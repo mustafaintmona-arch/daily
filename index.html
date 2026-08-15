@@ -1,0 +1,2422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="manifest" href="manifest.json">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daily">
+<meta name="theme-color" content="#0B1F33">
+<link rel="icon" href="icon-192.png">
+<title>Daily</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+button,a,.seg b,.cd,.uhead{-webkit-user-select:none;user-select:none}
+button,.seg b,.cd,.qbtn,.tool,.ub,.addbtn{transition:transform .09s ease,background .15s ease,color .15s ease,opacity .15s ease}
+button:active,.seg b:active,.cd:active,.qbtn:active,.tool:active,.ub:active,.addbtn:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.fade{animation:fi .18s ease}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+:root{--navy:#0B1F33;--gold:#B9975B;--ink:#EDE9E1;--dim:#8C8578;--card:#12293F;--card2:#0E2334;
+ --line:#1E3A54;--ok:#4CAF7D;--bad:#D46A5E}
+body{background:var(--navy);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+ padding:max(env(safe-area-inset-top),14px) 16px calc(86px + env(safe-area-inset-bottom));
+ font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.hdr{display:flex;align-items:baseline;justify-content:space-between}
+.hdr h1{font-size:13.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.hdr .dt{font-size:12.5px;color:var(--dim);margin-top:1px}
+.pgtitle{font-family:Georgia,serif;font-size:26px;margin-top:14px;letter-spacing:-.015em;
+ display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pgtitle span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#eye{background:var(--card2);border:1px solid var(--line);color:var(--dim);border-radius:12px;
+ padding:8px 13px;display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.1em;
+ text-transform:uppercase;font-weight:600;font-family:inherit}
+#eye svg{width:19px;height:19px;display:block}
+#find{background:var(--card2);border:1px solid var(--line);color:var(--dim);border-radius:12px;padding:8px 11px;display:flex}
+#find svg{width:19px;height:19px;display:block}
+.fres{padding:11px 0;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.fres:last-child{border-bottom:0}
+.fres i{font-style:normal;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);
+ flex:0 0 58px}
+.fres b{font-size:13.5px;font-weight:600;display:block}
+.fres span{font-size:11.5px;color:var(--dim)}
+#eye.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.cal{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px}
+.calh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.calh .mo{font-family:Georgia,serif;font-size:19px}
+.calh .nb{display:flex;gap:6px}
+.calh button{background:var(--card2);border:1px solid var(--line);color:var(--ink);border-radius:9px;
+ padding:6px 11px;font-size:12px}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cg .dow{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);text-align:center;padding:5px 0}
+.cg .cd{position:relative;text-align:center;padding:9px 0 12px;border-radius:10px;font-size:13.5px;color:var(--ink)}
+.cg .cd.out{color:#3B4A5A}
+.cg .cd.tdy{box-shadow:inset 0 0 0 1px var(--gold)}
+.cg .cd.sel{background:var(--gold);color:var(--navy);font-weight:700}
+.cg .cd .dots{position:absolute;left:0;right:0;bottom:4px;display:flex;justify-content:center;gap:2px}
+.cg .cd .dots s{width:3px;height:3px;border-radius:50%;background:var(--gold);text-decoration:none}
+.cg .cd.sel .dots s{background:var(--navy)}
+.ev{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+.ev:last-child{border-bottom:0}
+.ev .tm{flex:0 0 52px;font-size:11px;color:var(--gold);line-height:1.35;padding-top:1px}
+.ev .bd{flex:1;min-width:0}
+.ev .bd b{display:block;font-size:13.5px;font-weight:600}
+.ev .bd span{font-size:11.5px;color:var(--dim)}
+.ev.past{opacity:.45}
+.ev .x{background:none;border:0;color:var(--dim);font-size:16px;padding:0 3px}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;background:rgba(8,22,36,.95);
+ backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:7px 5px calc(6px + env(safe-area-inset-bottom))}
+.nav b{flex:1;text-align:center;font-size:9px;letter-spacing:.03em;text-transform:uppercase;
+ color:var(--dim);font-weight:600;padding:4px 0;white-space:nowrap;overflow:hidden}
+.nav b i{display:block;font-size:17px;position:relative;font-style:normal;margin-bottom:2px;opacity:.75}
+.nav b.on{color:var(--gold)} .nav b.on i{opacity:1}
+.nav .dot{position:absolute;top:-1px;right:50%;margin-right:-13px;width:6px;height:6px;border-radius:50%;
+ background:var(--bad);display:block;box-shadow:0 0 0 2px rgba(8,22,36,.95)}
+.hide{display:none!important}
+.sec{margin-top:20px}
+.deal.ldue{border-color:var(--gold)}
+.pill2{border-radius:10px;padding:8px 12px;font-size:11.5px;margin-top:10px}
+#offpill{background:rgba(140,133,120,.14);border:1px solid var(--line);color:var(--dim)}
+#upd{background:rgba(185,151,91,.14);border:1px solid var(--gold);color:var(--gold)}
+#upd b{text-decoration:underline}
+.nag{background:rgba(212,106,94,.12);border:1px solid rgba(212,106,94,.45);border-radius:14px;
+ padding:13px 14px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.nag b{display:block;font-size:13px;font-weight:600;color:var(--ink)}
+.nag span{font-size:11.5px;color:var(--dim);line-height:1.45}
+.nag button{background:var(--bad);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-size:12px;
+ font-weight:600;white-space:nowrap;font-family:inherit}
+.ernrow{display:flex;gap:9px;margin-bottom:14px}
+.ernrow div{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:11px 9px;text-align:center}
+.ernrow div u{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+ text-decoration:none;margin-bottom:5px}
+.ernrow div b{font-family:Georgia,serif;font-size:15.5px;color:var(--gold);font-weight:400;letter-spacing:-.01em}
+.ernrow div i{display:block;font-style:normal;font-size:9.5px;color:var(--dim);margin-top:3px}
+.ernbars{display:flex;align-items:flex-end;gap:5px;height:66px;margin-bottom:8px}
+.ernbars s{flex:1;text-decoration:none;display:flex;flex-direction:column;justify-content:flex-end;height:100%;position:relative}
+.ernbars s em{display:block;background:var(--gold);border-radius:4px 4px 0 0;min-height:2px;opacity:.55}
+.ernbars s.cur em{opacity:1}
+.ernbars s q{position:absolute;bottom:-15px;left:0;right:0;text-align:center;font-size:8.5px;
+ color:var(--dim);letter-spacing:.05em;text-transform:uppercase;quotes:none}
+.ernbars{margin-bottom:22px}
+.sec h2{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:600;
+ margin-bottom:9px;display:flex;justify-content:space-between;align-items:baseline}
+.sec h2 b{color:var(--gold);font-size:11px;letter-spacing:0;text-transform:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px}
+.card:empty{display:none}
+.row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.lab{font-size:14.5px}.tgt{font-size:11px;color:var(--dim);margin-top:1px}
+.hint{font-size:11.5px;color:var(--dim);line-height:1.55}
+.big{font-family:Georgia,serif;font-size:40px;line-height:1;letter-spacing:-.02em}
+.big small{font-size:13px;color:var(--dim);font-family:-apple-system,sans-serif}
+.bar{height:9px;background:#0A1826;border-radius:20px;margin-top:12px;position:relative;overflow:hidden}
+.bar i,.bar u,.bar s{position:absolute;top:0;height:100%}
+.bar i{left:0;background:linear-gradient(90deg,var(--gold),#E4C98F);border-radius:20px;transition:width .5s}
+.bar u{background:rgba(185,151,91,.32)} .bar s{background:rgba(185,151,91,.14)}
+.meta{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-top:6px}
+.legend{display:flex;gap:12px;font-size:10.5px;color:var(--dim);margin-top:7px;flex-wrap:wrap}
+.legend span::before{content:'';display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend .l1::before{background:var(--gold)} .legend .l2::before{background:rgba(185,151,91,.55)} .legend .l3::before{background:rgba(185,151,91,.2)}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px}
+.qbtn{background:var(--gold);color:var(--navy);border:0;border-radius:15px;padding:16px 8px;font-size:15px;
+ font-weight:700;font-family:inherit}
+.qbtn.alt{background:var(--card2);color:var(--ink);border:1px solid var(--line)}
+.qbtn small{display:block;font-size:10.5px;font-weight:500;opacity:.75;margin-top:2px}
+.stepper{display:flex;align-items:center;gap:11px}
+.stepper button{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:18px;line-height:1}
+.stepper button:active{background:var(--gold);color:var(--navy)}
+.val{min-width:32px;text-align:center;font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+.hit{color:var(--ok)}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tog{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:14px 10px;text-align:center;font-size:13.5px}
+.tog.on{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:600}
+.tog .ic{display:block;font-size:18px;margin-bottom:3px}
+.stars{display:flex;gap:4px}
+.stars span{flex:1;text-align:center;padding:8px 0;border-radius:8px;background:var(--card2);border:1px solid var(--line);font-size:12.5px}
+.stars span.on{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:700}
+.streak{display:flex;gap:5px;margin-top:10px}
+.streak i{flex:1;height:32px;border-radius:9px;background:var(--card2);border:1px solid var(--line);
+ display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim);font-style:normal}
+.streak i.done{background:rgba(76,175,125,.16);border-color:var(--ok);color:var(--ok)}
+input,textarea,select{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:12px;color:var(--ink);
+ padding:12px;font-size:16px;font-family:inherit;margin-top:5px;-webkit-appearance:none}
+input:focus,textarea:focus,select:focus{outline:0;border-color:var(--gold)}
+label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);display:block;margin-top:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tool{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:14px 6px;text-align:center;
+ font-size:12.5px;font-family:inherit;color:var(--ink)}
+.tool span{display:block;font-size:17px;margin-bottom:4px;color:var(--gold)}
+.btnfull{width:100%;background:var(--gold);color:var(--navy);border:0;border-radius:14px;padding:16px;
+ font-size:15.5px;font-weight:700;font-family:inherit;margin-top:14px}
+.addbtn{width:100%;background:transparent;border:1px dashed var(--line);color:var(--dim);border-radius:12px;
+ padding:12px;font-size:13.5px;margin-top:9px;font-family:inherit}
+.deal,.unit,.comp,.tmpl{border-bottom:1px solid var(--line);padding:13px 0}
+.deal:last-child,.unit:last-child,.comp:last-child,.tmpl:last-child{border-bottom:0}
+.deal .top,.unit .h{display:flex;justify-content:space-between;align-items:baseline;gap:9px}
+.deal .who,.unit .p{font-size:14.5px;font-weight:600}
+.deal .fee,.unit .pr{font-family:Georgia,serif;font-size:16px;color:var(--gold);white-space:nowrap}
+.deal .sub,.unit .m{font-size:11.5px;color:var(--dim);margin-top:2px}
+.unit .m.up{color:var(--ok)}.unit .m.down{color:var(--bad)}
+.next{font-size:12px;margin-top:7px;padding:7px 9px;border-radius:9px;background:var(--card2);border:1px solid var(--line)}
+.next.due{border-color:var(--bad);background:rgba(212,106,94,.12);color:#F0B9B2}
+.next b{color:var(--gold);font-weight:600}
+.move{background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--line);
+ border-radius:14px;padding:12px 13px;margin-bottom:8px;display:flex;gap:11px;align-items:flex-start}
+.move.hot{border-left-color:var(--bad)}
+.move.warm{border-left-color:var(--gold)}
+.move.cool{border-left-color:#3E7CA6}
+.move .rk{flex:0 0 20px;font-family:Georgia,serif;font-size:17px;color:var(--dim);line-height:1.1}
+.move.hot .rk{color:var(--bad)}.move.warm .rk{color:var(--gold)}
+.move .bd2{flex:1;min-width:0}
+.move .t1{font-size:14px;font-weight:600;line-height:1.3}
+.move .t2{font-size:11.5px;color:var(--dim);margin-top:3px;line-height:1.45}
+.move .t3{font-family:Georgia,serif;font-size:13px;color:var(--gold);margin-top:5px}
+.move .mb{display:flex;gap:6px;margin-top:9px}
+.move .mb a,.move .mb button{flex:1;text-align:center;background:transparent;border:1px solid var(--line);
+ color:var(--gold);border-radius:10px;padding:8px 4px;font-size:11px;text-decoration:none;font-family:inherit}
+.focus{background:rgba(185,151,91,.1);border:1px solid var(--gold);border-radius:14px;padding:13px 14px;margin-top:4px}
+.focus b{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:7px}
+.focus div{font-size:13.5px;line-height:1.6}
+.mrow{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line);gap:10px}
+.mrow:last-child{border-bottom:0}
+.mrow .ml{font-size:12.5px}
+.mrow .ms{font-size:10.5px;color:var(--dim);margin-top:2px}
+.mrow .mv{font-family:Georgia,serif;font-size:15px;white-space:nowrap}
+.mrow.gap .mv{color:var(--bad)}
+.mrow.good .mv{color:var(--ok)}
+.mreq{background:rgba(185,151,91,.1);border:1px solid rgba(185,151,91,.4);border-radius:12px;
+ padding:12px;margin-top:11px;font-size:12.5px;line-height:1.65}
+.mreq b{color:var(--gold)}
+.dcard{background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--line);
+ border-radius:14px;padding:13px 14px;margin-bottom:9px}
+.dcard.s0{border-left-color:#5A6B7C}.dcard.s1{border-left-color:#3E7CA6}
+.dcard.s2{border-left-color:#B9975B}.dcard.s3{border-left-color:#D9A64A}
+.dcard.s4{border-left-color:var(--ok)}
+.dcard.s5{border-left-color:var(--bad);opacity:.72}
+.stage b.lostb{background:var(--bad);color:#fff;border-color:var(--bad)}
+.npchip{display:inline-block;margin-top:8px;font-size:11px;padding:6px 10px;border-radius:9px;
+ background:rgba(185,151,91,.13);border:1px solid rgba(185,151,91,.45);color:var(--gold)}
+.npchip.soon{background:rgba(212,106,94,.14);border-color:rgba(212,106,94,.5);color:#F0B9B2}
+.dcard.due{border-color:rgba(212,106,94,.5)}
+.dtop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.dname{font-size:15px;font-weight:600;line-height:1.25}
+.dmeta{font-size:11.5px;color:var(--dim);margin-top:3px}
+.dfee{font-family:Georgia,serif;font-size:17px;color:var(--gold);white-space:nowrap;text-align:right}
+.dfee small{display:block;font-family:inherit;font-size:9px;color:var(--dim);letter-spacing:.08em;
+ text-transform:uppercase;margin-top:2px}
+.dstage{display:flex;align-items:center;gap:7px;margin-top:10px}
+.dbar{flex:1;display:flex;gap:3px}
+.dbar s{flex:1;height:4px;border-radius:2px;background:var(--line);text-decoration:none}
+.dbar s.on{background:var(--gold)}
+.dbar s.won{background:var(--ok)}
+.dstagen{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.dnext{font-size:12px;margin-top:9px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.03);
+ border:1px solid var(--line);display:flex;justify-content:space-between;gap:9px;align-items:center}
+.dnext.due{border-color:rgba(212,106,94,.5);background:rgba(212,106,94,.12);color:#F0B9B2}
+.dnext i{font-style:normal;font-size:10px;color:var(--dim);white-space:nowrap}
+.dnext.due i{color:#F0B9B2}
+.dadv{width:100%;margin-top:9px;background:var(--gold);color:var(--navy);border:0;border-radius:11px;
+ padding:12px;font-size:12.5px;font-weight:700;font-family:inherit;letter-spacing:.02em}
+.dadv.wonb{background:var(--ok);color:#062B18}
+.drow2{display:flex;gap:6px;margin-top:6px}
+.drow2 a,.drow2 button{flex:1;text-align:center;background:transparent;border:1px solid var(--line);
+ color:var(--dim);border-radius:11px;padding:10px 4px;font-size:11.5px;text-decoration:none;font-family:inherit}
+.drow2 a{color:var(--gold)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:9px;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chips b{flex:0 0 auto;font-size:11.5px;padding:8px 13px;border-radius:20px;background:var(--card2);
+ border:1px solid var(--line);color:var(--dim);font-weight:600}
+.chips b.on{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.chips b u{text-decoration:none;opacity:.6;margin-left:4px}
+.stage{display:flex;gap:4px;margin-top:8px}
+.stage b{flex:1;text-align:center;font-size:9px;padding:6px 1px;border-radius:7px;
+ background:var(--card2);border:1px solid var(--line);color:var(--dim);font-weight:600;text-transform:uppercase}
+.stage b.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.stage b.won{background:var(--ok);color:#062B18;border-color:var(--ok)}
+.acts,.ubtns{display:flex;gap:6px;margin-top:8px}
+.acts a,.acts button,.ub{flex:1;text-align:center;background:var(--card2);border:1px solid var(--line);color:var(--ink);
+ border-radius:10px;padding:10px 3px;font-size:11.5px;font-family:inherit;text-decoration:none}
+.ub.gold{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700}
+.unit .d{font-size:12px;color:var(--dim);margin-top:7px;padding-top:7px;border-top:1px solid var(--line);line-height:1.6}
+.pill{display:inline-block;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;
+ border-radius:20px;background:rgba(185,151,91,.16);color:var(--gold);margin-top:5px}
+.uhead{cursor:pointer}
+.seg{display:flex;gap:5px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:9px;position:sticky;top:0;z-index:20}
+.seg b{flex:1;text-align:center;font-size:12px;padding:9px 4px;border-radius:10px;color:var(--dim);font-weight:600}
+.seg b.on{background:var(--gold);color:var(--navy);box-shadow:0 1px 6px rgba(185,151,91,.35)}
+.comp .cn{font-size:15px;font-weight:600}
+.comp .cd{font-size:11px;color:var(--dim);margin-top:1px}
+.bedgrid{display:flex;gap:7px;margin-top:9px}
+.bedgrid div{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 4px;text-align:center}
+.bedgrid .bb{font-size:9.5px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+.bedgrid .bv{font-family:Georgia,serif;font-size:15px;color:var(--gold);margin-top:2px}
+.bedgrid .bp{font-size:9.5px;color:var(--dim);margin-top:1px}
+.creads{font-size:12px;color:var(--dim);margin-top:9px;line-height:1.6}
+.creads b{color:var(--ink);font-weight:600}
+.tmpl .tt{font-size:14px;font-weight:600}
+.tmpl .tp{font-size:11.5px;color:var(--dim);margin-top:3px;line-height:1.5}
+#lightbox{display:none;position:fixed;inset:0;background:rgba(6,15,25,.97);z-index:70;flex-direction:column;
+ align-items:center;justify-content:center;padding:18px}
+#lightbox img{max-width:100%;max-height:80vh;border-radius:12px;border:1px solid var(--line)}
+#lbcap{color:var(--gold);font-size:12.5px;margin-top:12px;text-align:center}
+.lbhint{color:var(--dim);font-size:11px;margin-top:5px}
+#sheet,#tsheet{display:none;position:fixed;inset:0;background:rgba(4,12,20,.78);z-index:80;align-items:flex-end}
+#sheet .inner,#tsheet .inner{background:var(--navy);border:1px solid var(--line);border-radius:22px 22px 0 0;
+ width:100%;max-height:93vh;overflow:auto;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+#sheet h3,#tsheet h3{font-size:17px;margin-bottom:2px}
+.pick{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+.pick b{flex:1;min-width:56px;text-align:center;font-size:9.5px;padding:9px 2px;border-radius:8px;
+ background:var(--card2);border:1px solid var(--line);color:var(--dim);font-weight:600;text-transform:uppercase}
+.pick b.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.sheetbtns{display:flex;gap:8px;margin-top:18px}
+.sheetbtns button{flex:1;border-radius:13px;padding:14px;font-size:15px;font-weight:700;border:0;font-family:inherit}
+#sv,#tcopy{background:var(--gold);color:var(--navy)} #sc,#tc{background:var(--card2);color:var(--dim);border:1px solid var(--line)}
+.calc{font-size:12px;color:var(--gold);margin-top:7px}
+.res .row .lab{font-size:13px}
+.res .row .v2{font-family:Georgia,serif;font-size:15.5px;color:var(--gold);white-space:nowrap}
+.res .row.tot{border-top:1px solid var(--gold);border-bottom:0;margin-top:3px;padding-top:11px}
+.res .row.tot .v2{font-size:18px}
+.sched{max-height:44vh;overflow:auto;margin-top:10px}
+.sched .row{padding:8px 0}.sched .row .lab{font-size:12px}
+.sched .row .v2{font-size:12.5px;font-family:inherit;color:var(--ink)}
+.sched .row.big2 .v2{color:var(--gold);font-weight:700}
+.hide{display:none}
+#printwrap{display:none}
+@media print{body{background:#fff!important;color:#111!important;padding:0!important}
+ body>*{display:none!important} #printwrap{display:block!important} @page{margin:14mm}}
+#printwrap .ph{border-bottom:3px solid #B9975B;padding-bottom:9px;margin-bottom:15px}
+#printwrap .ph h1{font-family:Georgia,serif;font-size:23px;color:#0B1F33;letter-spacing:0;text-transform:none}
+#printwrap .ph .sub2{font-size:12px;color:#666;margin-top:3px}
+#printwrap h3{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#B9975B;margin:15px 0 5px}
+#printwrap table{width:100%;border-collapse:collapse;font-size:12.5px}
+#printwrap td{padding:6px 0;border-bottom:1px solid #E5E1D8;color:#111}
+#printwrap td.r{text-align:right;font-weight:600;white-space:nowrap}
+#printwrap tr.tot td{border-top:2px solid #0B1F33;border-bottom:0;font-size:15px;font-family:Georgia,serif;color:#0B1F33;padding-top:9px}
+#printwrap figure{margin:0 0 11px}
+#printwrap img{width:100%;border:1px solid #DDD8CD;border-radius:6px}
+#printwrap figcaption{font-size:9.5px;color:#777;margin-top:3px;text-transform:uppercase;letter-spacing:.1em}
+#printwrap .foot2{margin-top:16px;padding-top:8px;border-top:1px solid #E5E1D8;font-size:9.5px;color:#777;line-height:1.6}
+#printwrap .note2{font-size:12px;color:#333;line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="hdr"><h1>Daily</h1><div class="dt" id="dt"></div></div>
+<div id="offpill" class="pill2 hide">Offline · your data is safe</div>
+<div id="upd" class="pill2 upd hide">New version ready · <b>Reload</b></div>
+<div class="pgtitle"><span id="pgtitle">Today</span><button id="find" title="Search everything" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button><button id="eye" title="Hide names and numbers"><svg id="eyesvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><span id="eyet">Private</span></button></div>
+
+<div id="p-today">
+  <div class="sec">
+    <div class="big" id="banked">AED 0<small> / 500,000</small></div>
+    <div class="bar"><s id="bmax"></s><u id="bpipe"></u><i id="bprog"></i></div>
+    <div class="meta"><span id="daysleft"></span><span id="need"></span></div>
+    <div class="legend"><span class="l1">Banked</span><span class="l2">Likely</span><span class="l3">Best case</span></div>
+  </div>
+  <div class="sec"><div class="nag hide" id="nag"></div></div>
+  <div class="sec"><h2>Today's money moves <b id="mmn"></b></h2>
+    <div id="moves"></div>
+    <div class="focus hide" id="focus"></div></div>
+  <div class="sec"><h2>Money map</h2><div class="card" id="mmap"></div></div>
+  <div class="sec"><h2>Commission earned <b id="ernb"></b></h2>
+    <div class="card">
+      <div class="ernrow" id="erntop"></div>
+      <div class="ernbars" id="ernbars"></div>
+      <div class="row" style="border-top:1px solid var(--line);margin-top:4px"><div><div class="lab">All time</div><div class="tgt" id="ernsub">No deals banked yet</div></div><div class="val hit" id="ernall">AED 0</div></div>
+    </div>
+    <button class="addbtn" id="logcomm">+ Log a commission</button>
+    <div class="card hide" style="margin-top:9px" id="ernlist"></div></div>
+  <div class="sec" id="upnextsec"><h2>In the diary today <b id="upnb"></b></h2><div class="card" id="upnext"></div></div>
+  <div class="sec"><h2>Log your activity</h2>
+    <div class="quick">
+      <button class="qbtn" id="q-call">+1 Call<small id="q-callv">0 today</small></button>
+      <button class="qbtn alt" id="q-convo">+1 Conversation<small id="q-convov">0 today</small></button>
+    </div>
+    <div class="card" id="nums"></div>
+  </div>
+  <div class="sec"><h2>Discipline</h2><div class="toggles" id="togs"></div></div>
+  <div class="sec"><h2>Who did you move closer today</h2>
+    <div class="card"><input id="moved" placeholder="Name one client you pushed closer">
+    <div class="hint" style="margin-top:7px">If you cannot name one, today was busy, not productive.</div></div></div>
+  <div class="sec"><h2>Rate the day</h2>
+    <div class="card"><div class="stars" id="score"></div>
+      <label>One thing to fix tomorrow</label><textarea id="fix" rows="2" placeholder="Be specific"></textarea>
+      <input id="comm" type="hidden" value="0"></div></div>
+  <div class="sec"><h2>Last 7 days</h2><div class="streak" id="streak"></div></div>
+  <button class="btnfull" id="save">Save today</button>
+</div>
+
+<div id="p-deals" class="hide">
+  <div class="sec">
+    <div class="big" id="dfore">AED 0<small> likely to close</small></div>
+    <div class="meta"><span id="dwon"></span><span id="dgap"></span></div>
+  </div>
+  <div class="sec"><div class="seg" id="dseg"></div></div>
+  <div id="d-active">
+  <div class="sec"><h2>Pipeline <b id="dcount"></b></h2>
+    <input id="dq" placeholder="Search client, unit or note">
+    <div class="chips" id="dchips" style="margin-top:9px"></div>
+    <select id="dfilt" class="hide"></select>
+    <div class="card" style="margin-top:9px" id="dlist"></div>
+    <button class="addbtn" id="adddeal">+ Add a client</button></div>
+  </div>
+  <div id="d-later" class="hide">
+  <div class="sec"><h2>Ready to call now <b id="lrcount"></b></h2>
+    <div class="card" id="lready"></div></div>
+  <div class="sec"><h2>Waiting <b id="lwcount"></b></h2>
+    <select id="lfilt"></select>
+    <div class="card" style="margin-top:9px" id="llist"></div>
+    <button class="addbtn" id="addlater">+ Add someone for later</button>
+    <button class="addbtn" id="icslater" style="margin-top:7px">↗ Send all dates to my iPhone calendar</button>
+    <div class="hint" style="margin-top:9px">Nobody here counts towards your goal. They are not lost, they are just not now. When their date arrives they move up top and appear on your home screen.</div></div>
+  </div>
+</div>
+
+<div id="p-stock" class="hide">
+  <div class="sec"><div class="seg" id="sseg"></div></div>
+<div id="s-units">
+  <div class="sec"><h2>Inventory <b id="ucount"></b></h2>
+    <div class="seg" id="useg"></div>
+    <input id="uq" placeholder="Search project, community or note">
+    <select id="ufilt" style="margin-top:8px"></select>
+    <div class="chips" id="usort" style="margin-top:9px"></div>
+    <div class="card" style="margin-top:9px" id="ulist"></div>
+    <button class="addbtn" id="addunit">+ Add a unit</button></div>
+</div>
+<div id="s-offplan" class="hide">
+  <div class="sec"><h2>Off-plan projects <b id="opcount"></b></h2>
+    <div class="card" id="oplist"></div>
+    <button class="addbtn" id="addop">+ Add an off-plan project</button>
+    <div class="hint" style="margin-top:9px">Enter the plan once. The app dates every payment, works out the cash you actually need before handover, and builds the client one pager.</div></div>
+</div>
+<div id="s-comps" class="hide">
+  <div class="sec"><h2>Market benchmarks <b id="cupd"></b></h2>
+    <input id="cq" placeholder="Search community">
+    <div class="card" style="margin-top:9px" id="clist"></div>
+    <div class="hint" style="margin-top:9px">Medians from DLD and Property Monitor data. Community level, not a unit valuation. Position, view and upgrades still need your eye.</div></div>
+</div>
+</div>
+<div id="p-diary" class="hide">
+  <div class="sec"><div class="cal">
+    <div class="calh"><div class="mo" id="calmo"></div>
+      <div class="nb"><button id="calp">‹</button><button id="calt">Today</button><button id="caln">›</button></div></div>
+    <div class="cg" id="calg"></div></div></div>
+  <div class="sec"><h2><span id="dayttl">Today</span> <b id="evcount"></b></h2>
+    <button class="addbtn" id="addev" style="margin-bottom:9px">+ Add to diary</button>
+    <div class="card" id="evlist"></div></div>
+</div>
+
+<div id="p-more" class="hide">
+  <div class="sec"><h2>Due today</h2><div class="card" id="duelist"></div></div>
+  <div class="sec"><h2>This week</h2><div class="card" id="week"></div></div>
+  <div class="sec"><h2>Calculators</h2>
+    <div class="tools">
+      <button class="tool" id="t-cost"><span>Σ</span>True cost of buying</button>
+      <button class="tool" id="t-mort"><span>◫</span>What can they afford</button>
+      <button class="tool" id="t-flip"><span>⇄</span>Flip before handover</button>
+      <button class="tool" id="t-plan"><span>▤</span>Payment plan</button>
+      <button class="tool" id="t-fee"><span>%</span>Deal calculator</button>
+    </div></div>
+  <div class="sec"><h2>Tools</h2>
+    <div class="tools">
+      <button class="tool" id="t-tmpl"><span>✎</span>Templates</button>
+      <button class="tool" id="t-paste"><span>⌸</span>Paste a unit</button>
+      <button class="tool" id="t-trash"><span>⌫</span>Recently deleted</button>
+      <button class="tool" id="t-import"><span>＋</span>Import clients</button>
+      <button class="tool" id="t-impl"><span>◈</span>Import prospects</button>
+      <button class="tool" id="t-cal"><span>↗</span>Follow-ups to calendar</button>
+      <button class="tool" id="t-backup"><span>⇪</span>Backup data</button>
+      <button class="tool" id="t-restore"><span>⇩</span>Restore data</button>
+    </div></div>
+  <div class="sec"><h2>What is killing your deals</h2><div class="card" id="objbox"></div></div>
+  <div class="sec"><h2>Storage</h2><div class="card" id="storebox"></div></div>
+  <div class="sec"><h2>Referral sources</h2><div class="card" id="refs"></div></div>
+  <div class="sec"><h2>Rules</h2><div class="card"><div class="hint">
+    One wallet: Ashish and Ashwini are the same money. Pick one deal, drop the other.<br><br>
+    Never ask T for money before the unit is locked.<br><br>
+    US and UK clients pay by wire, not card. Send escrow details early.<br><br>
+    A zero logged honestly beats a gap.</div></div></div>
+</div>
+
+<div class="nav" id="nav"></div>
+<input type="file" id="planfile" accept="image/*" style="display:none">
+<div id="lightbox" onclick="this.style.display='none'"><img id="lbimg"><div id="lbcap"></div><div class="lbhint">Tap anywhere to close</div></div>
+
+<div id="sheet"><div class="inner">
+  <h3 id="sh-title">Add a client</h3>
+  <div class="hint">Only the name is required.</div>
+  <label>Client name</label><input id="f-w" placeholder="Full name">
+  <div class="two"><div><label>Mobile</label><input id="f-ph" type="tel" placeholder="+971 50 000 0000"></div>
+  <div><label>Deal type</label><select id="f-ty"></select></div></div>
+  <div class="two" id="f-chwrap" style="display:none"><div><label>Cheques</label><select id="f-ch"></select></div>
+  <div><label>Annual rent AED</label><input id="f-rent" type="number" inputmode="numeric"></div></div>
+  <label>Unit or project</label><input id="f-u" placeholder="e.g. Elora 3BR park unit">
+  <div class="two"><div><label>Property value AED</label><input id="f-v" type="number" inputmode="numeric"></div>
+  <div><label>Commission %</label><input id="f-r" type="number" inputmode="decimal" step="0.5" value="2"></div></div>
+  <div class="calc" id="f-calc">Your fee: AED 0</div>
+  <label>Stage</label><div class="pick" id="f-stage"></div>
+  <div class="two"><div><label>Next action date</label><input id="f-nd" type="date"></div>
+  <div><label>Source</label><select id="f-src"></select></div></div>
+  <label>Next action</label><input id="f-na" placeholder="e.g. Send Creek Harbour numbers">
+  <div id="f-lostwrap" style="display:none"><label style="color:var(--bad)">Why it died</label>
+  <select id="f-lost"></select></div>
+  <label style="color:var(--gold)">If they are selling</label>
+  <div class="hint" style="margin-top:-2px">Their next developer payment is the best reason to call. Enter it and it lands in your Later list automatically.</div>
+  <div class="two"><div><label>Next payment date</label><input id="f-npd" type="date"></div>
+  <div><label>Amount AED</label><input id="f-npa" type="number" inputmode="numeric"></div></div>
+  <label>Price moves</label>
+  <div class="hint" style="margin-top:-2px" id="f-ladder">No prices logged yet</div>
+  <div class="two"><div><input id="f-ask" type="number" inputmode="numeric" placeholder="New asking"></div>
+  <div><input id="f-off" type="number" inputmode="numeric" placeholder="Best offer"></div></div>
+  <button class="addbtn" id="f-addp" style="margin-top:8px">+ Log this price move</button>
+  <label style="color:var(--gold)">What they are looking for</label>
+  <div class="hint" style="margin-top:-2px">Fill these in and the app can match them to your stock automatically.</div>
+  <div class="two"><div><label>Beds</label><input id="f-lbd" type="number" inputmode="numeric" placeholder="3"></div>
+  <div><label>Max budget AED</label><input id="f-lmax" type="number" inputmode="numeric" placeholder="3000000"></div></div>
+  <label>Areas they would buy in</label><input id="f-lcom" placeholder="The Valley, Creek Harbour">
+  <label>Referred by</label><input id="f-ref" placeholder="Who introduced them">
+  <label>Notes</label><textarea id="f-n" rows="2"></textarea>
+  <div class="sheetbtns"><button id="sc">Cancel</button><button id="sv">Save</button></div>
+  <button class="addbtn" id="sdel" style="border-color:rgba(212,106,94,.5);color:#D46A5E">Delete this deal</button>
+</div></div>
+
+<div id="tsheet"><div class="inner">
+  <h3 id="t-title">Tool</h3><div id="t-body"></div>
+  <div class="sheetbtns"><button id="tc">Close</button><button id="tcopy">Copy</button></div>
+</div></div>
+
+<div id="printwrap"></div>
+
+<script>
+const TARGET=500000, DEADLINE='2026-09-27';
+const NUMS=[['calls','Calls',40],['convos','Conversations',10],['meets','Meetings / viewings',2],['opps','New opportunities',2],['agreed','Deals agreed',0]];
+const TOGS=[['gym','Gym','◆'],['pray','Prayers on time','✦'],['deep','Deep work am','●'],['bed','Sleep before 12','☾']];
+const STAGES=['To call','Contacted','Interested','Agreed','Won'];
+const LOST=5;
+const OBJ=['Price','Payment plan','Mortgage or funds','Location','Developer','Timing','Spouse or family',
+ 'Wanted a discount','Bought elsewhere','Market uncertainty','Went quiet','Other'];
+const PROB=[0.10,0.25,0.50,0.80,1.00];
+const DTYPES=['Ready','Off-plan','Resale','Commercial','Rent','Land'];
+const CHEQ=['1 cheque','2 cheques','3 cheques','4 cheques','6 cheques','12 cheques'];
+const SRCS=['Referral','Repeat client','Portal lead','Walk in','Prospecting call','Social','Other'];
+const PAGES=[['today','Today','◧'],['deals','Deals','◆'],['stock','Stock','▣'],['diary','Diary','▤'],['more','More','≡']];
+const STOCKSEG=[['units','Inventory'],['offplan','Off-plan'],['comps','Comps']];
+const CADENCE={0:2,1:3,2:2,3:2};
+const TEMPLATES=[
+['Neighbour sold','{name}, quick one about your {unit}.\n\nA villa a few doors from you just traded. Prices in the community are well up since launch, but the last few quarters have flattened.\n\nYour neighbours are taking profit. The window is still open, it is just not widening anymore.\n\nWant me to send what your unit would fetch today? No obligation.'],
+['Gone quiet','{name}, no pressure at all.\n\nLast time we spoke you were looking at {unit}. Things have moved since then and I did not want you hearing the numbers from someone else.\n\nShall I send a short update, or leave it for now? Either answer is fine.'],
+['New launch','{name}, worth two minutes of your time.\n\n{unit}\n\nEntry pricing sits below what everything around it trades at, and the payment plan keeps your exposure small until handover.\n\nWant the full breakdown before it goes to the wider list?'],
+['Price moved','{name}, the seller on {unit} has moved.\n\nNew number is {price}. He owes a payment at handover so he is motivated, and that is where the room is.\n\nWorth a look, or has your plan changed?'],
+['Payment plan in plain terms','{name}, simply put.\n\nYou pay a small amount today to secure {unit}. Most months after that are small. A few larger payments land along the way, and the final part is due only when you get the keys.\n\nBy handover you will have paid a fraction of the price, and you can pay cash, arrange a mortgage, or sell before completion.\n\nWant the exact dates and amounts?'],
+['After a viewing','{name}, good to see you today.\n\nHonest read on {unit}: the position is the part you cannot replicate, and that is what holds value when the market softens.\n\nIf the number is the sticking point, tell me where you need to be and I will take it to the seller.'],
+['Landlord renewal','{name}, your tenancy on {unit} is coming up.\n\nRents in the community have moved, so it is worth deciding early whether to renew, increase or re-let.\n\nWant me to pull the comparables and give you a straight recommendation?']];
+
+const K='daily-v4';
+const db=()=>{try{return JSON.parse(localStorage.getItem(K))||{}}catch(e){return{}}};
+var _wt=null,_wp=null;
+function flushPut(){if(!_wp)return;try{localStorage.setItem(K,JSON.stringify(_wp));}catch(e){}
+ _wp=null;if(_wt){clearTimeout(_wt);_wt=null;}}
+const put=d=>{_wp=d; if(_wt)return; _wt=setTimeout(function(){_wt=null;flushPut();},220);};
+window.addEventListener('pagehide',flushPut);
+document.addEventListener('visibilitychange',function(){if(document.hidden)flushPut();});
+let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(S.priv===undefined)S.priv=0;
+const SEED_DEALS=[
+{ty:'Resale',w:'Ashwini + Ashish',ph:'',u:'Emaar distress 3BR',v:4700000,r:2,s:2,na:'Book the call with Ashish',nd:'',src:'Repeat client',ref:'',n:'One wallet with the Sobha deal. Pick one.',ch:'1 cheque',rent:0},
+{ty:'Off-plan',w:'Dr Ashish',ph:'',u:'Sobha 4BR corner',v:5831000,r:2,s:1,na:'Get a yes, no or not now',nd:'',src:'Repeat client',ref:'Ashwini',n:'4% DLD waived, 80% deferred to 2030.',ch:'1 cheque',rent:0},
+{ty:'Ready',w:'Sandeep',ph:'',u:'Ready unit, mortgage',v:2000000,r:2,s:1,na:'Chase the pre-approval document',nd:'',src:'Referral',ref:'Mohsin',n:'Mortgage approved. Ready stock only.',ch:'1 cheque',rent:0},
+{ty:'Off-plan',w:'Tauheed (T)',ph:'+447961509711',u:'Creek Harbour launch',v:1800000,r:3,s:1,na:'Send launch numbers and why now',nd:'',src:'Repeat client',ref:'Vanessa',n:'Asked 29 Jun. Never ask for money before the unit is locked.',ch:'1 cheque',rent:0},
+{ty:'Off-plan',w:'Syed Imran',ph:'',u:'Ghaf Distrikt 2BR+maid',v:2900000,r:2.5,s:1,na:'Pitch as the golden visa closer',nd:'',src:'Referral',ref:'',n:'Funds are the blocker.',ch:'1 cheque',rent:0},
+{ty:'Off-plan',w:'Zarina',ph:'',u:'Valencia studio',v:774000,r:5,s:2,na:'Reframe to what she affords alone',nd:'',src:'Referral',ref:'Hajra',n:'Wire only. Brother Naveed involved.',ch:'1 cheque',rent:0},
+{ty:'Off-plan',w:'Irfan',ph:'',u:'Diversification unit',v:1700000,r:4,s:0,na:'Source Abu Dhabi stock',nd:'',src:'Repeat client',ref:'',n:'Loyal, three units, nothing offered.',ch:'1 cheque',rent:0},
+{ty:'Ready',w:'Eisa Al Shehi',ph:'0502882582',u:'To qualify',v:2000000,r:2,s:0,na:'Call, open with his father in law',nd:'',src:'Referral',ref:'Mohammed Darwish',n:'Referred 28 Jul.',ch:'1 cheque',rent:0}];
+const SEED_UNITS=[
+{lt:'Sale',p:'Elora, The Valley',com:'The Valley',t:'3BR townhouse',bd:3,bua:2180,plot:1483,pr:2750000,op:0,pl:'Cash to seller + 333,777 to Emaar at handover',h:'Aug 2026',n:'Park facing, near pool. DLD valuation 2.50 to 2.58M. Target 2.65M.',tag:'Resale',img:'',link:'',fp:''},
+{lt:'Sale',p:'Creek Harbour launch',com:'Creek Harbour',t:'1BR',bd:1,bua:0,plot:0,pr:1800000,op:0,pl:'TBD at launch',h:'2029',n:'Walking distance to Dubai Square Mall.',tag:'Launch',img:'',link:'',fp:''},
+{lt:'Sale',p:'Valencia, DAMAC Lagoons',com:'DAMAC Lagoons',t:'Studio',bd:0,bua:420,plot:0,pr:774000,op:0,pl:'20% DP, 1% monthly, 50% handover',h:'Mar 2029',n:'First studios in Lagoons. Pool view 603, 702, 1002.',tag:'Off-plan',img:'',link:'',fp:''},
+{lt:'Sale',p:'Distrikt, Ghaf Woods',com:'Ghaf Woods',t:'2BR + maid',bd:2,bua:1450,plot:0,pr:2900000,op:0,pl:'Standard MAF plan',h:'2028',n:'Units 407 and 603 at 2.888 to 2.942M.',tag:'Off-plan',img:'',link:'',fp:''},
+{lt:'Sale',p:'Emaar distress deal',com:'TBC',t:'3BR',bd:3,bua:0,plot:0,pr:4700000,op:0,pl:'2.71M now, 3 x 413,988, 827,977 at handover',h:'Oct 2028',n:'Circa 1.3M upside case.',tag:'Distress',img:'',link:'',fp:''},
+{lt:'Sale',p:'Sobha 4BR corner',com:'Sobha',t:'4BR corner townhouse',bd:4,bua:0,plot:0,pr:5831000,op:0,pl:'20% now, 80% at completion. 4% DLD waived',h:'Aug 2030',n:'Live offer with Dr Ashish.',tag:'Off-plan',img:'',link:'',fp:''},
+{lt:'Sale',p:'Arancia, City of Arabia',com:'City of Arabia',t:'1BR',bd:1,bua:760,plot:0,pr:1000000,op:0,pl:'40/60, circa 440K over 3 years',h:'Q1 2029',n:'Phase 1 at circa 1,315 psf against 1,800 to 2,000 around it.',tag:'Phase 1',img:'',link:'',fp:''},
+{lt:'Sale',p:'Motor City Grade A office',com:'Motor City',t:'Office',bd:0,bua:1960,plot:0,pr:5000000,op:0,pl:'50/50',h:'Q1 2030',n:'G+18, only 70 offices.',tag:'Commercial',img:'',link:'',fp:''},
+{lt:'Rent',p:'The Valley 3BR townhouse',com:'The Valley',t:'3BR townhouse',bd:3,bua:0,plot:0,pr:0,op:0,rent:155000,ch:'2 cheques',pl:'',h:'Available now',n:'Landlord asking 150 to 155k. Near the water parks.',tag:'Rental',img:'',link:'',fp:''},
+{lt:'Rent',p:'The Valley 4BR townhouse',com:'The Valley',t:'4BR townhouse',bd:4,bua:0,plot:0,pr:0,op:0,rent:220000,ch:'2 cheques',pl:'',h:'Available now',n:'Huge plot. Asking 220k but open to offers.',tag:'Rental',img:'',link:'',fp:''}];
+if(!S.deals.length)S.deals=SEED_DEALS.slice();
+if(!S.units.length)S.units=SEED_UNITS.slice();
+put(S);
+
+const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const TD=iso(new Date());
+let day=S.days[TD]||{calls:0,convos:0,meets:0,opps:0,agreed:0,gym:0,pray:0,deep:0,bed:0,moved:'',comm:0,score:0,fix:''};
+const money=n=>'AED '+Math.round(n||0).toLocaleString();
+const pmoney=n=>S.priv?'AED •••••••':money(n);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num=v=>Number(v||0);
+const autoDate=n=>{const d=new Date();d.setDate(d.getDate()+n);return iso(d);};
+document.getElementById('dt').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+
+
+/* ================= OFF-PLAN ================= */
+const OPLANS=[
+ ['60 / 40',20,8,3,40],
+ ['70 / 30',20,10,3,30],
+ ['80 / 20',20,12,3,20],
+ ['50 / 50',20,6,3,50],
+ ['40 / 60 post handover',10,6,3,60],
+ ['1% monthly',20,40,1,40]];
+function opDefaults(){var d=new Date();d.setFullYear(d.getFullYear()+3);
+ return {n:'',dev:'',t:'',bd:0,bua:0,pr:0,disc:0,dld:1,h:d.toISOString().slice(0,7),dp:20,ic:8,gap:3,ho:40,rent:0,gr:6,sc:0,note:''};}
+function opNet(o){return num(o.pr)*(1-num(o.disc)/100);}
+function opDLD(o){return num(o.dld)?0:opNet(o)*0.04;}
+function opInstPct(o){var left=100-num(o.dp)-num(o.ho);return num(o.ic)>0?left/num(o.ic):0;}
+function opYears(o){var h=new Date(o.h+'-01');return Math.max(.25,(h-new Date())/31557600000);}
+function opSched(o){
+ var net=opNet(o), rows=[], d=new Date();
+ rows.push({l:'Booking today',pct:num(o.dp),amt:net*num(o.dp)/100,d:new Date(d)});
+ if(!num(o.dld))rows.push({l:'DLD registration 4%',pct:0,amt:net*0.04,d:new Date(d)});
+ var ip=opInstPct(o), c=new Date(d);
+ for(var i=1;i<=num(o.ic);i++){c=new Date(c);c.setMonth(c.getMonth()+num(o.gap));
+  rows.push({l:'Instalment '+i,pct:ip,amt:net*ip/100,d:new Date(c)});}
+ rows.push({l:'On handover',pct:num(o.ho),amt:net*num(o.ho)/100,d:new Date(o.h+'-01'),ho:1});
+ return rows;}
+function opCash(o){var r=opSched(o),h=new Date(o.h+'-01'),t=0;
+ r.forEach(function(x){if(!x.ho&&x.d<=h)t+=x.amt;});return t;}
+function opTotal(o){return opNet(o)+opDLD(o);}
+function opValue(o){return opNet(o)*Math.pow(1+num(o.gr)/100,opYears(o));}
+function fmtM(d){return d.toLocaleDateString('en-GB',{month:'short',year:'numeric'});}
+
+function drawOp(){
+ document.getElementById('opcount').textContent=S.op.length?S.op.length+' saved':'';
+ document.getElementById('oplist').innerHTML=S.op.length?S.op.map(function(o,i){
+  var net=opNet(o), cash=opCash(o), yrs=opYears(o), val=opValue(o);
+  var gain=val-net, mult=cash>0?gain/cash:0;
+  return '<div class="unit"><div class="h uhead" data-oi="'+i+'"><div><div class="p">'+esc(pvNum(o.n||'Untitled project'))+'</div>'+
+   '<div class="m">'+esc([o.dev,o.t,(o.bua?'BUA '+num(o.bua).toLocaleString():'')].filter(Boolean).join(' · '))+'</div></div>'+
+   '<div style="text-align:right"><div class="pr">'+pmoney(net)+'</div><div class="m">'+num(o.dp)+'% down · handover '+esc(pvNum(o.h))+'</div></div></div>'+
+   '<div class="d" id="opd-'+i+'" style="display:none">'+
+   '<div class="row"><div><div class="lab">Cash needed before handover</div><div class="tgt">Everything except the final payment</div></div><div class="val hit">'+money(cash)+'</div></div>'+
+   '<div class="row"><div><div class="lab">Due on handover</div><div class="tgt">'+num(o.ho)+'% · '+esc(o.h)+'</div></div><div class="val">'+money(net*num(o.ho)/100)+'</div></div>'+
+   '<div class="row"><div><div class="lab">Total including DLD</div><div class="tgt">'+(num(o.dld)?'DLD waived':'4% DLD payable')+'</div></div><div class="val">'+money(opTotal(o))+'</div></div>'+
+   (num(o.rent)?'<div class="row"><div><div class="lab">Gross yield on handover</div><div class="tgt">Rent '+money(o.rent)+'</div></div><div class="val">'+(opTotal(o)?(num(o.rent)/opTotal(o)*100).toFixed(1):'0')+'%</div></div>':'')+
+   '<div class="row"><div><div class="lab">Value at handover</div><div class="tgt">At '+num(o.gr)+'% a year over '+yrs.toFixed(1)+' years</div></div><div class="val">'+money(val)+'</div></div>'+
+   '<div class="row"><div><div class="lab">Return on cash in</div><div class="tgt">If sold at handover</div></div><div class="val '+(mult>0?'hit':'')+'">'+(mult*100).toFixed(0)+'%</div></div>'+
+   (o.note?'<div style="margin-top:8px">'+esc(pvNum(pvName(o.note)))+'</div>':'')+
+   '<div class="ubtns"><button class="ub gold" data-oppdf="'+i+'">Client one pager</button><button class="ub" data-opsch="'+i+'">Full schedule</button></div>'+
+   '<div class="ubtns"><button class="ub" data-opwa="'+i+'">WhatsApp</button><button class="ub" data-opvs="'+i+'">Versus ready</button><button class="ub" data-ope="'+i+'">Edit</button><button class="ub" data-opd="'+i+'">Delete</button></div>'+
+   '</div></div>';}).join(''):'<div class="hint">No projects yet. Add one and the app does the rest.</div>';
+ document.querySelectorAll('[data-oi]').forEach(function(h){h.onclick=function(){var d=document.getElementById('opd-'+h.dataset.oi);d.style.display=d.style.display==='none'?'block':'none';};});
+ document.querySelectorAll('[data-oppdf]').forEach(function(b){b.onclick=function(e){e.stopPropagation();opPDF(+b.dataset.oppdf);};});
+ document.querySelectorAll('[data-opsch]').forEach(function(b){b.onclick=function(e){e.stopPropagation();opSchedule(+b.dataset.opsch);};});
+ document.querySelectorAll('[data-opwa]').forEach(function(b){b.onclick=function(e){e.stopPropagation();opWhats(+b.dataset.opwa);};});
+ document.querySelectorAll('[data-opvs]').forEach(function(b){b.onclick=function(e){e.stopPropagation();opVersus(+b.dataset.opvs);};});
+ document.querySelectorAll('[data-ope]').forEach(function(b){b.onclick=function(e){e.stopPropagation();opEdit(+b.dataset.ope);};});
+ document.querySelectorAll('[data-opd]').forEach(function(b){b.onclick=function(e){e.stopPropagation();
+  if(confirm('Delete this project?')){toTrash('op',S.op[+b.dataset.opd]);S.op.splice(+b.dataset.opd,1);put(S);drawOp();}};});
+}
+
+function opEdit(i){
+ var o=(i>=0?JSON.parse(JSON.stringify(S.op[i])):opDefaults());
+ var h='<label>Project name</label><input id="o-n" value="'+esc(o.n)+'" placeholder="Elora 3, The Valley">'+
+ '<div class="two"><div><label>Developer</label><input id="o-dev" value="'+esc(o.dev)+'" placeholder="Emaar"></div>'+
+ '<div><label>Unit type</label><input id="o-t" value="'+esc(o.t)+'" placeholder="3BR townhouse"></div></div>'+
+ '<div class="two"><div><label>Beds</label><input id="o-bd" type="number" value="'+num(o.bd)+'"></div>'+
+ '<div><label>BUA sqft</label><input id="o-bua" type="number" value="'+num(o.bua)+'"></div></div>'+
+ '<label>List price AED</label><input id="o-pr" type="number" inputmode="numeric" value="'+num(o.pr)+'">'+
+ '<div class="two"><div><label>Discount %</label><input id="o-disc" type="number" step="0.5" value="'+num(o.disc)+'"></div>'+
+ '<div><label>DLD</label><select id="o-dld"><option value="1"'+(num(o.dld)?' selected':'')+'>Waived</option><option value="0"'+(num(o.dld)?'':' selected')+'>4% payable</option></select></div></div>'+
+ '<label>Payment plan preset</label><select id="o-pre"><option value="">Choose a preset to fill below</option>'+
+  OPLANS.map(function(p,k){return '<option value="'+k+'">'+p[0]+'</option>';}).join('')+'</select>'+
+ '<div class="two"><div><label>Down payment %</label><input id="o-dp" type="number" step="0.5" value="'+num(o.dp)+'"></div>'+
+ '<div><label>Handover %</label><input id="o-ho" type="number" step="0.5" value="'+num(o.ho)+'"></div></div>'+
+ '<div class="two"><div><label>Instalments</label><input id="o-ic" type="number" value="'+num(o.ic)+'"></div>'+
+ '<div><label>Every N months</label><input id="o-gap" type="number" value="'+num(o.gap)+'"></div></div>'+
+ '<label>Handover month</label><input id="o-h" type="month" value="'+esc(o.h)+'">'+
+ '<div class="two"><div><label>Expected annual rent</label><input id="o-rent" type="number" value="'+num(o.rent)+'"></div>'+
+ '<div><label>Growth % a year</label><input id="o-gr" type="number" step="0.5" value="'+num(o.gr)+'"></div></div>'+
+ '<label>Note for you, not the client</label><textarea id="o-note" rows="2">'+esc(o.note)+'</textarea>'+
+ '<div class="hint" id="o-live" style="margin-top:10px"></div>'+
+ '<button class="btnfull" id="o-save" style="margin-top:12px">Save project</button>';
+ openTool(i>=0?'Edit project':'New off-plan project',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ var F=function(id){return document.getElementById(id);};
+ function collect(){return {n:F('o-n').value.trim(),dev:F('o-dev').value.trim(),t:F('o-t').value.trim(),
+  bd:num(F('o-bd').value),bua:num(F('o-bua').value),pr:num(F('o-pr').value),disc:num(F('o-disc').value),
+  dld:num(F('o-dld').value),dp:num(F('o-dp').value),ho:num(F('o-ho').value),ic:num(F('o-ic').value),
+  gap:num(F('o-gap').value),h:F('o-h').value||opDefaults().h,rent:num(F('o-rent').value),
+  gr:num(F('o-gr').value),note:F('o-note').value.trim(),sc:0};}
+ function live(){var o=collect(),ip=opInstPct(o);
+  var warn=(num(o.dp)+num(o.ho)>100)?'<br><b style="color:var(--bad)">Down payment plus handover is over 100%. Fix that first.</b>':'';
+  F('o-live').innerHTML='Each instalment works out at '+ip.toFixed(2)+'% of price, about '+money(opNet(o)*ip/100)+'.<br>'+
+   'Cash needed before handover: <b style="color:var(--gold)">'+money(opCash(o))+'</b>.'+warn;}
+ ['o-pr','o-disc','o-dp','o-ho','o-ic','o-gap','o-h','o-dld','o-gr'].forEach(function(id){F(id).oninput=live;F(id).onchange=live;});
+ F('o-pre').onchange=function(){var k=this.value;if(k==='')return;var p=OPLANS[+k];
+  F('o-dp').value=p[1];F('o-ic').value=p[2];F('o-gap').value=p[3];F('o-ho').value=p[4];live();};
+ live();
+ F('o-save').onclick=function(){var o=collect();
+  if(!o.n){alert('Give the project a name.');return;}
+  if(num(o.dp)+num(o.ho)>100){alert('Down payment plus handover cannot be more than 100%.');return;}
+  if(i>=0)S.op[i]=o; else S.op.push(o);
+  put(S);drawOp();TS.style.display='none';};
+}
+
+function opSchedule(i){
+ var o=S.op[i], r=opSched(o), tot=0;
+ var h=r.map(function(x){tot+=x.amt;
+  return '<div class="row'+(x.ho?' big2':'')+'"><div><div class="lab">'+esc(x.l)+'</div><div class="tgt">'+fmtM(x.d)+'</div></div><div class="v2">'+(x.pct?x.pct.toFixed(2)+'% · ':'')+money(x.amt)+'</div></div>';}).join('');
+ h='<div class="sched">'+h+'<div class="row big2"><div><div class="lab">Total</div></div><div class="v2">'+money(tot)+'</div></div></div>';
+ var txt=o.n+'\n\n'+r.map(function(x){return fmtM(x.d)+' — '+x.l+' — '+money(x.amt);}).join('\n')+'\n\nTotal '+money(tot);
+ openTool(o.n+' schedule',h,txt);
+}
+
+function opWhats(i){
+ var o=S.op[i], net=opNet(o), r=opSched(o), cash=opCash(o), val=opValue(o);
+ var first=r[0], inst=r.filter(function(x){return x.l.indexOf('Instalment')===0;});
+ var t=o.n+(o.t?', '+o.t:'')+'\n\n'+
+ 'Price '+money(net)+(num(o.disc)?' after '+num(o.disc)+'% off list':'')+'\n'+
+ (num(o.dld)?'DLD 4% waived by the developer\n':'DLD 4% payable, '+money(opDLD(o))+'\n')+
+ '\nTo secure it today: '+money(first.amt)+' ('+num(o.dp)+'%)\n'+
+ (inst.length?'Then '+inst.length+' payments of about '+money(inst[0].amt)+', one every '+num(o.gap)+' month'+(num(o.gap)>1?'s':'')+'\n':'')+
+ 'Final '+num(o.ho)+'%, '+money(net*num(o.ho)/100)+', only when you get the keys in '+o.h+'\n\n'+
+ 'So before handover you are in for '+money(cash)+', not the full price.\n'+
+ (num(o.rent)?'Expected rent on handover '+money(o.rent)+', about '+(opTotal(o)?(num(o.rent)/opTotal(o)*100).toFixed(1):'0')+'% gross.\n':'')+
+ '\nWant the full dated schedule?';
+ openTool('WhatsApp message','<div class="hint" style="white-space:pre-wrap;line-height:1.7">'+esc(t)+'</div>',t);
+}
+
+function opVersus(i){
+ var o=S.op[i], net=opNet(o), cash=opCash(o), yrs=opYears(o), val=opValue(o);
+ var ready=net, readyCost=ready*1.06, rent=num(o.rent);
+ var rentEarned=rent*yrs, readyVal=ready*Math.pow(1+num(o.gr)/100,yrs);
+ var offGain=val-net, readyGain=readyVal-ready+rentEarned-(readyCost-ready);
+ var offROC=cash>0?offGain/cash*100:0, readyROC=readyCost>0?readyGain/readyCost*100:0;
+ var h='<div class="sched">'+
+ '<div class="row"><div><div class="lab">Cash in today</div><div class="tgt">Off-plan vs ready</div></div><div class="v2">'+money(opSched(o)[0].amt)+' vs '+money(readyCost)+'</div></div>'+
+ '<div class="row"><div><div class="lab">Cash in by '+esc(o.h)+'</div></div><div class="v2">'+money(cash)+' vs '+money(readyCost)+'</div></div>'+
+ '<div class="row"><div><div class="lab">Rent collected meanwhile</div><div class="tgt">Off-plan earns nothing until keys</div></div><div class="v2">0 vs '+money(rentEarned)+'</div></div>'+
+ '<div class="row"><div><div class="lab">Value in '+yrs.toFixed(1)+' years</div><div class="tgt">Both at '+num(o.gr)+'% a year</div></div><div class="v2">'+money(val)+' vs '+money(readyVal)+'</div></div>'+
+ '<div class="row big2"><div><div class="lab">Return on the cash you put in</div></div><div class="v2">'+offROC.toFixed(0)+'% vs '+readyROC.toFixed(0)+'%</div></div>'+
+ '</div><div class="hint" style="margin-top:12px">Off-plan wins on leverage because your money is spread out. Ready wins on rent, because it pays you from day one. If the client needs income now, ready is the honest answer. If they want the biggest return on a limited amount of cash, off-plan is. Say which one you think fits them.</div>';
+ openTool('Off-plan vs ready',h,'');
+}
+
+function opPDF(i){
+ var o=S.op[i], net=opNet(o), r=opSched(o), cash=opCash(o), yrs=opYears(o);
+ var lo=net*Math.pow(1.03,yrs), mid=opValue(o), hi=net*Math.pow(1+(num(o.gr)+3)/100,yrs);
+ var h='<div class="ph"><h1>'+esc(o.n)+'</h1><div class="sub2">'+esc([o.dev,o.t,(o.bua?num(o.bua).toLocaleString()+' sqft':'')].filter(Boolean).join(' &middot; '))+' &middot; handover '+esc(o.h)+'</div></div>';
+ h+='<h3>The price</h3><table>';
+ if(num(o.disc))h+='<tr><td>List price</td><td class="r">'+money(o.pr)+'</td></tr><tr><td>Discount '+num(o.disc)+'%</td><td class="r">-'+money(num(o.pr)-net)+'</td></tr>';
+ h+='<tr><td>Purchase price</td><td class="r">'+money(net)+'</td></tr>';
+ h+='<tr><td>DLD registration 4%</td><td class="r">'+(num(o.dld)?'Waived by the developer':money(opDLD(o)))+'</td></tr>';
+ h+='<tr class="tot"><td>Total cost</td><td class="r">'+money(opTotal(o))+'</td></tr></table>';
+ h+='<h3>What you pay and when</h3><table>';
+ r.forEach(function(x){h+='<tr><td>'+esc(x.l)+' &middot; '+fmtM(x.d)+'</td><td class="r">'+(x.pct?x.pct.toFixed(2)+'% &middot; ':'')+money(x.amt)+'</td></tr>';});
+ h+='<tr class="tot"><td>Paid before handover</td><td class="r">'+money(cash)+'</td></tr></table>';
+ h+='<h3>What it could be worth</h3><table>'+
+ '<tr><td>Cautious, 3% a year</td><td class="r">'+money(lo)+'</td></tr>'+
+ '<tr><td>Base case, '+num(o.gr)+'% a year</td><td class="r">'+money(mid)+'</td></tr>'+
+ '<tr><td>Strong, '+(num(o.gr)+3)+'% a year</td><td class="r">'+money(hi)+'</td></tr>'+
+ (num(o.rent)?'<tr><td>Expected annual rent on handover</td><td class="r">'+money(o.rent)+'</td></tr><tr><td>Gross yield on total cost</td><td class="r">'+(opTotal(o)?(num(o.rent)/opTotal(o)*100).toFixed(1):'0')+'%</td></tr>':'')+
+ '</table>';
+ h+='<h3>In plain terms</h3><div class="note2">You put in '+money(r[0].amt)+' today. Between now and '+esc(o.h)+' you pay a further '+money(cash-r[0].amt)+' in stages. The largest part, '+money(net*num(o.ho)/100)+', is due only when the property is handed to you. Growth figures are scenarios, not promises, and the market can fall as well as rise.</div>';
+ h+='<div class="foot2">Prepared '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'. Figures are indicative and confirmed by the developer at the point of booking.<br><b>Mustafa Saleh</b> &middot; Allegiance Real Estate &middot; Dubai</div>';
+ document.getElementById('printwrap').innerHTML=h;
+ setTimeout(function(){window.print();},200);
+}
+document.getElementById('addop').onclick=function(){opEdit(-1);};
+function searchAll(q){
+ q=q.toLowerCase().trim(); if(q.length<2)return [];
+ var r=[], hit=function(t){return String(t||'').toLowerCase().indexOf(q)>=0;};
+ S.deals.forEach(function(d,i){if(hit(d.w)||hit(d.u)||hit(d.n)||hit(d.na))
+  r.push({k:'Deal',t:d.w,s:d.u+' · '+STAGES[d.s],go:'deals'});});
+ S.units.forEach(function(u,i){if(hit(u.p)||hit(u.t)||hit(u.n)||hit(u.com)||hit(u.tag))
+  r.push({k:'Unit',t:u.p,s:u.t+' · '+money((u.lt||'Sale')==='Rent'?u.rent:u.pr),go:'stock',seg:'units'});});
+ S.op.forEach(function(o){if(hit(o.n)||hit(o.dev)||hit(o.t)||hit(o.note))
+  r.push({k:'Off-plan',t:o.n,s:o.dev+' · handover '+o.h,go:'stock',seg:'offplan'});});
+ S.later.forEach(function(x){if(hit(x.n)||hit(x.w)||hit(x.n2)||hit(x.ty))
+  r.push({k:'Later',t:x.n,s:x.ty+' · '+lWhen(x),go:'deals',dseg:'Later'});});
+ S.diary.forEach(function(e){if(hit(e.n)||hit(e.w))
+  r.push({k:'Diary',t:e.n,s:(e.w||'')+' · '+new Date(e.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'}),go:'diary',day:e.d});});
+ return r.slice(0,25);}
+document.getElementById('find').onclick=function(){
+ openTool('Search','<input id="fx-q" placeholder="Client, unit, community, note" autocomplete="off"><div class="card" id="fx-r" style="margin-top:12px"><div class="hint">Type at least two letters. It looks through deals, units, off-plan, your later list and the diary.</div></div>','');
+ document.getElementById('tcopy').textContent='Close';
+ var q=document.getElementById('fx-q'); setTimeout(function(){q.focus();},120);
+ q.oninput=function(){
+  var res=searchAll(q.value), el=document.getElementById('fx-r');
+  if(!res.length){el.innerHTML='<div class="hint">'+(q.value.trim().length<2?'Keep typing.':'Nothing found.')+'</div>';return;}
+  el.innerHTML=res.map(function(x,j){return '<div class="fres" data-fg="'+j+'"><i>'+x.k+'</i><div style="min-width:0"><b>'+esc(pvName(x.t))+'</b><span>'+esc(pvNum(x.s))+'</span></div></div>';}).join('');
+  el.querySelectorAll('[data-fg]').forEach(function(b){b.onclick=function(){
+   var x=res[+b.dataset.fg];
+   if(x.seg){SSEG=x.seg;drawStockSeg();}
+   if(x.dseg){DSEG=x.dseg;document.getElementById('d-active').classList.toggle('hide',DSEG!=='Active');
+    document.getElementById('d-later').classList.toggle('hide',DSEG!=='Later');drawDealSeg();drawLater();}
+   if(x.day){CALSEL=x.day;var d=new Date(x.day);CALM=new Date(d.getFullYear(),d.getMonth(),1);DREW.diary=0;}
+   TS.style.display='none'; goPage(x.go);};});
+ };
+};
+document.getElementById('nav').addEventListener('click',function(e){
+ var b=e.target.closest('b[data-p]'); if(b)goPage(b.dataset.p);});
+document.getElementById('sseg').addEventListener('click',function(e){
+ var b=e.target.closest('b[data-ss]'); if(!b)return;
+ SSEG=b.dataset.ss; drawStockSeg(); window.scrollTo(0,0);});
+
+
+
+/* ================= PRIVACY ================= */
+function pvName(x){var t=String(x==null?'':x);
+ if(!S.priv)return t;
+ return t.split(/([ +&,/]+)/).map(function(w){
+  return /^[A-Za-zÀ-ɏ]{2,}$/.test(w)?w[0]+'•••':w;}).join('');}
+function pvAll(x){return pvNum(pvName(x));}
+function pvNum(x){var t=String(x==null?'':x);
+ return S.priv?t.replace(/\d/g,'•'):t;}
+const EYE_OPEN='<path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/>';
+const EYE_SHUT='<path d="M2 4l20 16"/><path d="M6.9 7.3C3.9 9 1.5 12 1.5 12S5 19 12 19c2 0 3.7-.6 5.1-1.4"/><path d="M20 15.4c1.6-1.6 2.5-3.4 2.5-3.4S19 5 12 5c-.9 0-1.8.1-2.6.4"/><path d="M9.6 10.2a3.2 3.2 0 0 0 4.3 4.4"/>';
+function invalidate(){DREW={};pageDraw(PAGE);}
+function drawEye(){var b=document.getElementById('eye');
+ b.classList.toggle('on',!!S.priv);
+ document.getElementById('eyesvg').innerHTML=S.priv?EYE_SHUT:EYE_OPEN;
+ document.getElementById('eyet').textContent=S.priv?'Hidden':'Private';}
+document.getElementById('eye').onclick=function(){
+ S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawEarn();invalidate();};
+
+
+
+
+
+
+
+
+/* ================= MONEY MOVES ================= */
+function fitCount(d){
+ if(!num(d.lmax)&&!num(d.lbd)&&!(d.lcom||''))return 0;
+ var c=0;
+ S.units.forEach(function(u){if(matchScore(d,u))c++;});
+ return c;
+}
+function buildMoves(){
+ var out=[];
+ S.deals.forEach(function(d,i){
+  if(d.s>=4)return;
+  var fee=dealFee(d), late=(d.nd&&d.nd<TD)?Math.round((new Date(TD)-new Date(d.nd))/864e5):0;
+  var duetoday=(d.nd===TD), sc=0, why=[];
+  if(late>0){sc+=45+Math.min(25,late*3);why.push(late+' day'+(late>1?'s':'')+' late');}
+  else if(duetoday){sc+=42;why.push('due today');}
+  if(fee>=100000)sc+=22; else if(fee>=50000)sc+=14; else if(fee>=20000)sc+=7;
+  sc+=[0,5,12,20,0][d.s]||0;
+  if(!d.nd&&d.s<4){sc+=18;why.push('no next step set');}
+  if(sc<18)return;
+  out.push({k:'deal',i:i,sc:sc,t:d.w,ph:d.ph,fee:fee,
+   sub:(d.u||'No unit yet')+' · '+STAGES[d.s],
+   act:d.na||'Set the next step',why:why});
+ });
+ S.later.forEach(function(x,i){
+  if(!x.wd||x.wd>TD)return;
+  var late=Math.round((new Date(TD)-new Date(x.wd))/864e5);
+  out.push({k:'later',i:i,sc:30+Math.min(20,late*2),t:x.n,ph:x.ph,fee:0,
+   sub:(x.w||'')+' · '+(x.ty||'parked'),act:'Reconnect, you parked this',
+   why:[late>0?late+' days past the date':'due today']});
+ });
+ S.deals.forEach(function(d,i){
+  if(d.s>=4||!d.npd)return;
+  var nd=Math.round((new Date(d.npd)-new Date(TD))/864e5);
+  if(nd<0||nd>21)return;
+  out.push({k:'deal',i:i,sc:52+(21-nd),t:d.w,ph:d.ph,fee:dealFee(d),
+   sub:(d.u||'')+' · seller',act:'Payment of '+money(d.npa)+' due in '+nd+' days, they get motivated now',
+   why:['developer payment in '+nd+' days']});
+ });
+ out.forEach(function(m){
+  if(m.k!=='deal')return;
+  var f=fitCount(S.deals[m.i]);
+  if(f){m.sc+=Math.min(18,f*6);m.fits=f;m.why.push(f+' unit'+(f>1?'s':'')+' in stock fit them');}
+ });
+ out.sort(function(a,b){return b.sc-a.sc;});
+ return out;
+}
+function drawMoves(){
+ var M=buildMoves(), el=document.getElementById('moves'), F=document.getElementById('focus');
+ document.getElementById('mmn').textContent=M.length?M.length+' waiting':'';
+ if(!M.length){
+  el.innerHTML='<div class="card"><div class="hint">Nothing overdue and nothing parked. Either you are on top of it, or nothing has a date on it. Set next-action dates on your deals and this list writes itself.</div></div>';
+  F.classList.add('hide');return;}
+ el.innerHTML=M.slice(0,5).map(function(m,j){
+  var ph=(m.ph||'').replace(/[^\d+]/g,'');
+  var band=m.sc>=60?'hot':(m.sc>=35?'warm':'cool');
+  return '<div class="move '+band+'"><div class="rk">'+(j+1)+'</div><div class="bd2">'+
+   '<div class="t1">'+esc(pvName(m.t))+'</div>'+
+   '<div class="t2">'+esc(pvNum(m.sub))+'<br>'+esc(pvName(m.act))+'</div>'+
+   (m.why.length?'<div class="t2" style="color:var(--gold);opacity:.85">'+esc(m.why.join(' · '))+'</div>':'')+
+   (m.fee?'<div class="t3">'+pmoney(m.fee)+' to you</div>':'')+
+   '<div class="mb">'+(ph&&!S.priv?'<a href="tel:'+ph+'">Call</a><a href="https://wa.me/'+ph.replace('+','')+'" target="_blank">WhatsApp</a>':'')+
+   (m.k==='deal'?'<button data-mo="'+m.i+'">Open</button>'+(m.fits?'<button data-mf="'+m.i+'">Who fits</button>':'')
+     :'<button data-ml="'+m.i+'">Open</button>')+'</div></div></div>';}).join('');
+ document.querySelectorAll('[data-mo]').forEach(function(b){b.onclick=function(){openSheet(+b.dataset.mo);};});
+ document.querySelectorAll('[data-ml]').forEach(function(b){b.onclick=function(){laterEdit(+b.dataset.ml);};});
+ document.querySelectorAll('[data-mf]').forEach(function(b){b.onclick=function(){
+  var d=S.deals[+b.dataset.mf], best=null, bs=-1;
+  S.units.forEach(function(u,k){var m2=matchScore(d,u); if(m2&&m2.sc>bs){bs=m2.sc;best=k;}});
+  if(best!==null)whoFits(best);};});
+ F.classList.remove('hide');
+ F.innerHTML='<b>If you do only three things today</b><div>'+
+  M.slice(0,3).map(function(m,j){return (j+1)+'. '+esc(pvName(m.t))+' — '+esc(pvName(m.act));}).join('<br>')+'</div>';
+}
+
+/* ================= MONEY MAP ================= */
+function drawMap(){
+ var banked=bankedTotal()+ledgerTotal(), won=wonTotal();
+ var near=S.deals.filter(function(d){return d.s===3;}).reduce(function(a,d){return a+dealFee(d);},0);
+ var w=pipeWeighted(), gap=Math.max(0,TARGET-banked-won);
+ var rates=S.deals.filter(function(d){return d.s<4&&d.ty!=='Rent'&&num(d.r)>0;}).map(function(d){return num(d.r);});
+ var avgR=rates.length?rates.reduce(function(a,b){return a+b;},0)/rates.length:2;
+ var vol=avgR>0?gap/(avgR/100):0;
+ var sizes=S.deals.filter(function(d){return d.s<4&&num(d.v)>0;}).map(function(d){return num(d.v);});
+ var avgV=sizes.length?sizes.reduce(function(a,b){return a+b;},0)/sizes.length:0;
+ var deals=avgV>0?Math.ceil(vol/avgV):0;
+ var left=Math.max(0,Math.ceil((new Date(DEADLINE)-Date.now())/864e5)), wks=Math.max(1,Math.ceil(left/7));
+ var el=document.getElementById('mmap');
+ var R=function(l,sub,v,cl){return '<div class="mrow '+(cl||'')+'"><div><div class="ml">'+l+'</div>'+(sub?'<div class="ms">'+sub+'</div>':'')+'</div><div class="mv">'+v+'</div></div>';};
+ el.innerHTML=
+  R('Target','by '+new Date(DEADLINE).toLocaleDateString('en-GB',{day:'numeric',month:'long'}),pmoney(TARGET))+
+  R('Banked','commission logged',pmoney(banked),'good')+
+  R('Won, not yet paid','deals marked won',pmoney(won),'good')+
+  R('Near certain','anything at Agreed',pmoney(near))+
+  R('Weighted pipeline','everything else, discounted',pmoney(w))+
+  R('Gap','still to find',pmoney(gap),'gap')+
+  (gap>0?'<div class="mreq">To close that gap at your average <b>'+avgR.toFixed(1)+'%</b> you need about <b>'+pmoney(vol)+'</b> of sales volume.'+
+   (deals?'<br><br>At your average deal size of '+pmoney(avgV)+' that is roughly <b>'+deals+' deal'+(deals>1?'s':'')+'</b> in '+left+' days, or '+pmoney(gap/wks)+' a week.':'')+
+   '</div>'
+  :'<div class="mreq">Target hit. Set a new one and keep going.</div>');
+}
+
+/* ================= OFFLINE ================= */
+if('serviceWorker' in navigator){
+ window.addEventListener('load',function(){
+  navigator.serviceWorker.register('sw.js').then(function(reg){
+   reg.addEventListener('updatefound',function(){
+    var w=reg.installing; if(!w)return;
+    w.addEventListener('statechange',function(){
+     if(w.state==='installed'&&navigator.serviceWorker.controller){
+      var b=document.getElementById('upd'); if(b)b.classList.remove('hide');}
+    });});
+  }).catch(function(){});
+ });
+ navigator.serviceWorker.addEventListener('controllerchange',function(){location.reload();});
+}
+function drawNet(){
+ var p=document.getElementById('offpill');
+ p.classList.toggle('hide',navigator.onLine);
+}
+window.addEventListener('online',drawNet);
+window.addEventListener('offline',drawNet);
+
+/* ================= TRASH / UNDO ================= */
+function toTrash(kind,item){
+ if(!S.trash)S.trash=[];
+ S.trash.unshift({k:kind,at:new Date().toISOString(),o:item});
+ var cut=Date.now()-30*864e5;
+ S.trash=S.trash.filter(function(t){return new Date(t.at).getTime()>cut;}).slice(0,20);
+}
+function trashLabel(t){
+ var o=t.o;
+ if(t.k==='deal')return o.w+' · '+(o.u||'deal');
+ if(t.k==='unit')return o.p+' · '+(o.t||'unit');
+ if(t.k==='later')return o.n+' · '+(o.w||'later');
+ if(t.k==='op')return o.n+' · off-plan';
+ return 'item';
+}
+function openTrash(){
+ if(!S.trash)S.trash=[];
+ var h=S.trash.length?'<div class="card">'+S.trash.map(function(t,i){
+  var d=Math.floor((Date.now()-new Date(t.at).getTime())/864e5);
+  return '<div class="row"><div><div class="lab">'+esc(pvAll(trashLabel(t)))+'</div>'+
+   '<div class="tgt">'+t.k+' · deleted '+(d===0?'today':d+' day'+(d>1?'s':'')+' ago')+'</div></div>'+
+   '<button class="ub" data-und="'+i+'" style="flex:0 0 auto;padding:8px 13px">Restore</button></div>';}).join('')+'</div>'
+  :'<div class="hint">Nothing deleted recently. Anything you remove is kept here for 30 days.</div>';
+ openTool('Recently deleted',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.querySelectorAll('[data-und]').forEach(function(b){b.onclick=function(){
+  var t=S.trash.splice(+b.dataset.und,1)[0];
+  if(t.k==='deal')S.deals.push(t.o);
+  if(t.k==='unit')S.units.push(t.o);
+  if(t.k==='later')S.later.push(t.o);
+  if(t.k==='op')S.op.push(t.o);
+  put(S);invalidate();drawDeals();drawLater();drawHero();drawDealSeg();
+  TS.style.display='none';alert('Restored.');};});
+}
+
+/* ================= PASTE A UNIT ================= */
+function parseUnit(txt){
+ var t=' '+txt.replace(/ /g,' ')+' ', o={};
+ var n=function(x){return Number(String(x).replace(/,/g,''));};
+ var mm=function(re){var m=t.match(re);return m?m:null;};
+ var price=mm(/(?:aed|price|asking|selling)\D{0,12}([\d,]{5,})\s*(m|mn|million)?/i);
+ if(price){var v=n(price[1]); if(price[2])v*=1e6; if(v<1000&&v>0)v*=1e6; o.pr=Math.round(v);}
+ if(!o.pr){var alt=mm(/([\d.]+)\s*(?:m|mn|million)\b/i); if(alt)o.pr=Math.round(parseFloat(alt[1])*1e6);}
+ if(!o.pr){var bare=t.match(/\b\d{1,3}(?:,\d{3})+\b/g);
+  if(bare){var cands=bare.map(n).filter(function(v){return v>=50000;});
+   if(cands.length)o.pr=Math.max.apply(null,cands);}}
+ var bd=mm(/(\d+)\s*(?:br|bed|bedroom|bhk)/i); if(bd)o.bd=+bd[1];
+ var bua=mm(/([\d,]{3,})\s*(?:sq\.?\s?ft|sqft)\s*(?:bua|built[\s-]?up)/i);
+ if(!bua)bua=mm(/(?:bua|built[\s-]?up|size|area)[^\d]{0,8}([\d,]{3,})/i);
+ if(bua)o.bua=n(bua[1]);
+ if(!o.bua){var sq=mm(/([\d,]{3,})\s*(?:sq\.?\s?ft|sqft|sf)\b/i); if(sq)o.bua=n(sq[1]);}
+ var plot=mm(/(?:plot|land)\D{0,10}([\d,]{3,})/i); if(plot)o.plot=n(plot[1]);
+ var ho=mm(/(?:handover|completion|ready(?:\s+in)?)\D{0,12}(q[1-4]\s*\d{4}|\w{3,9}\s*\d{4}|\d{4})/i);
+ if(ho)o.h=ho[1].replace(/\s+/g,' ').trim();
+ var un=mm(/(?:unit|villa|no\.?|#)\s*([A-Z]?-?\d{1,4}[A-Z]?)\b/i);
+ var rent=/\b(rent|rental|per\s*(?:year|annum)|p\.?a\.?|yearly)\b/i.test(t);
+ o.lt=rent?'Rent':'Sale';
+ if(rent&&o.pr){o.rent=o.pr;o.pr=0;}
+ var COMS=['Farm Gardens','Farm Grove','Elora','Rivana','Nima','Lillia','Orania','Talia','Nara','Eden','Alana','Elea',
+  'DAMAC Lagoons','DAMAC Islands','DAMAC Hills','Ghaf Woods','Golf Estates','Jumeirah Park','Palm Jumeirah',
+  'Creek Harbour','Dubai Hills','Mina Rashid','Maritime City','Motor City','Arabian Ranches',
+  'Emaar South','Dubai South','Business Bay','Marina','The Valley'];
+ var found=COMS.filter(function(c){return t.toLowerCase().indexOf(c.toLowerCase())>=0;});
+ if(found.length){o.com=found[0];
+  o.p=o.com+(un?' '+un[1]:'');}
+ else{var first=txt.trim().split('\n')[0].slice(0,44); o.p=first||'Untitled unit';}
+ o.t=(o.bd?o.bd+'BR ':'')+(/town\s*house|\bth\b/i.test(t)?'townhouse':(/villa/i.test(t)?'villa':(/apartment|apt|flat/i.test(t)?'apartment':(/office/i.test(t)?'office':'unit'))));
+ o.tag=/off[\s-]?plan|launch|payment plan/i.test(t)?'Off-plan':(/resale|secondary/i.test(t)?'Resale':(/distress|motivated|urgent/i.test(t)?'Distress':''));
+ o.n=txt.trim().slice(0,300);
+ return o;
+}
+function pasteUnit(){
+ var h='<div class="hint">Paste the WhatsApp message exactly as you got it. The app pulls out what it can and shows you before saving.</div>'+
+ '<textarea id="pu-t" rows="6" placeholder="Elora The Valley\n3BR townhouse, unit 104\nBUA 2,180 sqft, plot 1,483\nAED 2,750,000\nHandover Q4 2027" style="margin-top:10px"></textarea>'+
+ '<div class="sched" id="pu-out"></div>'+
+ '<button class="btnfull" id="pu-save" style="margin-top:12px" disabled>Save this unit</button>';
+ openTool('Paste a unit',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ var found=null;
+ document.getElementById('pu-t').oninput=function(){
+  var txt=this.value.trim(), out=document.getElementById('pu-out'), btn=document.getElementById('pu-save');
+  if(txt.length<8){out.innerHTML='';btn.disabled=true;found=null;return;}
+  found=parseUnit(txt);
+  var rows=[['Project',found.p],['Type',found.t],['Beds',found.bd||'not found'],
+   ['BUA',found.bua?found.bua.toLocaleString():'not found'],['Plot',found.plot?found.plot.toLocaleString():'not found'],
+   [found.lt==='Rent'?'Annual rent':'Price',(found.lt==='Rent'?found.rent:found.pr)?money(found.lt==='Rent'?found.rent:found.pr):'not found'],
+   ['Handover',found.h||'not found'],['Listing',found.lt]];
+  out.innerHTML=rows.map(function(r){
+   var miss=(r[1]==='not found');
+   return '<div class="row"><div><div class="lab">'+r[0]+'</div></div><div class="v2" style="'+(miss?'color:var(--dim)':'')+'">'+esc(String(r[1]))+'</div></div>';}).join('')+
+   '<div class="hint" style="margin-top:9px">Save it, then tap Edit on the unit to fix anything marked not found.</div>';
+  btn.disabled=false;
+ };
+ document.getElementById('pu-save').onclick=function(){
+  if(!found)return;
+  S.units.push({lt:found.lt,p:found.p,com:found.com||'',t:found.t,bd:num(found.bd),bua:num(found.bua),
+   plot:num(found.plot),pr:num(found.pr),op:0,rent:num(found.rent),ch:'1 cheque',pl:'',h:found.h||'',
+   n:found.n,tag:found.tag||'',img:'',link:'',fp:''});
+  put(S);SSEG='units';drawStockSeg();drawUnits();TS.style.display='none';goPage('stock');
+ };
+}
+
+/* ================= FLIP BEFORE HANDOVER ================= */
+function flipCalc(){
+ var opts=S.op.map(function(o,i){return '<option value="'+i+'">'+esc(o.n)+'</option>';}).join('');
+ var h='<div class="seg" id="fl-seg"><b class="on" data-fs="sell">Seller</b><b data-fs="buy">New buyer</b></div>'+
+ (opts?'<label>Pull the plan from an off-plan project</label><select id="fl-src"><option value="">Enter it manually</option>'+opts+'</select>':'')+
+ '<label>Original purchase price AED</label><input id="fl-op" type="number" inputmode="numeric" placeholder="2640000">'+
+ '<div class="two"><div><label>Paid to developer %</label><input id="fl-pd" type="number" step="1" value="40"></div>'+
+ '<div><label>Resale price AED</label><input id="fl-rp" type="number" inputmode="numeric" placeholder="3100000"></div></div>'+
+ '<label style="color:var(--gold)">Remaining plan to the developer</label>'+
+ '<div class="two"><div><label>Instalments left</label><input id="fl-ic" type="number" value="4"></div>'+
+ '<div><label>Months apart</label><input id="fl-gap" type="number" value="3"></div></div>'+
+ '<div class="hint" style="margin-top:6px">Months apart is the gap between instalments. Quarterly is 3, monthly is 1.</div>'+
+ '<div class="two"><div><label>Handover %</label><input id="fl-ho" type="number" step="0.5" value="40"></div>'+
+ '<div><label>Handover month</label><input id="fl-h" type="month"></div></div>'+
+ '<label style="color:var(--gold)">Fees</label>'+
+ '<div class="two"><div><label>Trustee fee, buyer pays</label><input id="fl-tr" type="number" value="5250"></div>'+
+ '<div><label>Agency %</label><input id="fl-ag" type="number" step="0.5" value="2"></div></div>'+
+ '<label>DLD 4% on resale</label><select id="fl-dld"><option value="1">Payable</option><option value="0">Waived</option></select>'+
+ '<div class="sched" id="fl-out"></div>'+
+ '<button class="btnfull" id="fl-pdf" style="margin-top:12px">One pager for this side</button>';
+ openTool('Flip before handover',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ var SIDE='sell';
+ var F=function(i){return document.getElementById('fl-'+i);};
+ var d3=new Date();d3.setFullYear(d3.getFullYear()+2);F('h').value=d3.toISOString().slice(0,7);
+ function grab(){return {op:num(F('op').value),pd:num(F('pd').value),rp:num(F('rp').value),
+  ic:num(F('ic').value),gap:num(F('gap').value),ho:num(F('ho').value),h:F('h').value||d3.toISOString().slice(0,7),
+  tr:num(F('tr').value),ag:num(F('ag').value),dld:+F('dld').value};}
+ function model(o){
+  var paid=o.op*o.pd/100, prem=o.rp-o.op, remain=o.op-paid;
+  var hoAmt=o.op*o.ho/100, instTotal=Math.max(0,remain-hoAmt);
+  var each=o.ic>0?instTotal/o.ic:0, rows=[], c=new Date();
+  for(var k=1;k<=o.ic;k++){c=new Date(c);c.setMonth(c.getMonth()+o.gap);
+   rows.push(['Instalment '+k,each,new Date(c)]);}
+  rows.push(['On handover',hoAmt,new Date(o.h+'-01'),1]);
+  // seller
+  var sAg=o.rp*o.ag/100;
+  var sCost=sAg, sNet=prem-sCost, sRoi=paid>0?sNet/paid*100:0;
+  // buyer
+  var bToSeller=paid+prem, bDld=o.dld?o.rp*0.04:0, bTrust=num(o.tr);
+  var bFees=bDld+bTrust+290;
+  var bDay1=bToSeller+bFees, bFuture=remain, bTotal=bDay1+bFuture;
+  return {paid:paid,prem:prem,remain:remain,rows:rows,each:each,hoAmt:hoAmt,
+   sAg:sAg,sCost:sCost,sNet:sNet,sRoi:sRoi,
+   bToSeller:bToSeller,bDld:bDld,bTrust:bTrust,bFees:bFees,bDay1:bDay1,bFuture:bFuture,bTotal:bTotal};
+ }
+ function R(l,v,t,big){return '<div class="row'+(big?' big2':'')+'"><div><div class="lab">'+l+'</div>'+(t?'<div class="tgt">'+t+'</div>':'')+'</div><div class="v2">'+v+'</div></div>';}
+ function run(){
+  var o=grab(), out=F('out');
+  if(!o.op||!o.rp){out.innerHTML='<div class="hint">Enter the original price and the resale price.</div>';return;}
+  var m=model(o), h='';
+  if(SIDE==='sell'){
+   h=R('Original price',money(o.op))+
+   R('Paid to the developer so far',money(m.paid),o.pd+'% of price')+
+   R('Resale price',money(o.rp))+
+   R('Premium over original',money(m.prem),(o.op?(m.prem/o.op*100).toFixed(1):'0')+'% on price',1)+
+   R('Agency '+o.ag+'%','-'+money(m.sAg))+
+   R('Net profit',money(m.sNet),'after every fee',1)+
+   R('Return on cash in',m.sRoi.toFixed(0)+'%','on the '+money(m.paid)+' actually paid',1);
+   if(m.sNet<0)h+='<div class="hint" style="color:var(--bad);margin-top:9px">This flip loses money at that price. The premium does not cover the fees.</div>';
+   COPYTEXT='Selling before handover\n\nOriginal '+money(o.op)+', paid in '+money(m.paid)+
+    '\nResale '+money(o.rp)+', premium '+money(m.prem)+
+    '\nAgency '+money(m.sCost)+'\nNet profit '+money(m.sNet)+
+    '\nReturn on the cash you put in: '+m.sRoi.toFixed(0)+'%';
+  } else {
+   h=R('Pay the seller',money(m.bToSeller),'their '+money(m.paid)+' back plus '+money(m.prem)+' premium',1)+
+   R('DLD 4% on resale price',money(m.bDld),o.dld?'Charged again on assignment':'Waived')+
+   R('Trustee office fee',money(m.bTrust),'paid by you, not the seller')+
+   R('Oqood admin and title',money(290))+
+   R('Cash needed on transfer day',money(m.bDay1),'seller plus all fees',1)+
+   '<div class="row"><div><div class="lab" style="color:var(--gold)">Still owed to the developer</div><div class="tgt">'+money(m.remain)+' across '+o.ic+' instalments plus handover</div></div><div class="v2"></div></div>'+
+   m.rows.map(function(r){return '<div class="row'+(r[3]?' big2':'')+'"><div><div class="lab">'+r[0]+'</div><div class="tgt">'+r[2].toLocaleDateString('en-GB',{month:'short',year:'numeric'})+'</div></div><div class="v2">'+money(r[1])+'</div></div>';}).join('')+
+   R('Total to own it outright',money(m.bTotal),'day one plus everything to the developer',1);
+   COPYTEXT='Buying this off-plan resale\n\nTo the seller: '+money(m.bToSeller)+
+    '\nFees on transfer day: '+money(m.bFees)+
+    '\nCash needed on the day: '+money(m.bDay1)+
+    '\n\nStill owed to the developer: '+money(m.remain)+
+    '\n'+m.rows.map(function(r){return r[2].toLocaleDateString('en-GB',{month:'short',year:'numeric'})+' — '+r[0]+' — '+money(r[1]);}).join('\n')+
+    '\n\nTotal to own it: '+money(m.bTotal);
+  }
+  out.innerHTML=h;
+  document.getElementById('tcopy').textContent='Copy';
+  document.getElementById('tcopy').onclick=defaultCopy;
+ }
+ document.getElementById('fl-seg').onclick=function(e){
+  var b=e.target.closest('b[data-fs]'); if(!b)return;
+  SIDE=b.dataset.fs;
+  this.querySelectorAll('b').forEach(function(x){x.classList.toggle('on',x.dataset.fs===SIDE);});
+  run();};
+ ['op','pd','rp','ic','gap','ho','h','tr','ag','dld'].forEach(function(i){
+  F(i).oninput=run;F(i).onchange=run;});
+ if(document.getElementById('fl-src'))document.getElementById('fl-src').onchange=function(){
+  if(this.value==='')return; var o=S.op[+this.value];
+  F('op').value=Math.round(opNet(o));F('ic').value=o.ic;F('gap').value=o.gap;
+  F('ho').value=o.ho;F('h').value=o.h;run();};
+ run();
+ document.getElementById('fl-pdf').onclick=function(){flipPDF(grab(),SIDE,model(grab()));};
+}
+function flipPDF(o,side,m){
+ var h='<div class="ph"><h1>'+(side==='sell'?'Selling before handover':'Taking over this off-plan unit')+'</h1>'+
+  '<div class="sub2">Original '+money(o.op)+' &middot; resale '+money(o.rp)+' &middot; handover '+esc(o.h)+'</div></div>';
+ if(side==='sell'){
+  h+='<h3>Where you stand</h3><table>'+
+  '<tr><td>Original purchase price</td><td class="r">'+money(o.op)+'</td></tr>'+
+  '<tr><td>Paid to the developer, '+o.pd+'%</td><td class="r">'+money(m.paid)+'</td></tr>'+
+  '<tr><td>Resale price</td><td class="r">'+money(o.rp)+'</td></tr>'+
+  '<tr class="tot"><td>Premium over original</td><td class="r">'+money(m.prem)+'</td></tr></table>';
+  h+='<h3>What comes off</h3><table>'+
+  '<tr><td>Agency '+o.ag+'%</td><td class="r">'+money(m.sAg)+'</td></tr>'+
+  '<tr class="tot"><td>Net profit</td><td class="r">'+money(m.sNet)+'</td></tr>'+
+  '<tr class="tot"><td>Return on the cash you put in</td><td class="r">'+m.sRoi.toFixed(0)+'%</td></tr></table>';
+  h+='<h3>Why the percentage looks the way it does</h3><div class="note2">Your return is measured against the '+money(m.paid)+' you have actually paid, not the full price. That is the whole point of buying off-plan. The buyer takes over the remaining '+money(m.remain)+' owed to the developer.</div>';
+ } else {
+  h+='<h3>On transfer day</h3><table>'+
+  '<tr><td>To the seller, their paid amount</td><td class="r">'+money(m.paid)+'</td></tr>'+
+  '<tr><td>To the seller, premium</td><td class="r">'+money(m.prem)+'</td></tr>'+
+  '<tr><td>DLD 4% on the resale price</td><td class="r">'+(o.dld?money(m.bDld):'Waived')+'</td></tr>'+
+  '<tr><td>Trustee office fee</td><td class="r">'+money(m.bTrust)+'</td></tr>'+
+  '<tr><td>Oqood admin and title</td><td class="r">'+money(290)+'</td></tr>'+
+  '<tr class="tot"><td>Cash needed on the day</td><td class="r">'+money(m.bDay1)+'</td></tr></table>';
+  h+='<h3>Then to the developer</h3><table>';
+  m.rows.forEach(function(r){h+='<tr'+(r[3]?' class="tot"':'')+'><td>'+r[0]+' &middot; '+r[2].toLocaleDateString('en-GB',{month:'long',year:'numeric'})+'</td><td class="r">'+money(r[1])+'</td></tr>';});
+  h+='<tr class="tot"><td>Total to own it outright</td><td class="r">'+money(m.bTotal)+'</td></tr></table>';
+  h+='<h3>In plain terms</h3><div class="note2">You are stepping into the existing contract. You pay the seller what they have already put in plus the premium, you cover the transfer costs, and from there you continue the original payment plan on the dates above. Nothing else changes.</div>';
+ }
+ h+='<div class="foot2">Prepared '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'. Government fees are as published by Dubai Land Department and are confirmed at the trustee office on the day.<br><b>Mustafa Saleh</b> &middot; Allegiance Real Estate &middot; Dubai</div>';
+ document.getElementById('printwrap').innerHTML=h;
+ setTimeout(function(){window.print();},200);
+}
+
+/* ================= BUYER COSTS + MORTGAGE ================= */
+const FEES={trustLo:4000,trustHi:4200,adminReady:580,adminOff:40,deed:250,map:250,mortReg:290,mortPct:0.0025};
+function costRows(o){
+ var pr=num(o.pr), r=[];
+ r.push(['Purchase price',pr,1]);
+ r.push(['DLD transfer fee 4%',num(o.dldw)?0:pr*0.04,0,num(o.dldw)?'Waived by the developer':'']);
+ r.push(['Trustee office fee',pr>500000?FEES.trustHi:FEES.trustLo,0]);
+ r.push(['DLD admin fee',o.off?FEES.adminOff:FEES.adminReady,0]);
+ r.push(['Title deed issuance',FEES.deed,0]);
+ if(!o.off)r.push(['Property map',FEES.map,0]);
+ var ag=pr*num(o.ag)/100;
+ if(ag)r.push(['Agency fee '+num(o.ag)+'%',ag,0]);
+ if(num(o.ln)){
+  r.push(['Mortgage registration 0.25%',num(o.ln)*FEES.mortPct+FEES.mortReg,0]);
+  r.push(['Bank arrangement fee '+num(o.bk)+'%',num(o.ln)*num(o.bk)/100,0]);
+  r.push(['Property valuation',num(o.val),0]);
+ }
+ if(num(o.noc))r.push(['Developer NOC',num(o.noc),0]);
+ if(num(o.sc)&&num(o.bua))r.push(['Service charge, first year',num(o.sc)*num(o.bua),0,num(o.sc)+' per sqft']);
+ return r;
+}
+function costTotals(o){
+ var rows=costRows(o), price=num(o.pr), extra=0;
+ rows.forEach(function(x){if(!x[2])extra+=x[1];});
+ return {rows:rows,price:price,extra:extra,total:price+extra,
+  cash:price-num(o.ln)+extra, pct:price?extra/price*100:0};
+}
+function buyerCosts(){
+ var h='<label>Purchase price AED</label><input id="b-pr" type="number" inputmode="numeric" placeholder="2750000">'+
+ '<div class="two"><div><label>Property</label><select id="b-off"><option value="0">Ready</option><option value="1">Off-plan</option></select></div>'+
+ '<div><label>DLD 4%</label><select id="b-dldw"><option value="0">Payable</option><option value="1">Waived</option></select></div></div>'+
+ '<div class="two"><div><label>Agency fee %</label><input id="b-ag" type="number" step="0.5" value="2"></div>'+
+ '<div><label>Developer NOC</label><input id="b-noc" type="number" value="0"></div></div>'+
+ '<label style="color:var(--gold)">If there is a mortgage</label>'+
+ '<div class="two"><div><label>Loan amount AED</label><input id="b-ln" type="number" value="0"></div>'+
+ '<div><label>Bank fee %</label><input id="b-bk" type="number" step="0.05" value="1"></div></div>'+
+ '<div class="two"><div><label>Valuation fee</label><input id="b-val" type="number" value="3150"></div>'+
+ '<div><label>BUA sqft</label><input id="b-bua" type="number" value="0"></div></div>'+
+ '<label>Service charge per sqft</label><input id="b-sc" type="number" step="0.5" value="0" placeholder="Leave 0 to skip">'+
+ '<div class="sched" id="b-out"></div>'+
+ '<button class="btnfull" id="b-pdf" style="margin-top:12px">Client one pager</button>';
+ openTool('True cost of buying',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ var ids=['b-pr','b-off','b-dldw','b-ag','b-noc','b-ln','b-bk','b-val','b-bua','b-sc'];
+ function grab(){return {pr:num(document.getElementById('b-pr').value),
+  off:+document.getElementById('b-off').value,dldw:+document.getElementById('b-dldw').value,
+  ag:num(document.getElementById('b-ag').value),noc:num(document.getElementById('b-noc').value),
+  ln:num(document.getElementById('b-ln').value),bk:num(document.getElementById('b-bk').value),
+  val:num(document.getElementById('b-val').value),bua:num(document.getElementById('b-bua').value),
+  sc:num(document.getElementById('b-sc').value)};}
+ function run(){
+  var o=grab(), t=costTotals(o);
+  if(!o.pr){document.getElementById('b-out').innerHTML='<div class="hint">Enter a price.</div>';return;}
+  document.getElementById('b-out').innerHTML=t.rows.map(function(x){
+   return '<div class="row'+(x[2]?' big2':'')+'"><div><div class="lab">'+esc(x[0])+'</div>'+(x[3]?'<div class="tgt">'+esc(x[3])+'</div>':'')+'</div><div class="v2">'+money(x[1])+'</div></div>';}).join('')+
+   '<div class="row big2"><div><div class="lab">Costs on top</div><div class="tgt">'+t.pct.toFixed(2)+'% of the price</div></div><div class="v2">'+money(t.extra)+'</div></div>'+
+   '<div class="row big2"><div><div class="lab">Total cost</div></div><div class="v2">'+money(t.total)+'</div></div>'+
+   (o.ln?'<div class="row big2"><div><div class="lab">Cash you need</div><div class="tgt">After the bank pays '+money(o.ln)+'</div></div><div class="v2">'+money(t.cash)+'</div></div>':'');
+  COPYTEXT='Buying costs on '+money(o.pr)+'\n\n'+t.rows.filter(function(x){return !x[2];}).map(function(x){return x[0]+': '+money(x[1]);}).join('\n')+
+   '\n\nCosts on top: '+money(t.extra)+' ('+t.pct.toFixed(1)+'%)\nTotal: '+money(t.total)+(o.ln?'\nCash needed: '+money(t.cash):'');
+  document.getElementById('tcopy').textContent='Copy';
+  document.getElementById('tcopy').onclick=defaultCopy;
+ }
+ ids.forEach(function(i){var e=document.getElementById(i);e.oninput=run;e.onchange=run;});
+ document.getElementById('b-pdf').onclick=function(){costPDF(grab());};
+ run();
+}
+function costPDF(o){
+ var t=costTotals(o);
+ var h='<div class="ph"><h1>What you actually pay</h1><div class="sub2">'+(o.off?'Off-plan':'Ready')+' purchase at '+money(o.pr)+' &middot; Dubai</div></div>';
+ h+='<h3>The full picture</h3><table>';
+ t.rows.forEach(function(x){h+='<tr'+(x[2]?' class="tot"':'')+'><td>'+esc(x[0])+(x[3]?' &middot; '+esc(x[3]):'')+'</td><td class="r">'+money(x[1])+'</td></tr>';});
+ h+='<tr><td>Costs on top of the price</td><td class="r">'+money(t.extra)+' &middot; '+t.pct.toFixed(2)+'%</td></tr>';
+ h+='<tr class="tot"><td>Total cost</td><td class="r">'+money(t.total)+'</td></tr>';
+ if(num(o.ln))h+='<tr class="tot"><td>Cash required from you</td><td class="r">'+money(t.cash)+'</td></tr>';
+ h+='</table>';
+ h+='<h3>In plain terms</h3><div class="note2">There is no annual property tax in Dubai and no capital gains tax on sale. What you see above is what it costs to own it. The DLD transfer fee is the large one at 4% of the price, and unless a developer is waiving it, it is paid on the day of transfer.</div>';
+ h+='<div class="foot2">Prepared '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'. Government fees are as published by Dubai Land Department and are subject to change. Bank and valuation fees vary by lender.<br><b>Mustafa Saleh</b> &middot; Allegiance Real Estate &middot; Dubai</div>';
+ document.getElementById('printwrap').innerHTML=h;
+ setTimeout(function(){window.print();},200);
+}
+
+const LTVS=[['Resident, first home, under 5M',80],['Resident, first home, over 5M',70],
+ ['Resident, second or investment',65],['Non-resident',60],['Off-plan',50]];
+function mortgage(){
+ var h='<label>Gross monthly income AED</label><input id="m-inc" type="number" inputmode="numeric" placeholder="45000">'+
+ '<label>Existing monthly commitments</label><input id="m-deb" type="number" value="0" placeholder="Car loan, cards, other loans">'+
+ '<label>Buyer profile</label><select id="m-ltv">'+LTVS.map(function(l,i){return '<option value="'+l[1]+'"'+(i===0?' selected':'')+'>'+l[0]+' · '+l[1]+'%</option>';}).join('')+'</select>'+
+ '<div class="two"><div><label>Rate % a year</label><input id="m-r" type="number" step="0.05" value="4.19"></div>'+
+ '<div><label>Years</label><input id="m-y" type="number" value="25"></div></div>'+
+ '<label>Age today</label><input id="m-age" type="number" value="40">'+
+ '<div class="sched" id="m-out"></div>'+
+ '<div class="hint" style="margin-top:10px">The Central Bank caps total monthly debt at 50% of gross income. That is usually what limits you, not the deposit.</div>';
+ openTool('What can they afford',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ function run(){
+  var inc=num(document.getElementById('m-inc').value), deb=num(document.getElementById('m-deb').value);
+  var ltv=num(document.getElementById('m-ltv').value), r=num(document.getElementById('m-r').value);
+  var y=num(document.getElementById('m-y').value), age=num(document.getElementById('m-age').value);
+  var out=document.getElementById('m-out');
+  if(!inc){out.innerHTML='<div class="hint">Enter their monthly income.</div>';return;}
+  var maxTerm=Math.max(1,Math.min(y,65-age)); var capped=maxTerm<y;
+  var room=Math.max(0,inc*0.5-deb), i=r/100/12, nMo=maxTerm*12;
+  var loan=i>0?room*(1-Math.pow(1+i,-nMo))/i:room*nMo;
+  var price=ltv?loan/(ltv/100):0;
+  var dep=price-loan, fees=price*0.04+ (price>500000?4200:4000)+580+250+250+price*0.02+loan*0.0025+290+loan*0.01+3150;
+  out.innerHTML=
+   '<div class="row"><div><div class="lab">Monthly they can service</div><div class="tgt">50% of income less commitments</div></div><div class="v2">'+money(room)+'</div></div>'+
+   '<div class="row"><div><div class="lab">Term used</div><div class="tgt">'+(capped?'Capped by age 65, not '+y+' years':'As requested')+'</div></div><div class="v2">'+maxTerm+' years</div></div>'+
+   '<div class="row big2"><div><div class="lab">They can borrow</div><div class="tgt">At '+r+'%</div></div><div class="v2">'+money(loan)+'</div></div>'+
+   '<div class="row big2"><div><div class="lab">Property they can buy</div><div class="tgt">At '+ltv+'% loan to value</div></div><div class="v2">'+money(price)+'</div></div>'+
+   '<div class="row"><div><div class="lab">Deposit needed</div><div class="tgt">'+(100-ltv)+'% of price</div></div><div class="v2">'+money(dep)+'</div></div>'+
+   '<div class="row"><div><div class="lab">Fees on top</div><div class="tgt">DLD, agency, bank, trustee</div></div><div class="v2">'+money(fees)+'</div></div>'+
+   '<div class="row big2"><div><div class="lab">Total cash they need</div></div><div class="v2">'+money(dep+fees)+'</div></div>'+
+   '<div class="row"><div><div class="lab">Shop in this band</div><div class="tgt">Comfortable to maximum</div></div><div class="v2">'+money(price*0.85)+' – '+money(price)+'</div></div>';
+  COPYTEXT='Affordability\n\nIncome '+money(inc)+' a month, commitments '+money(deb)+
+   '\nCan service '+money(room)+' a month over '+maxTerm+' years at '+r+'%'+
+   '\n\nBorrowing: '+money(loan)+'\nProperty: up to '+money(price)+
+   '\nDeposit: '+money(dep)+'\nFees: '+money(fees)+'\nTotal cash needed: '+money(dep+fees)+
+   '\n\nSensible search band: '+money(price*0.85)+' to '+money(price);
+  document.getElementById('tcopy').textContent='Copy';
+  document.getElementById('tcopy').onclick=defaultCopy;
+ }
+ ['m-inc','m-deb','m-ltv','m-r','m-y','m-age'].forEach(function(i){
+  var e=document.getElementById(i);e.oninput=run;e.onchange=run;});
+ run();
+}
+
+/* ================= MATCHMAKER ================= */
+function matchScore(d,u){
+ var isR=(u.lt||'Sale')==='Rent', price=isR?num(u.rent):num(u.pr);
+ var sc=0, why=[];
+ var bud=num(d.lmax)||num(d.v);
+ if(bud&&price){
+  if(price<=bud){sc+=40;why.push('inside budget');}
+  else if(price<=bud*1.1){sc+=22;why.push('9% over budget, stretchable');}
+  else if(price<=bud*1.25){sc+=8;why.push('a stretch');}
+  else return null;
+ }
+ if(num(d.lbd)&&num(u.bd)){
+  if(num(d.lbd)===num(u.bd)){sc+=25;why.push(u.bd+' bed match');}
+  else if(Math.abs(num(d.lbd)-num(u.bd))===1){sc+=10;why.push('one bed off');}
+ }
+ var areas=(d.lcom||'').toLowerCase().split(/[,;/]+/).map(function(x){return x.trim();}).filter(Boolean);
+ var ucom=((u.com||'')+' '+(u.p||'')).toLowerCase();
+ if(areas.length){
+  if(areas.some(function(a){return a&&ucom.indexOf(a)>=0;})){sc+=25;why.push('area match');}
+ }
+ var txt=((d.u||'')+' '+(d.n||'')).toLowerCase();
+ if(u.com&&txt.indexOf(String(u.com).toLowerCase())>=0){sc+=12;why.push('already talked about this area');}
+ if(d.ty==='Rent'&&!isR)return null;
+ if(isR&&d.ty!=='Rent'&&d.ty!=='Ready')sc-=10;
+ sc+=[0,4,8,12,0][d.s]||0;
+ if(d.s===4)return null;
+ if(sc<20)return null;
+ return {sc:Math.min(100,sc),why:why};
+}
+function whoFits(i){
+ var u=S.units[i], out=[];
+ S.deals.forEach(function(d,j){var m=matchScore(d,u); if(m)out.push({d:d,j:j,m:m});});
+ out.sort(function(a,b){return b.m.sc-a.m.sc;});
+ var isR=(u.lt||'Sale')==='Rent';
+ var h='<div class="hint">'+esc(pvNum(u.p))+' · '+pmoney(isR?u.rent:u.pr)+(isR?' a year':'')+'</div>';
+ if(!out.length){
+  h+='<div class="hint" style="margin-top:12px">Nobody in your pipeline matches yet.<br><br>Open a client, scroll to <b style="color:var(--gold)">What they are looking for</b> and fill in beds, budget and areas. The more you fill in, the better this gets.</div>';
+  openTool('Who fits this',h,'');document.getElementById('tcopy').textContent='Close';return;}
+ h+='<div class="card" style="margin-top:12px">'+out.slice(0,12).map(function(o){
+  var ph=(o.d.ph||'').replace(/[^\d+]/g,'');
+  var band=o.m.sc>=70?'Strong':(o.m.sc>=45?'Worth a call':'Long shot');
+  return '<div class="fres" style="align-items:flex-start"><i style="flex:0 0 46px;color:'+(o.m.sc>=70?'var(--gold)':'var(--dim)')+'">'+o.m.sc+'</i>'+
+   '<div style="min-width:0;flex:1"><b>'+esc(pvName(o.d.w))+'</b>'+
+   '<span>'+band+' · '+esc(o.m.why.join(', '))+'</span>'+
+   (ph&&!S.priv?'<div class="acts" style="margin-top:7px"><a href="tel:'+ph+'">Call</a><a href="https://wa.me/'+ph.replace('+','')+'" target="_blank">WhatsApp</a></div>':'')+
+   '</div></div>';}).join('')+'</div>';
+ var txt=out.slice(0,12).map(function(o){return o.m.sc+' · '+o.d.w+' · '+o.m.why.join(', ');}).join('\n');
+ openTool(out.length+' fit this unit',h,'Call list for '+u.p+'\n\n'+txt);
+}
+/* ---------- backup nag ---------- */
+function daysSinceBackup(){
+ if(!S.bkAt)return 999;
+ return Math.floor((Date.now()-new Date(S.bkAt).getTime())/864e5);
+}
+function drawNag(){
+ var d=daysSinceBackup(), el=document.getElementById('nag');
+ if(d<7){el.classList.add('hide');return;}
+ el.classList.remove('hide');
+ el.innerHTML='<div><b>'+(d===999?'You have never backed up':'Last backup was '+d+' days ago')+'</b>'+
+  '<span>Everything lives on this phone only. One tap and it is safe.</span></div><button id="nagbk">Back up</button>';
+ document.getElementById('nagbk').onclick=function(){document.getElementById('t-backup').click();};
+}
+
+/* ================= CALENDAR EXPORT + LINKS ================= */
+function icsEsc(t){return String(t||'').replace(/\\/g,'\\\\').replace(/[,;]/g,function(c){return '\\'+c;}).replace(/\n/g,'\\n');}
+function icsStamp(){return new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';}
+function icsDay(d){return String(d).replace(/-/g,'');}
+function icsDT(d,t){var p=(t||'09:00').split(':');
+ return icsDay(d)+'T'+('0'+p[0]).slice(-2)+('0'+(p[1]||'00')).slice(-2)+'00';}
+function icsEvent(o){
+ var uid=(o.d+'-'+Math.random().toString(36).slice(2,9)+'@daily');
+ var body=['BEGIN:VEVENT','UID:'+uid,'DTSTAMP:'+icsStamp()];
+ if(o.t){body.push('DTSTART;TZID=Asia/Dubai:'+icsDT(o.d,o.t));
+  var eh=('0'+(Math.min(23,+o.t.split(':')[0]+1))).slice(-2);
+  body.push('DTEND;TZID=Asia/Dubai:'+icsDT(o.d,eh+':'+(o.t.split(':')[1]||'00')));}
+ else{body.push('DTSTART;VALUE=DATE:'+icsDay(o.d));
+  var nd=new Date(o.d);nd.setDate(nd.getDate()+1);
+  body.push('DTEND;VALUE=DATE:'+icsDay(iso(nd)));}
+ body.push('SUMMARY:'+icsEsc(o.n));
+ if(o.desc)body.push('DESCRIPTION:'+icsEsc(o.desc));
+ body.push('BEGIN:VALARM','TRIGGER:'+(o.t?'-PT60M':'-PT15H'),'ACTION:DISPLAY','DESCRIPTION:'+icsEsc(o.n),'END:VALARM');
+ body.push('END:VEVENT');
+ return body.join('\r\n');
+}
+function icsFile(events,name){
+ var txt=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Daily//Mustafa//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH']
+  .concat(events).concat(['END:VCALENDAR']).join('\r\n');
+ var blob=new Blob([txt],{type:'text/calendar'});
+ var fn=(name||'daily')+'.ics';
+ if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],fn,{type:'text/calendar'})]})){
+  navigator.share({files:[new File([blob],fn,{type:'text/calendar'})]}).catch(function(){});return;}
+ var url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=fn;document.body.appendChild(a);a.click();
+ setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);
+}
+function icsOneDiary(i){var e=S.diary[i];
+ icsFile([icsEvent({n:e.n,d:e.d,t:e.t,desc:(e.w||'')+(e.ty?' · '+e.ty:'')})],'event');}
+function icsOneLater(i){var x=S.later[i];
+ icsFile([icsEvent({n:'Call '+x.n+(x.w?' · '+x.w:''),d:x.wd,t:'',
+  desc:(x.ty||'')+(x.n2?'\n'+x.n2:'')+(x.ph?'\n'+x.ph:'')})],'reconnect');}
+function icsAllLater(){
+ var L=S.later.filter(function(x){return x.wd;});
+ if(!L.length){alert('Nothing in your Later list yet.');return;}
+ icsFile(L.map(function(x){return icsEvent({n:'Call '+x.n+(x.w?' · '+x.w:''),d:x.wd,t:'',
+  desc:(x.ty||'')+(x.n2?'\n'+x.n2:'')+(x.ph?'\n'+x.ph:'')});}),'later-list');
+ alert(L.length+' reminders sent to your calendar.');
+}
+function icsAllFollow(){
+ var L=S.deals.filter(function(d){return d.s<4&&d.nd;});
+ if(!L.length){alert('No follow-up dates set.');return;}
+ icsFile(L.map(function(d){return icsEvent({n:(d.na||'Follow up')+' · '+d.w,d:d.nd,t:'',
+  desc:(d.u||'')+(d.ph?'\n'+d.ph:'')});}),'follow-ups');
+ alert(L.length+' follow-ups sent to your calendar.');
+}
+function mapLink(u){return 'https://maps.apple.com/?q='+encodeURIComponent((u.com||u.p||'')+', Dubai');}
+function pfLink(u){return 'https://www.propertyfinder.ae/en/search?c=1&q='+encodeURIComponent(u.p||'');}
+
+/* ================= LATER / NURTURE ================= */
+const LTYPES=['Handover coming','Lease ending','Seller not now','Buyer not ready','Investor watching','Mortgage pending','Other'];
+var DSEG='Active';
+function drawDealSeg(){
+ var due=S.later.filter(function(x){return x.wd&&x.wd<=TD;}).length;
+ var opts=['Active','Later'];
+ document.getElementById('dseg').innerHTML=opts.map(function(o){
+  var lbl=o==='Later'?('Later'+(S.later.length?' ('+S.later.length+')':'')):o;
+  return '<b class="'+(DSEG===o?'on':'')+'" data-ds="'+o+'">'+lbl+(o==='Later'&&due?' ●':'')+'</b>';}).join('');
+ document.querySelectorAll('#dseg b').forEach(function(b){b.onclick=function(){
+  DSEG=b.dataset.ds;
+  document.getElementById('d-active').classList.toggle('hide',DSEG!=='Active');
+  document.getElementById('d-later').classList.toggle('hide',DSEG!=='Later');
+  drawDealSeg();if(DSEG==='Later')drawLater();window.scrollTo(0,0);};});
+}
+function lWhen(x){
+ if(!x.wd)return 'No date set';
+ var d=new Date(x.wd), days=Math.round((d-new Date(TD))/86400000);
+ if(days<0)return 'Was due '+Math.abs(days)+' day'+(Math.abs(days)>1?'s':'')+' ago';
+ if(days===0)return 'Today';
+ if(days===1)return 'Tomorrow';
+ if(days<31)return 'In '+days+' days';
+ return d.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+}
+function lRow(x,i,ready){
+ var ph=(x.ph||'').replace(/[^\d+]/g,'');
+ return '<div class="deal'+(ready?' ldue':'')+'"><div class="top"><div>'+
+  '<div class="who">'+esc(pvName(x.n))+'</div>'+
+  '<div class="sub">'+esc(pvNum(x.w||''))+(x.w&&x.ty?' · ':'')+esc(x.ty||'')+'</div></div>'+
+  '<div class="fee" style="font-size:12px;'+(ready?'':'color:var(--dim)')+'">'+esc(lWhen(x))+'</div></div>'+
+  (x.n2?'<div class="next"><b>Why later:</b> '+esc(pvAll(x.n2))+'</div>':'')+
+  '<div class="acts">'+(ph&&!S.priv?'<a href="tel:'+ph+'">Call</a><a href="https://wa.me/'+ph.replace('+','')+'" target="_blank">WhatsApp</a>':'')+
+  '<button data-lics="'+i+'">Remind me</button><button data-lmv="'+i+'">Move to pipeline</button><button data-lsn="'+i+'">Snooze</button><button data-led="'+i+'">Edit</button></div></div>';
+}
+function drawLater(){
+ var ready=[],wait=[];
+ S.later.forEach(function(x,i){ (x.wd&&x.wd<=TD?ready:wait).push([x,i]); });
+ wait.sort(function(a,b){return (a[0].wd||'9999').localeCompare(b[0].wd||'9999');});
+ var f=document.getElementById('lfilt'), cur=f.value||'All types';
+ var ts=['All types'].concat(LTYPES.filter(function(t){return S.later.some(function(x){return x.ty===t;});}));
+ f.innerHTML=ts.map(function(t){return '<option'+(t===cur?' selected':'')+'>'+t+'</option>';}).join('');
+ if(cur!=='All types')wait=wait.filter(function(p){return p[0].ty===cur;});
+ document.getElementById('lrcount').textContent=ready.length?ready.length+' waiting on you':'';
+ document.getElementById('lwcount').textContent=wait.length?wait.length:'';
+ document.getElementById('lready').innerHTML=ready.length?ready.map(function(p){return lRow(p[0],p[1],1);}).join('')
+  :'<div class="hint">Nobody is due yet. Good.</div>';
+ document.getElementById('llist').innerHTML=wait.length?wait.map(function(p){return lRow(p[0],p[1],0);}).join('')
+  :'<div class="hint">Nobody parked here yet. Add the ones who said not now.</div>';
+ document.querySelectorAll('[data-lmv]').forEach(function(b){b.onclick=function(){
+  var x=S.later[+b.dataset.lmv];
+  S.deals.push({ty:'Ready',w:x.n,ph:x.ph||'',u:x.w||'',v:num(x.v)||0,r:2,s:0,
+   na:'Reconnect, '+(x.ty||'was parked'),nd:TD,src:'Repeat client',ref:'',n:x.n2||'',ch:'1 cheque',rent:0});
+  S.later.splice(+b.dataset.lmv,1);put(S);drawLater();drawDeals();drawHero();drawDealSeg();
+  alert(x.n+' moved into your pipeline.');};});
+ document.querySelectorAll('[data-lsn]').forEach(function(b){b.onclick=function(){
+  var x=S.later[+b.dataset.lsn], m=prompt('Push back by how many months?','3');
+  if(m===null)return; var d=new Date(x.wd&&x.wd>TD?x.wd:TD); d.setMonth(d.getMonth()+num(m));
+  x.wd=iso(d);put(S);drawLater();drawDealSeg();drawUpNext();};});
+ document.querySelectorAll('[data-lics]').forEach(function(b){b.onclick=function(){icsOneLater(+b.dataset.lics);};});
+ document.querySelectorAll('[data-led]').forEach(function(b){b.onclick=function(){laterEdit(+b.dataset.led);};});
+}
+function laterEdit(i){
+ var x=(i>=0?JSON.parse(JSON.stringify(S.later[i])):{n:'',ph:'',w:'',ty:LTYPES[0],wd:'',n2:'',v:0});
+ var h='<label>Name</label><input id="l-n" value="'+esc(x.n)+'" placeholder="Naveen Mannava">'+
+ '<label>Mobile</label><input id="l-ph" type="tel" value="'+esc(x.ph)+'" placeholder="+9715...">'+
+ '<label>What it is about</label><input id="l-w" value="'+esc(x.w)+'" placeholder="Murooj villa, rental">'+
+ '<label>Why later</label><select id="l-ty">'+LTYPES.map(function(t){return '<option'+(t===x.ty?' selected':'')+'>'+t+'</option>';}).join('')+'</select>'+
+ '<label>Call them again on</label><input id="l-wd" type="date" value="'+esc(x.wd)+'">'+
+ '<div class="quick" style="margin-top:9px">'+[1,2,3,6,12].map(function(m){return '<button class="qbtn alt" data-lq="'+m+'" style="padding:9px 4px;font-size:11px">'+m+'m</button>';}).join('')+'</div>'+
+ '<label>Estimated value AED</label><input id="l-v" type="number" value="'+num(x.v)+'">'+
+ '<label>The note that matters</label><textarea id="l-n2" rows="2" placeholder="Handover Q2 2027, wants to flip before keys">'+esc(x.n2)+'</textarea>'+
+ '<button class="btnfull" id="l-save" style="margin-top:13px">Save</button>'+
+ (i>=0?'<button class="btnfull" id="l-del" style="margin-top:9px;background:transparent;color:var(--bad);border:1px solid var(--line)">Remove</button>':'');
+ openTool(i>=0?'Edit':'Add someone for later',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.querySelectorAll('[data-lq]').forEach(function(b){b.onclick=function(){
+  var d=new Date(); d.setMonth(d.getMonth()+ +b.dataset.lq);
+  document.getElementById('l-wd').value=iso(d);};});
+ document.getElementById('l-save').onclick=function(){
+  var o={n:document.getElementById('l-n').value.trim(),ph:document.getElementById('l-ph').value.trim(),
+   w:document.getElementById('l-w').value.trim(),ty:document.getElementById('l-ty').value,
+   wd:document.getElementById('l-wd').value,v:num(document.getElementById('l-v').value),
+   n2:document.getElementById('l-n2').value.trim()};
+  if(!o.n){alert('Who is it?');return;}
+  if(!o.wd){alert('Pick a date to call them again. That is the whole point of this list.');return;}
+  if(i>=0)S.later[i]=o; else S.later.push(o);
+  put(S);drawLater();drawDealSeg();drawUpNext();TS.style.display='none';};
+ if(i>=0)document.getElementById('l-del').onclick=function(){
+  if(confirm('Remove this person?')){toTrash('later',S.later[i]);S.later.splice(i,1);put(S);drawLater();drawDealSeg();TS.style.display='none';}};
+}
+document.getElementById('addlater').onclick=function(){laterEdit(-1);};
+document.getElementById('icslater').onclick=icsAllLater;
+document.getElementById('t-cal').onclick=icsAllFollow;
+document.getElementById('t-cost').onclick=buyerCosts;
+document.getElementById('t-mort').onclick=mortgage;
+document.getElementById('t-flip').onclick=flipCalc;
+document.getElementById('t-paste').onclick=pasteUnit;
+document.getElementById('t-trash').onclick=openTrash;
+document.getElementById('upd').onclick=function(){location.reload();};
+document.getElementById('t-impl').onclick=function(){
+ openTool('Import prospects','<div class="hint">Choose the prospect file Claude gives you. It adds people to your Later list with their call dates and hooks already written, and skips anyone already there.</div><input type="file" id="ip-f" accept="application/json,.json" style="margin-top:14px"><div class="hint" id="ip-r" style="margin-top:12px"></div>','');
+ document.getElementById('tcopy').textContent='Close';
+ document.getElementById('ip-f').onchange=function(){
+  var f=this.files[0]; if(!f)return; var out=document.getElementById('ip-r');
+  var r=new FileReader();
+  r.onload=function(ev){
+   var o; try{o=JSON.parse(ev.target.result);}catch(e){out.textContent='That file is not readable.';return;}
+   var L=o.later||o;
+   if(!Array.isArray(L)||!L.length){out.textContent='No prospects found in that file.';return;}
+   var added=0, skipped=0;
+   L.forEach(function(x){
+    if(!x||!x.n)return;
+    var dup=S.later.some(function(y){return y.n===x.n&&y.w===x.w;})
+      ||S.deals.some(function(y){return y.w===x.n;});
+    if(dup){skipped++;return;}
+    S.later.push({n:x.n,ph:x.ph||'',w:x.w||'',ty:x.ty||'Seller not now',
+     wd:x.wd||TD,v:num(x.v),n2:x.n2||''});
+    added++;});
+   put(S);drawLater();drawDealSeg();drawUpNext();drawNav();
+   out.innerHTML='<b style="color:var(--gold)">'+added+' added</b> to your Later list'+(skipped?', '+skipped+' skipped as duplicates':'')+'.<br><br>Open Deals, tap Later, then send the dates to your calendar.';
+  };
+  r.readAsText(f);};
+};
+
+/* ================= DIARY ================= */
+const EVT=['Viewing','Call','Meeting','Doc','Payment','Follow up'];
+var CALM=new Date(); CALM.setDate(1);
+var CALSEL=iso(new Date());
+function evOf(d){
+ var own=S.diary.filter(function(e){return e.d===d;});
+ var fu=S.deals.filter(function(x){return x.nd===d&&x.s<4;}).map(function(x){
+  return {n:x.na||'Follow up',w:x.w,d:d,t:'',ty:'Follow up',auto:1};});
+ var lt=S.later.filter(function(x){return x.wd===d;}).map(function(x){
+  return {n:'Reconnect · '+(x.ty||''),w:x.n,d:d,t:'',ty:'Later',auto:1};});
+ return own.concat(fu).concat(lt).sort(function(a,b){return (a.t||'zz').localeCompare(b.t||'zz');});}
+function t12(t){if(!t)return '';var p=t.split(':'),h=+p[0],m=p[1]||'00';
+ var ap=h>=12?'PM':'AM';h=h%12;if(!h)h=12;return h+':'+m+'\n'+ap;}
+function drawCal(){
+ document.getElementById('calmo').textContent=CALM.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+ var y=CALM.getFullYear(),mo=CALM.getMonth();
+ var first=new Date(y,mo,1), lead=(first.getDay()+6)%7;
+ var start=new Date(y,mo,1-lead), h='';
+ ['M','T','W','T','F','S','S'].forEach(function(d){h+='<div class="dow">'+d+'</div>';});
+ for(var i=0;i<42;i++){
+  var d=new Date(start); d.setDate(start.getDate()+i);
+  var k=iso(d), n=evOf(k).length, cl='cd';
+  if(d.getMonth()!==mo)cl+=' out';
+  if(k===TD)cl+=' tdy';
+  if(k===CALSEL)cl+=' sel';
+  h+='<div class="'+cl+'" data-cd="'+k+'">'+d.getDate()+
+   (n?'<div class="dots">'+Array(Math.min(n,3)+1).join('<s></s>')+'</div>':'')+'</div>';
+  if(i>=34 && d.getMonth()!==mo && (i+1)%7===0)break;
+ }
+ document.getElementById('calg').innerHTML=h;
+ document.querySelectorAll('[data-cd]').forEach(function(c){c.onclick=function(){
+  CALSEL=c.dataset.cd; var d=new Date(CALSEL); CALM=new Date(d.getFullYear(),d.getMonth(),1);
+  drawCal();drawEvents();};});
+}
+function drawEvents(){
+ var L=evOf(CALSEL), sd=new Date(CALSEL);
+ document.getElementById('dayttl').textContent = CALSEL===TD?'Today':
+  sd.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+ document.getElementById('evcount').textContent=L.length?L.length+(L.length>1?' events':' event'):'';
+ document.getElementById('evlist').innerHTML=L.length?L.map(function(e){
+  var idx=S.diary.indexOf(e), past=(e.d<TD);
+  if(e.auto)return '<div class="ev'+(past?' past':'')+'"><div class="tm">·</div><div class="bd"><b>'+esc(e.n)+'</b><span>'+esc(pvName(e.w||''))+' · from Deals</span></div></div>';
+  return '<div class="ev'+(past?' past':'')+'"><div class="tm">'+esc(t12(e.t)).replace('\n','<br>')+'</div>'+
+   '<div class="bd"><b>'+esc(pvName(e.n))+'</b><span>'+esc(pvName(e.w||''))+(e.w&&e.ty?' · ':'')+esc(e.ty||'')+'</span></div>'+
+   '<button class="x" data-evics="'+idx+'" style="background:none;border:0;color:var(--gold);font-size:15px;padding:0 4px">↗</button>'+
+   '<button class="x" data-evx="'+idx+'">×</button></div>';}).join('')
+  :'<div class="hint">Nothing booked. An empty day is a choice.</div>';
+ document.querySelectorAll('[data-evics]').forEach(function(b){b.onclick=function(){icsOneDiary(+b.dataset.evics);};});
+ document.querySelectorAll('[data-evx]').forEach(function(b){b.onclick=function(){
+  if(confirm('Remove this?')){S.diary.splice(+b.dataset.evx,1);put(S);drawDiary();drawUpNext();}};});
+}
+function drawDiary(){drawCal();drawEvents();}
+function drawUpNext(){
+ var L=evOf(TD), sec=document.getElementById('upnextsec');
+ var soon=S.diary.filter(function(e){return e.d>TD;}).sort(function(a,b){return (a.d+a.t).localeCompare(b.d+b.t);}).slice(0,2);
+ document.getElementById('upnb').textContent=L.length?L.length+' today':'';
+ var h=L.map(function(e){
+  return '<div class="ev"><div class="tm">'+esc(t12(e.t)).replace('\n','<br>')+'</div>'+
+   '<div class="bd"><b>'+esc(pvName(e.n))+'</b><span>'+esc(pvName(e.w||''))+(e.w&&e.ty?' · ':'')+esc(e.ty||'')+'</span></div></div>';}).join('');
+ if(!L.length)h='';
+ if(soon.length)h+=soon.map(function(e){
+  return '<div class="ev past"><div class="tm">'+esc(new Date(e.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'}))+'</div>'+
+   '<div class="bd"><b>'+esc(pvName(e.n))+'</b><span>'+esc(pvName(e.w||''))+'</span></div></div>';}).join('');
+ document.getElementById('upnext').innerHTML=h||'<div class="hint">Nothing in the diary today.</div>';
+}
+document.getElementById('calp').onclick=function(){CALM.setMonth(CALM.getMonth()-1);drawCal();};
+document.getElementById('caln').onclick=function(){CALM.setMonth(CALM.getMonth()+1);drawCal();};
+document.getElementById('calt').onclick=function(){CALM=new Date();CALM.setDate(1);CALSEL=TD;drawDiary();};
+document.getElementById('addev').onclick=function(){
+ var h='<label>What is it</label><input id="e-n" placeholder="Viewing, Elora 3BR">'+
+ '<label>Who with</label><input id="e-w" placeholder="Usman · buyer">'+
+ '<div class="two"><div><label>Date</label><input id="e-d" type="date" value="'+CALSEL+'"></div>'+
+ '<div><label>Time</label><input id="e-t" type="time" value="10:00"></div></div>'+
+ '<label>Type</label><select id="e-ty">'+EVT.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
+ '<button class="btnfull" id="e-save" style="margin-top:14px">Add to diary</button>';
+ openTool('Add to diary',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.getElementById('e-save').onclick=function(){
+  var n=document.getElementById('e-n').value.trim();
+  if(!n){alert('What is it?');return;}
+  S.diary.push({n:n,w:document.getElementById('e-w').value.trim(),
+   d:document.getElementById('e-d').value||CALSEL,t:document.getElementById('e-t').value,
+   ty:document.getElementById('e-ty').value});
+  put(S);CALSEL=S.diary[S.diary.length-1].d;
+  var dd=new Date(CALSEL);CALM=new Date(dd.getFullYear(),dd.getMonth(),1);
+  drawDiary();drawUpNext();TS.style.display='none';};
+};
+
+
+let PAGE='today';
+var SSEG='units', DREW={};
+function pageDraw(k){
+ if(DREW[k])return; DREW[k]=1;
+ if(k==='stock'){drawUnits();drawOp();drawComps();}
+ if(k==='diary'){drawDiary();}
+ if(k==='more'){drawMore();}
+}
+function drawStockSeg(){
+ document.getElementById('sseg').innerHTML=STOCKSEG.map(function(o){
+  return '<b class="'+(SSEG===o[0]?'on':'')+'" data-ss="'+o[0]+'">'+o[1]+'</b>';}).join('');
+ STOCKSEG.forEach(function(o){document.getElementById('s-'+o[0]).classList.toggle('hide',o[0]!==SSEG);});
+}
+function goPage(k){
+ PAGE=k;
+ PAGES.forEach(function(p){var el=document.getElementById('p-'+p[0]);
+  el.classList.toggle('hide',p[0]!==PAGE);
+  if(p[0]===PAGE){el.classList.remove('fade');void el.offsetWidth;el.classList.add('fade');}});
+ document.getElementById('pgtitle').textContent=PAGES.filter(function(p){return p[0]===PAGE;})[0][1];
+ pageDraw(k); drawNav(); window.scrollTo(0,0);
+ if(navigator.vibrate)navigator.vibrate(6);
+}
+function drawNav(){
+ var due=S.later.filter(function(x){return x.wd&&x.wd<=TD;}).length
+  + S.deals.filter(function(x){return x.s<4&&x.nd&&x.nd<=TD;}).length;
+ document.getElementById('nav').innerHTML=PAGES.map(function(p){
+  var dot=(p[0]==='deals'&&due)?'<u class="dot"></u>':'';
+  return '<b class="'+(PAGE===p[0]?'on':'')+'" data-p="'+p[0]+'"><i>'+p[2]+dot+'</i>'+p[1]+'</b>';}).join('');
+}
+
+function drawNums(){
+ document.getElementById('nums').innerHTML=NUMS.map(function(n){var k=n[0],l=n[1],t=n[2];
+  return '<div class="row"><div><div class="lab">'+l+'</div>'+(t?'<div class="tgt">Target '+t+'</div>':'')+'</div><div class="stepper"><button data-k="'+k+'" data-d="-1">−</button><span class="val '+(t&&day[k]>=t?'hit':'')+'" id="v-'+k+'">'+day[k]+'</span><button data-k="'+k+'" data-d="1">+</button></div></div>';}).join('');
+ document.querySelectorAll('#nums .stepper button').forEach(function(b){b.onclick=function(){bump(b.dataset.k,+b.dataset.d);};});
+ document.getElementById('q-callv').textContent=day.calls+' today';
+ document.getElementById('q-convov').textContent=day.convos+' today';
+}
+function bump(k,d){
+ day[k]=Math.max(0,day[k]+d);
+ var t=(NUMS.filter(function(n){return n[0]===k;})[0]||[])[2], el=document.getElementById('v-'+k);
+ if(el){el.textContent=day[k];el.className='val '+(t&&day[k]>=t?'hit':'');}
+ document.getElementById('q-callv').textContent=day.calls+' today';
+ document.getElementById('q-convov').textContent=day.convos+' today';
+ S.days[TD]=day;put(S);
+}
+document.getElementById('q-call').onclick=function(){bump('calls',1);};
+document.getElementById('q-convo').onclick=function(){bump('convos',1);};
+function drawTogs(){
+ document.getElementById('togs').innerHTML=TOGS.map(function(t){return '<div class="tog '+(day[t[0]]?'on':'')+'" data-k="'+t[0]+'"><span class="ic">'+t[2]+'</span>'+t[1]+'</div>';}).join('');
+ document.querySelectorAll('.tog').forEach(function(t){t.onclick=function(){var k=t.dataset.k;day[k]=day[k]?0:1;t.classList.toggle('on',!!day[k]);S.days[TD]=day;put(S);};});
+}
+function drawScore(){
+ var h='';for(var i=1;i<=10;i++)h+='<span class="'+(day.score>=i?'on':'')+'" data-s="'+i+'">'+i+'</span>';
+ document.getElementById('score').innerHTML=h;
+ document.querySelectorAll('.stars span').forEach(function(s){s.onclick=function(){day.score=+s.dataset.s;drawScore();};});
+}
+function drawStreak(){
+ var h='';for(var i=6;i>=0;i--){var dt=new Date(Date.now()-i*864e5),d=S.days[iso(dt)];
+  h+='<i class="'+(d&&(d.calls||d.convos||d.score)?'done':'')+'">'+dt.toLocaleDateString('en-GB',{weekday:'short'}).slice(0,2)+'</i>';}
+ document.getElementById('streak').innerHTML=h;
+}
+function dealFee(d){return d.ty==='Rent'?num(d.rent)*0.05:num(d.v)*num(d.r)/100;}
+function bankedTotal(){var b=0;Object.keys(S.days).forEach(function(k){if(k!==TD)b+=num(S.days[k].comm);});return b+num(day.comm);}
+function wonTotal(){return S.deals.filter(function(d){return d.s===4;}).reduce(function(a,d){return a+dealFee(d);},0);}
+function pipeMax(){return S.deals.filter(function(d){return d.s<4;}).reduce(function(a,d){return a+dealFee(d);},0);}
+function pipeWeighted(){return S.deals.filter(function(d){return d.s<4;}).reduce(function(a,d){return a+dealFee(d)*PROB[d.s];},0);}
+function monthKey(d){return d.slice(0,7);}
+function earnMap(){
+ var m={};
+ Object.keys(S.days).forEach(function(k){var c=num(S.days[k]&&S.days[k].comm);
+  if(c)m[monthKey(k)]=(m[monthKey(k)]||0)+c;});
+ S.ledger.forEach(function(e){var k=monthKey(e.d);m[k]=(m[k]||0)+num(e.amt);});
+ return m;}
+function ledgerTotal(){return S.ledger.reduce(function(a,e){return a+num(e.amt);},0);}
+function drawLedger(){
+ var el=document.getElementById('ernlist');
+ var L=S.ledger.slice().sort(function(a,b){return b.d.localeCompare(a.d);});
+ el.classList.toggle('hide',!L.length);
+ if(!L.length){el.innerHTML='';return;}
+ el.innerHTML=L.slice(0,12).map(function(e){var i=S.ledger.indexOf(e);
+  return '<div class="row"><div><div class="lab">'+esc(pvName(e.w||'Commission'))+'</div>'+
+   '<div class="tgt">'+new Date(e.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+(e.n?' · '+esc(pvAll(e.n)):'')+'</div></div>'+
+   '<div style="display:flex;align-items:center;gap:9px"><span class="val hit">'+pmoney(e.amt)+'</span>'+
+   '<button class="x" data-lgx="'+i+'" style="background:none;border:0;color:var(--dim);font-size:16px">×</button></div></div>';}).join('')+
+  (L.length>12?'<div class="hint" style="padding-top:9px">Showing the last 12 of '+L.length+'.</div>':'');
+ document.querySelectorAll('[data-lgx]').forEach(function(b){b.onclick=function(){
+  if(confirm('Remove this entry?')){S.ledger.splice(+b.dataset.lgx,1);put(S);drawEarn();drawHero();}};});
+}
+document.getElementById('logcomm').onclick=function(){logComm();};
+function logComm(){
+ var won=S.deals.filter(function(d){return d.s===4;});
+ var h='<label>Amount AED</label><input id="c-amt" type="number" inputmode="numeric" placeholder="45000">'+
+ '<label>Date it landed</label><input id="c-d" type="date" value="'+TD+'">'+
+ '<label>Client or deal</label><input id="c-w" placeholder="Usman, Elora 3BR">'+
+ (won.length?'<div class="hint" style="margin-top:8px">Tap a won deal to fill it in</div><div class="quick" style="margin-top:7px;flex-wrap:wrap">'+
+   won.slice(0,6).map(function(d,j){return '<button class="qbtn alt" data-cw="'+j+'" style="padding:9px 6px;font-size:11px;flex:0 0 auto">'+esc(d.w)+'</button>';}).join('')+'</div>':'')+
+ '<label>Note</label><input id="c-n" placeholder="Half now, half on transfer">'+
+ '<button class="btnfull" id="c-save" style="margin-top:14px">Log it</button>'+
+ '<div class="hint" style="margin-top:10px">Backdate as far as you like. Every month you fill in makes the chart honest.</div>';
+ openTool('Log a commission',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.querySelectorAll('[data-cw]').forEach(function(b){b.onclick=function(){
+  var d=won[+b.dataset.cw];
+  document.getElementById('c-w').value=d.w;
+  if(!num(document.getElementById('c-amt').value))document.getElementById('c-amt').value=Math.round(dealFee(d));};});
+ document.getElementById('c-save').onclick=function(){
+  var a=num(document.getElementById('c-amt').value);
+  if(!a){alert('How much?');return;}
+  S.ledger.push({amt:a,d:document.getElementById('c-d').value||TD,
+   w:document.getElementById('c-w').value.trim(),n:document.getElementById('c-n').value.trim()});
+  put(S);drawEarn();drawHero();drawMap();TS.style.display='none';};
+}
+function drawEarn(){
+ drawLedger();
+ var m=earnMap(), now=new Date(), curK=monthKey(TD);
+ var months=[],labels=[];
+ for(var i=5;i>=0;i--){var d=new Date(now.getFullYear(),now.getMonth()-i,1);
+  var k=d.toISOString().slice(0,7);months.push(k);
+  labels.push(d.toLocaleDateString('en-GB',{month:'short'}));}
+ var vals=months.map(function(k){return m[k]||0;});
+ var mx=Math.max.apply(null,vals.concat([1]));
+ var thisM=m[curK]||0, prevK=months[months.length-2], lastM=m[prevK]||0;
+ var all=0;Object.keys(m).forEach(function(k){all+=m[k];});
+ var yr=0;Object.keys(m).forEach(function(k){if(k.slice(0,4)===TD.slice(0,4))yr+=m[k];});
+ var wonN=S.deals.filter(function(d){return d.s===4;}).length;
+ var best=0,bestK='';Object.keys(m).forEach(function(k){if(m[k]>best){best=m[k];bestK=k;}});
+ var delta=lastM?Math.round((thisM-lastM)/lastM*100):null;
+ document.getElementById('ernb').textContent=thisM?'this month':'';
+ document.getElementById('erntop').innerHTML=
+  '<div><u>This month</u><b>'+pmoney(thisM)+'</b><i>'+(delta===null?'first month tracked':(delta>=0?'+':'')+delta+'% on last month')+'</i></div>'+
+  '<div><u>This year</u><b>'+pmoney(yr)+'</b><i>'+wonN+' deal'+(wonN===1?'':'s')+' won</i></div>';
+ document.getElementById('ernbars').innerHTML=months.map(function(k,i){
+  var hpx=Math.round(vals[i]/mx*100);
+  return '<s class="'+(k===curK?'cur':'')+'"><em style="height:'+hpx+'%"></em><q>'+labels[i]+'</q></s>';}).join('');
+ document.getElementById('ernall').textContent=pmoney(all);
+ document.getElementById('ernsub').textContent=best?('Best month '+new Date(bestK+'-01').toLocaleDateString('en-GB',{month:'long',year:'numeric'})+' · '+(S.priv?'AED •••••':money(best))):'Log commission below when a deal banks';
+}
+function drawHero(){
+ var banked=bankedTotal()+wonTotal()+ledgerTotal(), w=pipeWeighted(), m=pipeMax();
+ var p1=Math.min(100,banked/TARGET*100), p2=Math.min(Math.max(0,100-p1),w/TARGET*100), p3=Math.min(Math.max(0,100-p1-p2),m/TARGET*100);
+ document.getElementById('banked').innerHTML=pmoney(banked)+'<small> / 500,000</small>';
+ document.getElementById('bprog').style.width=p1+'%';
+ var u=document.getElementById('bpipe');u.style.left=p1+'%';u.style.width=p2+'%';
+ var s2=document.getElementById('bmax');s2.style.left=(p1+p2)+'%';s2.style.width=p3+'%';
+ var left=Math.max(0,Math.ceil((new Date(DEADLINE)-Date.now())/864e5)), wks=Math.max(1,Math.ceil(left/7));
+ document.getElementById('daysleft').textContent=left+' days left';
+ document.getElementById('need').textContent=pmoney(Math.max(0,TARGET-banked)/wks)+' / week needed';
+}
+
+var DF='All deals', DQ='';
+function drawDealFilters(){
+ var el=document.getElementById('dfilt');
+ var opts=['All deals','Due now'].concat(STAGES.map(function(x){return 'Stage: '+x;})).concat(DTYPES.map(function(x){return 'Type: '+x;}));
+ el.innerHTML=opts.map(function(o){return '<option'+(DF===o?' selected':'')+'>'+o+'</option>';}).join('');
+ el.onchange=function(){DF=el.value;drawDeals();};
+}
+function dealPass(d){
+ if(DQ){var hay=(d.w+' '+d.u+' '+(d.n||'')+' '+(d.na||'')).toLowerCase();if(hay.indexOf(DQ)<0)return false;}
+ if(DF==='All deals'||!DF)return true;
+ if(DF==='Due now')return d.s<4&&d.nd&&d.nd<=TD;
+ if(DF.indexOf('Stage: ')===0)return STAGES[d.s]===DF.slice(7);
+ if(DF.indexOf('Type: ')===0)return (d.ty||'')===DF.slice(6);
+ return true;
+}
+var DCHIP='All';
+function drawDealChips(){
+ var due=S.deals.filter(function(d){return d.s<4&&d.nd&&d.nd<=TD;}).length;
+ var counts={};STAGES.forEach(function(st,j){counts[st]=S.deals.filter(function(d){return d.s===j;}).length;});
+ counts['Lost']=S.deals.filter(function(d){return d.s===LOST;}).length;
+ var opts=[['All',S.deals.length],['Due',due]].concat(STAGES.map(function(st){return [st,counts[st]];})).concat([['Lost',counts['Lost']]]);
+ document.getElementById('dchips').innerHTML=opts.map(function(o){
+  return '<b class="'+(DCHIP===o[0]?'on':'')+'" data-dc="'+o[0]+'">'+o[0]+(o[1]?'<u>'+o[1]+'</u>':'')+'</b>';}).join('');
+ document.querySelectorAll('[data-dc]').forEach(function(b){b.onclick=function(){
+  DCHIP=b.dataset.dc;drawDeals();};});
+}
+function chipPass(d){
+ if(DCHIP==='All')return true;
+ if(DCHIP==='Due')return d.s<4&&d.nd&&d.nd<=TD;
+ if(DCHIP==='Lost')return d.s===LOST;
+ return STAGES[d.s]===DCHIP;
+}
+function drawDeals(){
+ drawDealFilters();drawDealChips();
+ var idx=[];S.deals.forEach(function(d,i){if(dealPass(d)&&chipPass(d)&&(DCHIP==='Lost'||d.s!==LOST))idx.push(i);});
+ idx.sort(function(a,b){var A=S.deals[a],B=S.deals[b];
+  var ad=(A.s<4&&A.nd&&A.nd<=TD)?0:1, bd=(B.s<4&&B.nd&&B.nd<=TD)?0:1;
+  if(ad!==bd)return ad-bd;return dealFee(B)-dealFee(A);});
+ document.getElementById('dcount').textContent=idx.length+' of '+S.deals.length;
+ document.getElementById('dfore').innerHTML=pmoney(pipeWeighted())+'<small> likely to close</small>';
+ document.getElementById('dwon').textContent='Won '+pmoney(wonTotal())+' · best case '+pmoney(pipeMax());
+ document.getElementById('dgap').textContent='Gap '+pmoney(Math.max(0,TARGET-bankedTotal()-wonTotal()-ledgerTotal()));
+ document.getElementById('dlist').innerHTML=idx.length?idx.map(function(i){
+  var d=S.deals[i], ph=(d.ph||'').replace(/[^\d+]/g,''), due=(d.s<4&&d.nd&&d.nd<=TD);
+  var sub=d.ty==='Rent'?(pmoney(d.rent)+'/yr · '+esc(d.ch||''))
+    :(pmoney(d.v)+' at '+d.r+'%');
+  var days=d.nd?Math.round((new Date(d.nd)-new Date(TD))/864e5):null;
+  var when=d.nd?(days<0?Math.abs(days)+'d late':(days===0?'today':(days===1?'tomorrow':'in '+days+'d'))):'';
+  return '<div class="dcard s'+d.s+(due?' due':'')+'">'+
+   '<div class="dtop"><div style="min-width:0">'+
+    '<div class="dname">'+esc(pvName(d.w))+'</div>'+
+    '<div class="dmeta">'+esc(pvNum(d.u||'No unit yet'))+' · '+sub+(d.ty?' · '+esc(d.ty):'')+'</div></div>'+
+    '<div class="dfee">'+pmoney(dealFee(d))+'<small>your fee</small></div></div>'+
+   '<div class="dstage"><div class="dbar">'+STAGES.map(function(st,j){
+     return '<s class="'+(j<=d.s?(d.s===4?'won':'on'):'')+'"></s>';}).join('')+'</div>'+
+    '<div class="dstagen">'+STAGES[d.s]+'</div></div>'+
+   (d.na?'<div class="dnext '+(due?'due':'')+'"><span>'+esc(pvName(d.na))+'</span>'+(when?'<i>'+when+'</i>':'')+'</div>':'')+
+   (d.npd?(function(){var nd=Math.round((new Date(d.npd)-new Date(TD))/864e5);
+     return '<div class="npchip'+(nd<=30?' soon':'')+'">Next developer payment '+pmoney(d.npa)+' in '+nd+' days</div>';})():'')+
+   (d.s===LOST&&d.lost?'<div class="dnext" style="border-color:rgba(212,106,94,.4)">Lost on '+esc(d.lost)+'</div>':'')+
+   (d.s===LOST?'<button class="dadv" data-bk="'+i+'" style="background:transparent;border:1px solid var(--line);color:var(--dim)">Reopen this deal</button>':'')+
+   (d.s<4?'<button class="dadv'+(d.s===3?' wonb':'')+'" data-adv="'+i+'">'+(d.s===3?'Mark as won':'Move to '+STAGES[d.s+1])+'</button>'
+        :(d.s===4?'<button class="dadv wonb" data-adv="'+i+'" disabled style="opacity:.65">Won</button>':''))+
+   '<div class="drow2">'+(ph&&!S.priv?'<a href="tel:'+ph+'">Call</a><a href="https://wa.me/'+ph.replace('+','')+'" target="_blank">WhatsApp</a>':'')+
+   '<button data-tp="'+i+'">Message</button><button data-bk="'+i+'">Back</button><button data-ed="'+i+'">Edit</button></div>'+
+   '</div>';
+ }).join(''):'<div class="hint">'+(DCHIP==='All'?'Nothing matches that search.':'Nobody at '+DCHIP+' right now.')+'</div>';
+ document.querySelectorAll('[data-adv]').forEach(function(b){b.onclick=function(){
+  var d=S.deals[+b.dataset.adv]; if(d.s>=4)return;
+  var ns=d.s+1;
+  if(ns<4&&CADENCE[ns]!==undefined)d.nd=autoDate(CADENCE[ns]);
+  if(ns===4){d.nd='';}
+  d.s=ns;put(S);drawDeals();drawHero();drawMore();drawNav();drawMoves();drawMap();
+  if(navigator.vibrate)navigator.vibrate(12);
+  if(ns===4)setTimeout(function(){if(confirm('Nice one. Log the commission now?'))logComm();},120);};});
+ document.querySelectorAll('[data-bk]').forEach(function(b){b.onclick=function(){
+  var d=S.deals[+b.dataset.bk]; if(d.s<=0)return; d.s=(d.s===LOST?2:d.s-1);put(S);drawDeals();drawHero();drawMore();};});
+ document.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(){openSheet(+b.dataset.ed);};});
+ document.querySelectorAll('[data-tp]').forEach(function(b){b.onclick=function(){pickTemplate(+b.dataset.tp);};});
+}
+
+var EDIT=null, PICK=0;
+function f(id){return document.getElementById('f-'+id);}
+function fillSel(el,arr){el.innerHTML=arr.map(function(o){return '<option>'+o+'</option>';}).join('');}
+fillSel(f('ty'),DTYPES);fillSel(f('ch'),CHEQ);fillSel(f('src'),SRCS);
+function toggleRent(){document.getElementById('f-chwrap').style.display=f('ty').value==='Rent'?'grid':'none';calcFee();}
+function calcFee(){
+ if(f('ty').value==='Rent'){document.getElementById('f-calc').textContent='Your fee: '+money(num(f('rent').value)*0.05)+'  (5% of annual rent)';return;}
+ document.getElementById('f-calc').textContent='Your fee: '+money(num(f('v').value)*num(f('r').value)/100);
+}
+function drawStagePick(s){PICK=s;
+ var all=STAGES.concat(['Lost']);
+ document.getElementById('f-stage').innerHTML=all.map(function(x,j){
+  return '<b class="'+(j===s?(j===LOST?'lostb':'on'):'')+'" data-j="'+j+'">'+x+'</b>';}).join('');
+ document.querySelectorAll('#f-stage b').forEach(function(b){b.onclick=function(){drawStagePick(+b.dataset.j);};});
+ document.getElementById('f-lostwrap').style.display=(s===LOST?'block':'none');}
+function drawLadder(d){
+ var L=(d&&d.hist)||[];
+ var el=document.getElementById('f-ladder');
+ if(!L.length){el.textContent='No prices logged yet';return;}
+ var asks=L.filter(function(x){return x.a;}), offs=L.filter(function(x){return x.o;});
+ var h='';
+ if(asks.length)h+='Asking: '+asks.map(function(x){return money(x.a);}).join(' → ');
+ if(offs.length)h+=(h?'<br>':'')+'Offers: '+offs.map(function(x){return money(x.o);}).join(' → ');
+ if(asks.length&&offs.length){
+  var lowAsk=asks[asks.length-1].a, hiOff=Math.max.apply(null,offs.map(function(x){return x.o;}));
+  var gap=lowAsk-hiOff;
+  h+='<br><b style="color:'+(gap<=0?'var(--ok)':'var(--gold)')+'">'+(gap<=0?'Offer is at or above asking':'Gap '+money(gap)+' · '+(lowAsk?(gap/lowAsk*100).toFixed(1):'0')+'%')+'</b>';}
+ el.innerHTML=h;}
+function openSheet(i){
+ EDIT=i;
+ var d=i===null?{w:'',ph:'',u:'',v:'',r:2,s:0,na:'',nd:'',src:'Referral',n:'',ty:'Ready',ch:'1 cheque',rent:'',ref:'',lbd:'',lmax:'',lcom:''}:S.deals[i];
+ document.getElementById('sh-title').textContent=i===null?'Add a client':'Edit deal';
+ f('w').value=d.w;f('ph').value=d.ph||'';f('u').value=d.u||'';f('v').value=d.v||'';f('r').value=d.r;
+ f('na').value=d.na||'';f('nd').value=d.nd||'';f('n').value=d.n||'';f('src').value=d.src||'Referral';
+ f('ty').value=d.ty||'Ready';f('ch').value=d.ch||'1 cheque';f('rent').value=d.rent||'';f('ref').value=d.ref||'';
+ f('lbd').value=d.lbd||'';f('lmax').value=d.lmax||'';f('lcom').value=d.lcom||'';
+ f('npd').value=d.npd||'';f('npa').value=d.npa||'';f('ask').value='';f('off').value='';
+ f('lost').innerHTML=OBJ.map(function(o){return '<option'+(d.lost===o?' selected':'')+'>'+o+'</option>';}).join('');
+ drawLadder(d);
+ f('addp').onclick=function(){
+  var a=num(f('ask').value), o=num(f('off').value);
+  if(!a&&!o){alert('Enter a new asking price, an offer, or both.');return;}
+  if(i===null){alert('Save the client first, then log price moves.');return;}
+  if(!S.deals[i].hist)S.deals[i].hist=[];
+  S.deals[i].hist.push({d:TD,a:a||0,o:o||0});
+  put(S);f('ask').value='';f('off').value='';drawLadder(S.deals[i]);};
+ drawStagePick(d.s||0);toggleRent();
+ document.getElementById('sdel').style.display=i===null?'none':'block';
+ document.getElementById('sheet').style.display='flex';
+}
+f('v').oninput=calcFee;f('r').oninput=calcFee;f('rent').oninput=calcFee;f('ty').onchange=toggleRent;
+document.getElementById('adddeal').onclick=function(){openSheet(null);};
+document.getElementById('sc').onclick=function(){document.getElementById('sheet').style.display='none';};
+document.getElementById('sdel').onclick=function(){if(EDIT!==null&&confirm('Delete this deal?')){toTrash('deal',S.deals[EDIT]);S.deals.splice(EDIT,1);put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawMore();}};
+document.getElementById('sv').onclick=function(){
+ var w=f('w').value.trim(); if(!w){alert('Client name is needed');return;}
+ var o={w:w,ph:f('ph').value.trim(),u:f('u').value.trim(),v:num(f('v').value),r:num(f('r').value)||2,
+  s:PICK,na:f('na').value.trim(),nd:f('nd').value,src:f('src').value,n:f('n').value.trim(),
+  ty:f('ty').value,ch:f('ch').value,rent:num(f('rent').value),ref:f('ref').value.trim(),
+  lbd:num(f('lbd').value),lmax:num(f('lmax').value),lcom:f('lcom').value.trim(),
+  npd:f('npd').value,npa:num(f('npa').value),
+  lost:(PICK===LOST?f('lost').value:''),
+  hist:(EDIT!==null&&S.deals[EDIT].hist)?S.deals[EDIT].hist:[]};
+ if(EDIT===null)S.deals.push(o);else S.deals[EDIT]=o;
+ put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawMore();
+};
+
+function psf(u){return u.bua&&u.pr?Math.round(u.pr/u.bua):0;}
+var UF='All units', UQ='', USEG='All';
+function drawUnitSeg(){
+ var opts=['All','For sale','For rent'];
+ document.getElementById('useg').innerHTML=opts.map(function(o){return '<b class="'+(USEG===o?'on':'')+'" data-s="'+o+'">'+o+'</b>';}).join('');
+ document.querySelectorAll('#useg b').forEach(function(b){b.onclick=function(){USEG=b.dataset.s;UF='All units';drawUnits();};});
+}
+var USORT='A-Z';
+const USORTS=['A-Z','Price high','Price low','Biggest','Newest','Lowest psf'];
+function drawUnitSort(){
+ document.getElementById('usort').innerHTML=USORTS.map(function(o){
+  return '<b class="'+(USORT===o?'on':'')+'" data-us="'+o+'">'+o+'</b>';}).join('');
+ document.querySelectorAll('[data-us]').forEach(function(b){b.onclick=function(){
+  USORT=b.dataset.us;drawUnits();};});
+}
+function uPrice(u){return (u.lt||'Sale')==='Rent'?num(u.rent):num(u.pr);}
+function drawUnitFilters(){
+ var el=document.getElementById('ufilt'), tags=[], beds=[], coms=[];
+ S.units.forEach(function(u){
+  if(u.tag&&tags.indexOf('Type: '+u.tag)<0)tags.push('Type: '+u.tag);
+  var b='Beds: '+(u.bd?u.bd:'Studio'); if(beds.indexOf(b)<0)beds.push(b);
+  var c='Where: '+(u.com||u.p); if(u.com&&coms.indexOf(c)<0)coms.push(c);});
+ el.innerHTML=['All units'].concat(tags,beds,coms).map(function(o){return '<option'+(UF===o?' selected':'')+'>'+o+'</option>';}).join('');
+ el.onchange=function(){UF=el.value;drawUnits();};
+}
+function unitPass(u){
+ var lt=u.lt||'Sale';
+ if(USEG==='For sale'&&lt!=='Sale')return false;
+ if(USEG==='For rent'&&lt!=='Rent')return false;
+ if(UQ){var hay=(u.p+' '+u.t+' '+(u.n||'')+' '+(u.pl||'')+' '+(u.com||'')).toLowerCase();if(hay.indexOf(UQ)<0)return false;}
+ if(UF==='All units'||!UF)return true;
+ if(UF.indexOf('Type: ')===0)return u.tag===UF.slice(6);
+ if(UF.indexOf('Beds: ')===0){var v=UF.slice(6);return v==='Studio'?!u.bd:String(u.bd)===v;}
+ if(UF.indexOf('Where: ')===0)return (u.com||u.p)===UF.slice(7);
+ return true;
+}
+function drawUnits(){
+ drawUnitSeg();drawUnitFilters();drawUnitSort();
+ var list=[];S.units.forEach(function(u,i){if(unitPass(u))list.push([u,i]);});
+ list.sort(function(a,b){
+  var A=a[0], B=b[0];
+  if(USORT==='Price high')return uPrice(B)-uPrice(A);
+  if(USORT==='Price low'){
+   var pa=uPrice(A)||Infinity, pb=uPrice(B)||Infinity; return pa-pb;}
+  if(USORT==='Biggest')return (num(B.bua)||num(B.plot))-(num(A.bua)||num(A.plot));
+  if(USORT==='Lowest psf'){
+   var sa=psf(A)||Infinity, sb=psf(B)||Infinity; return sa-sb;}
+  if(USORT==='Newest')return b[1]-a[1];
+  return String(A.p||'').localeCompare(String(B.p||''),undefined,{numeric:true,sensitivity:'base'});});
+ document.getElementById('ucount').textContent=list.length+' of '+S.units.length;
+ document.getElementById('ulist').innerHTML=list.length?list.map(function(x){
+  var u=x[0], i=x[1], sp=[];
+  if(u.bd)sp.push(pvNum(u.bd+' bed')); if(u.bua)sp.push(pvNum('BUA '+u.bua.toLocaleString())); if(u.plot)sp.push(pvNum('plot '+u.plot.toLocaleString()));
+  var up=u.op?Math.round((u.pr-u.op)/u.op*100):null, isR=(u.lt||'Sale')==='Rent';
+  return '<div class="unit"><div class="h uhead" data-i="'+i+'"><div><div class="p">'+esc(pvNum(u.p))+'</div><div class="m">'+esc(pvNum(u.t))+(sp.length?' · '+sp.join(' · '):'')+'</div></div>'+
+   '<div style="text-align:right">'+(isR?
+     '<div class="pr">'+pmoney(u.rent)+'</div><div class="m">per year · '+esc(u.ch||'')+'</div>'
+    :'<div class="pr">'+pmoney(u.pr)+'</div>'+(psf(u)?'<div class="m">'+(S.priv?'••••':psf(u).toLocaleString())+' /sqft</div>':'')+
+     (up!==null?'<div class="m '+(up>=0?'up':'down')+'">'+(S.priv?'••% on OP':(up>=0?'+':'')+up+'% on OP')+'</div>':''))+'</div></div>'+
+   (u.tag?'<span class="pill">'+esc(u.tag)+'</span>':'')+
+   '<div class="d" id="det-'+i+'" style="display:none">'+
+   (isR?'<b style="color:var(--ink)">Annual rent:</b> '+pmoney(u.rent)+' · '+esc(u.ch||'')+'<br>':'')+
+   (!isR&&u.op?'<b style="color:var(--ink)">Original price:</b> '+pmoney(u.op)+' · uplift '+pmoney(u.pr-u.op)+'<br>':'')+
+   (u.h?'<b style="color:var(--ink)">Handover:</b> '+esc(pvNum(u.h))+'<br>':'')+
+   (u.pl?'<b style="color:var(--ink)">Plan:</b> '+esc(pvNum(u.pl))+'<br>':'')+esc(pvNum(pvName(u.n)))+
+   '<div class="ubtns"><button class="ub gold" data-offer="'+i+'">'+(isR?'Rental offer':'Sales offer')+'</button><button class="ub" data-fit="'+i+'">Who fits this</button></div>'+
+   '<div class="ubtns"><button class="ub" data-plan="'+i+'">'+(u.img?'Masterplan':'+ Masterplan')+'</button>'+(u.img?'<button class="ub" data-rmi="'+i+'" style="flex:0 0 42px;color:var(--bad)">✕</button>':'')+
+   '<button class="ub" data-fp="'+i+'">'+(u.fp?'Floorplan':'+ Floorplan')+'</button>'+(u.fp?'<button class="ub" data-rmf="'+i+'" style="flex:0 0 42px;color:var(--bad)">✕</button>':'')+'</div>'+
+   '<div class="ubtns"><a class="ub" href="'+mapLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Map</a><a class="ub" href="'+pfLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Listings</a><button class="ub" data-op="'+i+'">'+(u.op?'Edit OP':'+ OP')+'</button></div>'+
+   '<div class="ubtns"><button class="ub" data-sh="'+i+'">Share</button><button class="ub" data-eu="'+i+'">Edit</button><button class="ub" data-du="'+i+'">Delete</button></div>'+
+   '</div></div>';}).join(''):'<div class="hint">Nothing matches that filter.</div>';
+ document.querySelectorAll('.uhead').forEach(function(h){h.onclick=function(){var d=document.getElementById('det-'+h.dataset.i);d.style.display=d.style.display==='none'?'block':'none';};});
+ document.querySelectorAll('[data-offer]').forEach(function(b){b.onclick=function(e){e.stopPropagation();salesOffer(+b.dataset.offer);};});
+ document.querySelectorAll('[data-fit]').forEach(function(b){b.onclick=function(e){e.stopPropagation();whoFits(+b.dataset.fit);};});
+ document.querySelectorAll('[data-plan]').forEach(function(b){b.onclick=function(e){e.stopPropagation();openImg(+b.dataset.plan,'img');};});
+ document.querySelectorAll('[data-fp]').forEach(function(b){b.onclick=function(e){e.stopPropagation();openImg(+b.dataset.fp,'fp');};});
+ document.querySelectorAll('[data-op]').forEach(function(b){b.onclick=function(e){e.stopPropagation();
+  var i=+b.dataset.op,u=S.units[i],v=prompt('Original purchase price in AED',u.op||'');
+  if(v===null)return;u.op=num(String(v).replace(/[^0-9.]/g,''));put(S);drawUnits();};});
+ document.querySelectorAll('[data-rmi]').forEach(function(b){b.onclick=function(e){e.stopPropagation();removeImg(+b.dataset.rmi,'img');};});
+ document.querySelectorAll('[data-rmf]').forEach(function(b){b.onclick=function(e){e.stopPropagation();removeImg(+b.dataset.rmf,'fp');};});
+ document.querySelectorAll('[data-sh]').forEach(function(b){b.onclick=function(e){e.stopPropagation();shareUnit(+b.dataset.sh);};});
+ document.querySelectorAll('[data-eu]').forEach(function(b){b.onclick=function(e){e.stopPropagation();editUnit(+b.dataset.eu);};});
+ document.querySelectorAll('[data-du]').forEach(function(b){b.onclick=function(e){e.stopPropagation();
+  if(confirm('Delete this unit?')){toTrash('unit',S.units[+b.dataset.du]);S.units.splice(+b.dataset.du,1);put(S);drawUnits();}};});
+}
+function openImg(i,kind){
+ var u=S.units[i];
+ if(u[kind]){
+  loadImg(u,i,kind).then(function(src){
+   if(!src){alert('That image could not be found. Add it again.');u[kind]='';put(S);drawUnits();return;}
+   document.getElementById('lbimg').src=src;
+   document.getElementById('lbcap').textContent=u.p+' · '+(kind==='fp'?'floorplan':'masterplan');
+   document.getElementById('lightbox').style.display='flex';});
+  return;}
+ var pf=document.getElementById('planfile');pf.dataset.i=i;pf.dataset.kind=kind;pf.click();
+}
+function removeImg(i,kind){
+ var u=S.units[i];if(!u[kind])return;
+ if(!confirm('Remove this image?'))return;
+ if(u[kind].indexOf('data:')!==0)idbDel(u[kind]);
+ u[kind]='';put(S);drawUnits();
+}
+document.getElementById('planfile').onchange=function(){
+ var fl=this.files[0], i=+this.dataset.i, kind=this.dataset.kind, self=this; if(!fl)return;
+ var r=new FileReader();
+ r.onload=function(ev){var im=new Image();im.onload=function(){
+  var max=1200, sc=Math.min(1,max/Math.max(im.width,im.height));
+  var c=document.createElement('canvas');c.width=im.width*sc;c.height=im.height*sc;
+  c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+  var data=c.toDataURL('image/jpeg',.62), key=imgKey(i,kind);
+  idbSet(key,data).then(function(){
+   S.units[i][kind]=key; put(S); drawUnits();
+   alert((kind==='fp'?'Floorplan':'Masterplan')+' saved.');
+  }).catch(function(){
+   try{S.units[i][kind]=data;put(S);drawUnits();alert('Saved.');}
+   catch(e2){alert('Could not save the image. Try a smaller photo.');}
+  });
+ };im.src=ev.target.result;};
+ r.readAsDataURL(fl);self.value='';
+};
+function editUnit(i){var u=S.units[i];
+ u.lt=confirm('OK for a SALE listing.\nCancel for a RENTAL listing.')?'Sale':'Rent';
+ if(u.lt==='Rent'){u.rent=num(prompt('Annual rent AED',u.rent||0));u.ch=prompt('Cheques',u.ch||'2 cheques')||u.ch;}
+ u.p=prompt('Project',u.p)||u.p;u.com=prompt('Community',u.com||'')||u.com;u.t=prompt('Type',u.t)||u.t;
+ u.bd=num(prompt('Bedrooms',u.bd));u.bua=num(prompt('BUA sqft',u.bua));u.plot=num(prompt('Plot sqft',u.plot));
+ u.pr=num(prompt('Asking price AED',u.pr))||u.pr;u.op=num(prompt('Original price AED',u.op||0));
+ u.pl=prompt('Payment plan',u.pl)||u.pl;u.h=prompt('Handover',u.h)||u.h;
+ u.tag=prompt('Tag, e.g. Resale, Off-plan, Commercial',u.tag||'')||u.tag;u.n=prompt('Notes',u.n)||u.n;
+ put(S);drawUnits();}
+document.getElementById('addunit').onclick=function(){
+ var p=prompt('Project');if(!p)return;
+ var lt=confirm('OK for a SALE listing.\nCancel for a RENTAL listing.')?'Sale':'Rent';
+ var rent=0,ch='1 cheque';
+ if(lt==='Rent'){rent=num(prompt('Annual rent AED'));ch=prompt('Cheques, e.g. 2 cheques','2 cheques')||'1 cheque';}
+ S.units.push({lt:lt,rent:rent,ch:ch,p:p,com:prompt('Community')||'',t:prompt('Type, e.g. 3BR townhouse')||'',bd:num(prompt('Bedrooms')),
+  bua:num(prompt('BUA sqft')),plot:num(prompt('Plot sqft')),pr:num(prompt('Asking price AED')),
+  op:num(prompt('Original price AED (optional)')),pl:prompt('Payment plan')||'',h:prompt('Handover')||'',
+  n:prompt('Notes')||'',tag:prompt('Tag, e.g. Resale')||'',img:'',link:'',fp:''});
+ put(S);drawUnits();};
+function shareUnit(i){
+ var u=S.units[i], sp=[];
+ if(u.bd)sp.push(u.bd+' bedroom');if(u.bua)sp.push('BUA '+u.bua.toLocaleString()+' sqft');if(u.plot)sp.push('Plot '+u.plot.toLocaleString()+' sqft');
+ var isR=(u.lt||'Sale')==='Rent';
+ var t=u.p+'\n'+u.t+'\n'+(sp.length?sp.join('\n')+'\n':'');
+ if(isR){t+='\nAnnual rent: '+money(u.rent)+'\nCheques: '+(u.ch||'1 cheque');}
+ else{t+='\nPrice: '+money(u.pr); if(psf(u))t+='\nAED '+psf(u).toLocaleString()+' per sqft';}
+ if(!isR&&u.op)t+='\nOriginal price: '+money(u.op)+' ('+(u.pr>=u.op?'+':'')+Math.round((u.pr-u.op)/u.op*100)+'%)';
+ if(u.pl)t+='\nPayment plan: '+u.pl;
+ if(u.h)t+='\nHandover: '+u.h;
+ if(u.n)t+='\n\n'+u.n;
+ t+='\n\nWant the full breakdown? I will send it over.\n\nMustafa Saleh, Allegiance Real Estate';
+ openTool('Share this unit','<div class="hint">Ready to paste into WhatsApp.</div><textarea id="sh-t" rows="12" style="font-size:13px">'+esc(t)+'</textarea>',t);
+ setTimeout(function(){var ta=document.getElementById('sh-t');if(ta)ta.oninput=function(){COPYTEXT=ta.value;};},50);
+}
+
+var COMPS=null, CQ='';
+var FALLBACK={updated:'13 Aug 2026',communities:[
+{name:'Orania, The Valley',dev:'Emaar',type:'Townhouse',beds:[{b:3,med:2750000,psf:1421,n:52},{b:4,med:3700000,psf:1610,n:16}],
+ trend:'Peaked Q1 2026 at 1,464 psf, now about 1,387.',read:'Growth phase closing. 42% has traded, flips made a median +27.8% over 14 months.'},
+{name:'Elora, The Valley',dev:'Emaar',type:'Townhouse',beds:[{b:3,med:2550000,psf:1218,n:9},{b:4,med:3350000,psf:1285,n:7}],
+ trend:'Thin data, 16 deeds Apr to Jul 2026.',read:'Trades below Orania. DLD valuation for 3BR Type B is 2.50 to 2.58M.'},
+{name:'Rivana, The Valley',dev:'Emaar',type:'Villa',beds:[{b:3,med:3400000,psf:976,n:15},{b:4,med:3800000,psf:1107,n:106},{b:5,med:4900000,psf:1010,n:31}],
+ trend:'3BR psf up about 12% from 2024 to 2025.',read:'4 beds are the depth. Newest 3BR print is Nov 2025, not a live comp.'},
+{name:'Farm Gardens, The Valley',dev:'Emaar',type:'Villa',beds:[{b:4,med:6500000,psf:762,n:21},{b:5,med:7837500,psf:783,n:26}],
+ trend:'197 transactions since Jan 2023.',read:'Resales up a median 22% on original developer price. Only 42 of 146 owners have exited.'},
+{name:'Nima, The Valley',dev:'Emaar',type:'Villa',beds:[{b:3,med:2513888,psf:1310,n:162},{b:4,med:3109888,psf:996,n:59}],
+ trend:'221 transactions to Jul 2026.',read:'Deepest 3 bed market in The Valley. Registry holds only 34 of 206 traded units.'},
+{name:'Lillia, The Valley',dev:'Emaar',type:'Townhouse',beds:[{b:3,med:2385000,psf:1116,n:48},{b:4,med:3150000,psf:1108,n:17}],
+ trend:'65 transactions, Dec 2024 to Jul 2026.',read:'Cheapest 3 bed townhouse entry in The Valley on psf.'}]};
+function drawComps(){
+ var c=COMPS||FALLBACK;
+ document.getElementById('cupd').textContent='updated '+(c.updated||'');
+ var list=c.communities.filter(function(x){return !CQ||x.name.toLowerCase().indexOf(CQ)>=0;});
+ document.getElementById('clist').innerHTML=list.length?list.map(function(x){
+  return '<div class="comp"><div class="cn">'+esc(x.name)+'</div><div class="cd">'+esc(x.dev||'')+' · '+esc(x.type||'')+'</div>'+
+   '<div class="bedgrid">'+x.beds.map(function(b){return '<div><div class="bb">'+b.b+' bed</div><div class="bv">'+(b.med/1000000).toFixed(2)+'M</div><div class="bp">'+b.psf.toLocaleString()+' psf · n='+b.n+'</div></div>';}).join('')+'</div>'+
+   '<div class="creads"><b>Trend:</b> '+esc(x.trend||'')+'<br><b>Read:</b> '+esc(x.read||'')+'</div></div>';}).join('')
+  :'<div class="hint">No community matches.</div>';
+}
+fetch('comps.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&j.communities){COMPS=j;drawComps();}}).catch(function(){});
+
+var APPVER='v31 · 15 Aug 2026 · lowest psf sort';
+function drawObj(){
+ var L=S.deals.filter(function(d){return d.s===LOST&&d.lost;});
+ var el=document.getElementById('objbox');
+ if(L.length<3){el.innerHTML='<div class="hint">Mark dead deals as Lost and pick a reason. After a handful this tells you what is actually costing you money, using your own deals rather than industry guesses.'+(L.length?'<br><br>'+L.length+' logged so far.':'')+'</div>';return;}
+ var c={},v={};
+ L.forEach(function(d){c[d.lost]=(c[d.lost]||0)+1;v[d.lost]=(v[d.lost]||0)+dealFee(d);});
+ var ks=Object.keys(c).sort(function(a,b){return c[b]-c[a];});
+ var mx=c[ks[0]];
+ el.innerHTML='<div class="hint" style="margin-bottom:11px">'+L.length+' lost deals, '+pmoney(L.reduce(function(a,d){return a+dealFee(d);},0))+' of commission gone.</div>'+
+  ks.map(function(k){
+   return '<div class="row"><div style="flex:1"><div class="lab">'+esc(k)+'</div>'+
+   '<div style="height:5px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden;max-width:190px"><div style="width:'+Math.round(c[k]/mx*100)+'%;height:100%;background:var(--gold)"></div></div>'+
+   '<div class="tgt" style="margin-top:4px">'+pmoney(v[k])+' lost</div></div>'+
+   '<div class="val">'+c[k]+'</div></div>';}).join('');
+}
+function drawStore(){
+ var txt=JSON.stringify(S), kb=Math.round(txt.length/1024);
+ var imgs=0;S.units.forEach(function(u){if(u.img)imgs++;if(u.fp)imgs++;});
+ var pct=Math.min(100,Math.round(kb/5000*100));
+ var el=document.getElementById('storebox');
+ var ver=APPVER.split(' · ')[0];
+ el.innerHTML='<div class="row"><div><div class="lab">App version</div><div class="tgt">If this is not '+ver+', your phone is showing an old copy</div></div><div class="val hit">'+ver+'</div></div><div class="row"><div><div class="lab">App data</div><div class="tgt">'+kb+' KB of about 5,000 KB</div></div><div class="val '+(pct>80?'':'hit')+'">'+pct+'%</div></div>'+
+  '<div class="row"><div><div class="lab">Images stored</div><div class="tgt">Saved separately, plenty of room</div></div><div class="val hit">'+imgs+'</div></div>';
+ if(navigator.storage&&navigator.storage.estimate){navigator.storage.estimate().then(function(e){
+  if(!e.usage)return; var mb=(e.usage/1048576).toFixed(1), q=(e.quota/1048576).toFixed(0);
+  el.innerHTML+='<div class="row"><div><div class="lab">Total on device</div><div class="tgt">Including images</div></div><div class="val">'+mb+' MB / '+q+' MB</div></div>';});}
+}
+function drawMore(){drawStore();drawObj();
+ var due=[];S.deals.forEach(function(d,i){if(d.s<4&&d.nd&&d.nd<=TD)due.push(d);});
+ due.sort(function(a,b){return dealFee(b)-dealFee(a);});
+ document.getElementById('duelist').innerHTML=due.length?due.map(function(d){
+  return '<div class="row"><div><div class="lab">'+esc(pvName(d.w))+'</div><div class="tgt">'+esc(d.na)+'</div></div><div style="font-family:Georgia,serif;color:var(--gold);white-space:nowrap">'+money(dealFee(d))+'</div></div>';}).join('')
+  :'<div class="hint">Nothing due. Set next action dates on your deals and this becomes your call list.</div>';
+ var days=[];for(var i=0;i<7;i++)days.push(iso(new Date(Date.now()-i*864e5)));
+ function sum(k){return days.reduce(function(a,x){return a+num((S.days[x]||{})[k]);},0);}
+ var rows=[['Calls',sum('calls'),280],['Conversations',sum('convos'),70],['Meetings',sum('meets'),14],
+  ['New opportunities',sum('opps'),14],['Gym days',sum('gym'),6],['Days logged',days.filter(function(x){return S.days[x];}).length,7]];
+ document.getElementById('week').innerHTML=rows.map(function(r){
+  return '<div class="row"><div class="lab">'+r[0]+'</div><div class="val '+(r[1]>=r[2]?'hit':'')+'" style="font-size:16px">'+r[1]+'<span style="color:var(--dim);font-size:11.5px;font-weight:400"> / '+r[2]+'</span></div></div>';}).join('');
+ var refs={};
+ S.deals.forEach(function(d){if(d.ref){if(!refs[d.ref])refs[d.ref]={n:0,v:0};refs[d.ref].n++;refs[d.ref].v+=dealFee(d);}});
+ var ks=Object.keys(refs).sort(function(a,b){return refs[b].v-refs[a].v;});
+ document.getElementById('refs').innerHTML=ks.length?ks.map(function(k){
+  return '<div class="row"><div><div class="lab">'+esc(k)+'</div><div class="tgt">'+refs[k].n+' client'+(refs[k].n>1?'s':'')+' introduced</div></div><div style="font-family:Georgia,serif;color:var(--gold)">'+money(refs[k].v)+'</div></div>';}).join('')
+  :'<div class="hint">Fill in Referred by on your deals and this shows who actually grows your book. Thank the top one this month.</div>';
+}
+
+/* ---------- image store: IndexedDB, large capacity ---------- */
+var IDB=null;
+function idbOpen(){return new Promise(function(res,rej){
+ if(IDB)return res(IDB);
+ var r=indexedDB.open('dailyimgs',1);
+ r.onupgradeneeded=function(){r.result.createObjectStore('img');};
+ r.onsuccess=function(){IDB=r.result;res(IDB);};
+ r.onerror=function(){rej(r.error);};});}
+function idbSet(k,v){return idbOpen().then(function(db){return new Promise(function(res,rej){
+ var t=db.transaction('img','readwrite');t.objectStore('img').put(v,k);
+ t.oncomplete=function(){res(true);};t.onerror=function(){rej(t.error);};});});}
+function idbGet(k){return idbOpen().then(function(db){return new Promise(function(res){
+ var t=db.transaction('img','readonly'),q=t.objectStore('img').get(k);
+ q.onsuccess=function(){res(q.result||'');};q.onerror=function(){res('');};});});}
+function idbDel(k){return idbOpen().then(function(db){return new Promise(function(res){
+ var t=db.transaction('img','readwrite');t.objectStore('img').delete(k);t.oncomplete=function(){res(true);};});});}
+function imgKey(i,kind){return 'u'+i+'_'+kind;}
+function hasImg(u,kind){return !!u[kind];}
+function loadImg(u,i,kind){
+ var v=u[kind];
+ if(!v)return Promise.resolve('');
+ if(v.indexOf('data:')===0)return Promise.resolve(v);
+ return idbGet(v);
+}
+
+var TS=document.getElementById('tsheet'), TB=document.getElementById('t-body'), COPYTEXT='';
+function defaultCopy(){navigator.clipboard.writeText(COPYTEXT).then(function(){
+ var b=document.getElementById('tcopy');b.textContent='Copied ✓';setTimeout(function(){b.textContent='Copy';},1400);
+}).catch(function(){prompt('Copy this',COPYTEXT);});}
+document.getElementById('tc').onclick=function(){TS.style.display='none';};
+document.getElementById('tcopy').onclick=defaultCopy;
+function openTool(title,html,copy){
+ document.getElementById('t-title').textContent=title;TB.innerHTML=html;COPYTEXT=copy||'';
+ var b=document.getElementById('tcopy');b.textContent='Copy';b.onclick=defaultCopy;
+ TS.style.display='flex';TS.querySelector('.inner').scrollTop=0;
+}
+document.getElementById('t-fee').onclick=function(){
+ openTool('Deal calculator','<label>Property price AED</label><input id="c-p" type="number" inputmode="numeric" placeholder="2750000">'+
+  '<div class="two"><div><label>Your commission %</label><input id="c-r" type="number" step="0.5" value="2"></div>'+
+  '<div><label>Agency fee % to buyer</label><input id="c-a" type="number" step="0.5" value="2"></div></div><div class="res" id="c-out"></div>','');
+ var go=function(){
+  var P=num(document.getElementById('c-p').value),R=num(document.getElementById('c-r').value),A=num(document.getElementById('c-a').value);
+  var fee=P*R/100, vat=fee*.05, dld=P*.04, ag=P*A/100, agv=ag*.05, trust=4200, tot=P+dld+ag+agv+trust;
+  COPYTEXT='Price '+money(P)+'\nDLD 4% '+money(dld)+'\nAgency '+A+'% + VAT '+money(ag+agv)+'\nTrustee '+money(trust)+'\nTotal outlay '+money(tot);
+  document.getElementById('c-out').innerHTML=
+   '<div class="row"><div class="lab">Your gross fee</div><div class="v2">'+money(fee)+'</div></div>'+
+   '<div class="row"><div class="lab">Fee incl VAT</div><div class="v2">'+money(fee+vat)+'</div></div>'+
+   '<div class="row"><div class="lab">Client DLD 4%</div><div class="v2">'+money(dld)+'</div></div>'+
+   '<div class="row"><div class="lab">Client agency + VAT</div><div class="v2">'+money(ag+agv)+'</div></div>'+
+   '<div class="row"><div class="lab">Trustee</div><div class="v2">'+money(trust)+'</div></div>'+
+   '<div class="row tot"><div class="lab">Client total outlay</div><div class="v2">'+money(tot)+'</div></div>';};
+ ['c-p','c-r','c-a'].forEach(function(id){document.getElementById(id).oninput=go;});go();};
+
+document.getElementById('t-plan').onclick=function(){
+ openTool('Payment plan builder','<label>List price AED</label><input id="p-p" type="number" inputmode="numeric" placeholder="1300000">'+
+  '<div class="two"><div><label>Discount %</label><input id="p-d" type="number" value="0"></div>'+
+  '<div><label>DLD</label><select id="p-w"><option value="1">Waived</option><option value="0">4% payable</option></select></div></div>'+
+  '<div class="two"><div><label>Down payment %</label><input id="p-dp" type="number" value="20"></div>'+
+  '<div><label>Handover %</label><input id="p-ho" type="number" value="50"></div></div>'+
+  '<div class="two"><div><label>Monthly %</label><input id="p-m" type="number" step="0.25" value="1"></div>'+
+  '<div><label>Months</label><input id="p-n" type="number" value="30"></div></div><div class="sched" id="p-out"></div>','');
+ var go=function(){
+  var L=num(document.getElementById('p-p').value), D=num(document.getElementById('p-d').value),
+   W=document.getElementById('p-w').value==='1', DP=num(document.getElementById('p-dp').value),
+   HO=num(document.getElementById('p-ho').value), M=num(document.getElementById('p-m').value), N=num(document.getElementById('p-n').value);
+  var net=L*(1-D/100), start=new Date(), rows=[];
+  rows.push([start,'Down payment '+DP+'%',net*DP/100]);
+  if(!W)rows.push([start,'DLD 4%',net*.04]);
+  for(var i=1;i<=N;i++){var d=new Date(start);d.setMonth(d.getMonth()+i);rows.push([d,'Monthly '+M+'%',net*M/100]);}
+  var hd=new Date(start);hd.setMonth(hd.getMonth()+N+1);
+  rows.push([hd,'On handover '+HO+'%',net*HO/100]);
+  var total=rows.reduce(function(a,r){return a+r[2];},0);
+  var txt='PAYMENT PLAN\n'+(D?'List '+money(L)+', less '+D+'% discount\n':'')+'Your price '+money(net)+'\n'+(W?'DLD 4% waived\n':'')+'\n';
+  document.getElementById('p-out').innerHTML=rows.map(function(r){
+   txt+=r[0].toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+'  '+r[1]+'  '+money(r[2])+'\n';
+   return '<div class="row '+(r[2]>net*0.05?'big2':'')+'"><div class="lab">'+r[0].toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+' · '+r[1]+'</div><div class="v2">'+money(r[2])+'</div></div>';
+  }).join('')+'<div class="row tot"><div class="lab">Total</div><div class="v2">'+money(total)+'</div></div>';
+  txt+='\nTotal '+money(total);COPYTEXT=txt;};
+ ['p-p','p-d','p-dp','p-ho','p-m','p-n'].forEach(function(id){document.getElementById(id).oninput=go;});
+ document.getElementById('p-w').onchange=go;go();};
+
+document.getElementById('t-tmpl').onclick=function(){
+ openTool('Message templates','<div class="hint">Tap one to copy. Replace {name}, {unit} and {price} before sending.</div>'+
+  TEMPLATES.map(function(t,i){return '<div class="tmpl" data-t="'+i+'"><div class="tt">'+t[0]+'</div><div class="tp">'+esc(t[1].slice(0,90))+'…</div></div>';}).join(''),'');
+ setTimeout(function(){document.querySelectorAll('.tmpl').forEach(function(el){el.onclick=function(){COPYTEXT=TEMPLATES[+el.dataset.t][1];defaultCopy();};});},50);};
+function pickTemplate(i){
+ var d=S.deals[i];
+ openTool('Message for '+d.w,'<div class="hint">Filled in for this client. Tap one to copy.</div>'+
+  TEMPLATES.map(function(t,j){return '<div class="tmpl" data-t="'+j+'"><div class="tt">'+t[0]+'</div></div>';}).join(''),'');
+ setTimeout(function(){document.querySelectorAll('.tmpl').forEach(function(el){el.onclick=function(){
+  COPYTEXT=TEMPLATES[+el.dataset.t][1].split('{name}').join(d.w.split(' ')[0]).split('{unit}').join(d.u||'the unit').split('{price}').join(money(d.v));
+  defaultCopy();};});},50);}
+document.getElementById('t-import').onclick=function(){
+ openTool('Import clients','<div class="hint">Paste the client list Claude gives you. This adds to your pipeline and skips anyone already there.</div><textarea id="imp-t" rows="7" placeholder="Paste here"></textarea><div id="imp-r" class="calc"></div>','');
+ setTimeout(function(){var ta=document.getElementById('imp-t');
+  ta.oninput=function(){try{var a=JSON.parse(ta.value);document.getElementById('imp-r').textContent='Ready to add '+a.length+' clients.';}catch(e){document.getElementById('imp-r').textContent='';}};},50);
+ var b=document.getElementById('tcopy');b.textContent='Add to pipeline';
+ b.onclick=function(){try{
+  var arr=JSON.parse(document.getElementById('imp-t').value), have={}, added=0;
+  S.deals.forEach(function(d){have[d.w.trim().toLowerCase()]=1;});
+  arr.forEach(function(o){var key=String(o.w||'').trim().toLowerCase(); if(have[key])return;
+   S.deals.push({w:o.w||'',ph:o.ph||'',u:o.u||'',v:num(o.v),r:num(o.r)||2,s:num(o.s),na:o.na||'',nd:o.nd||'',
+    src:o.src||'Referral',n:o.n||'',ty:o.ty||'Ready',ch:o.ch||'1 cheque',rent:num(o.rent),ref:o.ref||''});added++;});
+  put(S);drawDeals();drawHero();drawMore();alert(added+' clients added.');TS.style.display='none';
+ }catch(e){alert('That did not look like a valid client list.');}};};
+function allImgKeys(){var ks=[];S.units.forEach(function(u){['img','fp'].forEach(function(k){
+ if(u[k]&&u[k].indexOf('data:')!==0)ks.push(u[k]);});});return ks;}
+function buildBackup(){ flushPut(); S.bkAt=new Date().toISOString(); put(S); setTimeout(drawNag,50);
+ var ks=allImgKeys();
+ return Promise.all(ks.map(function(k){return idbGet(k).then(function(v){return [k,v];});}))
+  .then(function(pairs){var imgs={};pairs.forEach(function(p){if(p[1])imgs[p[0]]=p[1];});
+   return JSON.stringify({v:8,at:new Date().toISOString(),S:S,imgs:imgs});});}
+document.getElementById('t-backup').onclick=function(){
+ openTool('Backup','<div class="hint">Building your backup file. Everything is included, deals, units, off-plan, diary, daily history and all your images.</div><div class="hint" id="bkst" style="margin-top:10px;color:var(--gold)">Working...</div><button class="btnfull" id="bkgo" style="margin-top:14px" disabled>Save backup file</button>','');
+ document.getElementById('tcopy').textContent='Close';
+ buildBackup().then(function(txt){
+  var kb=Math.round(txt.length/1024);
+  var name='daily-backup-'+TD+'.json';
+  document.getElementById('bkst').textContent=kb>1024?(kb/1024).toFixed(1)+' MB ready':kb+' KB ready';
+  var b=document.getElementById('bkgo'); b.disabled=false;
+  b.onclick=function(){
+   var blob=new Blob([txt],{type:'application/json'});
+   if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],name,{type:'application/json'})]})){
+    navigator.share({files:[new File([blob],name,{type:'application/json'})],title:'Daily backup'}).catch(function(){});
+    return;}
+   var url=URL.createObjectURL(blob), a=document.createElement('a');
+   a.href=url;a.download=name;document.body.appendChild(a);a.click();
+   setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);
+  };
+ }).catch(function(){document.getElementById('bkst').textContent='Could not build the backup.';});
+};
+document.getElementById('t-restore').onclick=function(){
+ openTool('Restore','<div class="hint">Choose a backup file. This replaces everything currently in the app, so take a fresh backup first if you are not sure.</div><input type="file" id="rsfile" accept="application/json,.json" style="margin-top:14px"><div class="hint" id="rsst" style="margin-top:10px"></div>','');
+ document.getElementById('tcopy').textContent='Close';
+ document.getElementById('rsfile').onchange=function(){
+  var f=this.files[0]; if(!f)return;
+  var st=document.getElementById('rsst'); st.textContent='Reading...';
+  var r=new FileReader();
+  r.onload=function(ev){
+   var o; try{o=JSON.parse(ev.target.result);}catch(e){st.textContent='That file is not a valid backup.';return;}
+   var D=o.S||o;
+   if(!D||(!D.days&&!D.deals&&!D.units)){st.textContent='That file is not a Daily backup.';return;}
+   if(!confirm('Replace everything in the app with this backup?'))return;
+   var imgs=o.imgs||{}, ks=Object.keys(imgs);
+   Promise.all(ks.map(function(k){return idbSet(k,imgs[k]).catch(function(){});}))
+    .then(function(){
+     S=D; if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[];
+     if(!S.op)S.op=[]; if(!S.diary)S.diary=[]; if(S.priv===undefined)S.priv=0;
+     try{put(S);flushPut();}catch(e){alert('Restored, but phone storage is tight. Some data may not have saved.');}
+     alert('Restored. Reloading.'); location.reload();});
+  };
+  r.onerror=function(){st.textContent='Could not read that file.';};
+  r.readAsText(f);
+ };
+};
+
+function salesOffer(i){
+ var u=S.units[i];
+ if((u.lt||'Sale')==='Rent'){return rentalOffer(i);}
+ openTool('Sales offer','<div class="hint">'+esc(u.p)+'</div>'+
+  '<label>Offer price AED</label><input id="so-p" type="number" inputmode="numeric" value="'+(u.pr||'')+'">'+
+  '<div class="two"><div><label>Agency fee %</label><input id="so-a" type="number" step="0.5" value="2"></div>'+
+  '<div><label>DLD</label><select id="so-d"><option value="4">4% payable</option><option value="0">Waived</option></select></div></div>'+
+  '<div class="two"><div><label>Trustee AED</label><input id="so-t" type="number" value="4200"></div>'+
+  '<div><label>Admin / NOC</label><select id="so-x"><option value="3000">3,000</option><option value="5250">5,250</option><option value="0">None</option></select></div></div>'+
+  '<div class="res" id="so-out"></div>'+
+  '<button class="addbtn" id="so-pdf" style="border-style:solid;border-color:var(--gold);color:var(--gold)">Generate PDF to send</button>','');
+ function vals(){return {P:num(document.getElementById('so-p').value),A:num(document.getElementById('so-a').value),
+  D:num(document.getElementById('so-d').value),T:num(document.getElementById('so-t').value),X:num(document.getElementById('so-x').value)};}
+ function go(){
+  var v=vals(), dld=v.P*v.D/100, ag=v.P*v.A/100, agv=ag*.05, total=v.P+dld+ag+agv+v.T+v.X, sp=[];
+  if(u.bd)sp.push(u.bd+' bedroom');if(u.bua)sp.push('BUA '+u.bua.toLocaleString()+' sqft');if(u.plot)sp.push('Plot '+u.plot.toLocaleString()+' sqft');
+  var txt='SALES OFFER\n'+u.p+'\n'+u.t+'\n'+(sp.length?sp.join(' · ')+'\n':'');
+  txt+='\nPRICE\nProperty price: '+money(v.P)+'\n';
+  if(psf(u))txt+='AED '+psf(u).toLocaleString()+' per sqft\n';
+  if(u.op)txt+='Original price: '+money(u.op)+' ('+(v.P>=u.op?'+':'')+Math.round((v.P-u.op)/u.op*100)+'%)\n';
+  txt+='\nFEES\n'+(v.D?'DLD '+v.D+'%: '+money(dld)+'\n':'DLD: WAIVED\n')+'Agency '+v.A+'% incl VAT: '+money(ag+agv)+'\n';
+  if(v.T)txt+='Trustee: '+money(v.T)+'\n'; if(v.X)txt+='Admin / NOC: '+money(v.X)+'\n';
+  txt+='\nTOTAL PAYABLE: '+money(total)+'\n';
+  if(u.pl)txt+='\nPAYMENT PLAN\n'+u.pl+'\n'; if(u.h)txt+='Handover: '+u.h+'\n';
+  txt+='\nFigures are indicative and confirmed at booking.\n\nMustafa Saleh\nAllegiance Real Estate';
+  COPYTEXT=txt;
+  document.getElementById('so-out').innerHTML=
+   '<div class="row"><div class="lab">Property price</div><div class="v2">'+money(v.P)+'</div></div>'+
+   (v.D?'<div class="row"><div class="lab">DLD '+v.D+'%</div><div class="v2">'+money(dld)+'</div></div>':'<div class="row"><div class="lab">DLD</div><div class="v2" style="color:var(--ok)">WAIVED</div></div>')+
+   '<div class="row"><div class="lab">Agency '+v.A+'% incl VAT</div><div class="v2">'+money(ag+agv)+'</div></div>'+
+   (v.T?'<div class="row"><div class="lab">Trustee</div><div class="v2">'+money(v.T)+'</div></div>':'')+
+   (v.X?'<div class="row"><div class="lab">Admin / NOC</div><div class="v2">'+money(v.X)+'</div></div>':'')+
+   '<div class="row tot"><div class="lab">Total payable</div><div class="v2">'+money(total)+'</div></div>';
+ }
+ ['so-p','so-a','so-t'].forEach(function(id){document.getElementById(id).oninput=go;});
+ document.getElementById('so-d').onchange=go;document.getElementById('so-x').onchange=go;
+ document.getElementById('so-pdf').onclick=function(){
+  var v=vals(), dld=v.P*v.D/100, ag=v.P*v.A/100, agv=ag*.05, total=v.P+dld+ag+agv+v.T+v.X, sp=[];
+  if(u.bd)sp.push(u.bd+' bedroom');if(u.bua)sp.push('BUA '+u.bua.toLocaleString()+' sqft');if(u.plot)sp.push('Plot '+u.plot.toLocaleString()+' sqft');
+  function row(l,val,c){return '<tr class="'+(c||'')+'"><td>'+l+'</td><td class="r">'+val+'</td></tr>';}
+  var h='<div class="ph"><h1>'+esc(u.p)+'</h1><div class="sub2">'+esc(u.t)+(sp.length?' &middot; '+sp.join(' &middot; '):'')+'</div></div>';
+  h+='<h3>Price</h3><table>'+row('Property price',money(v.P));
+  if(psf(u))h+=row('Price per sqft','AED '+psf(u).toLocaleString());
+  if(u.op)h+=row('Original price',money(u.op)+' ('+(v.P>=u.op?'+':'')+Math.round((v.P-u.op)/u.op*100)+'%)');
+  h+='</table><h3>Fees</h3><table>'+(v.D?row('DLD '+v.D+'%',money(dld)):row('DLD','Waived'))+
+   row('Agency fee '+v.A+'% incl VAT',money(ag+agv))+(v.T?row('Trustee office',money(v.T)):'')+(v.X?row('Admin / NOC',money(v.X)):'')+
+   row('Total payable',money(total),'tot')+'</table>';
+  if(u.pl||u.h)h+='<h3>Terms</h3><table>'+(u.pl?row('Payment plan',esc(u.pl)):'')+(u.h?row('Handover',esc(u.h)):'')+'</table>';
+  if(u.n)h+='<h3>Notes</h3><div class="note2">'+esc(u.n)+'</div>';
+  var tail='<div class="foot2">Figures are indicative and confirmed at the point of booking. Prepared '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'.<br><b>Mustafa Saleh</b> &middot; Allegiance Real Estate &middot; Dubai</div>';
+  Promise.all([loadImg(u,i,'img'),loadImg(u,i,'fp')]).then(function(im){
+   if(im[0])h+='<figure><img src="'+im[0]+'"><figcaption>Masterplan &middot; unit position</figcaption></figure>';
+   if(im[1])h+='<figure><img src="'+im[1]+'"><figcaption>Floorplan</figcaption></figure>';
+   document.getElementById('printwrap').innerHTML=h+tail;
+   setTimeout(function(){window.print();},250);});
+ };
+ go();
+}
+
+function rentalOffer(i){
+ var u=S.units[i];
+ openTool('Rental offer','<div class="hint">'+esc(u.p)+'</div>'+
+  '<label>Annual rent AED</label><input id="ro-r" type="number" inputmode="numeric" value="'+(u.rent||'')+'">'+
+  '<div class="two"><div><label>Cheques</label><select id="ro-c"></select></div>'+
+  '<div><label>Agency fee %</label><input id="ro-a" type="number" step="0.5" value="5"></div></div>'+
+  '<div class="two"><div><label>Security deposit %</label><input id="ro-s" type="number" step="1" value="5"></div>'+
+  '<div><label>Ejari AED</label><input id="ro-e" type="number" value="220"></div></div>'+
+  '<div class="res" id="ro-out"></div>'+
+  '<button class="addbtn" id="ro-pdf" style="border-style:solid;border-color:var(--gold);color:var(--gold)">Generate PDF to send</button>','');
+ fillSel(document.getElementById('ro-c'),CHEQ);
+ document.getElementById('ro-c').value=u.ch||'2 cheques';
+ function go(){
+  var R=num(document.getElementById('ro-r').value), A=num(document.getElementById('ro-a').value),
+   D=num(document.getElementById('ro-s').value), E=num(document.getElementById('ro-e').value),
+   C=document.getElementById('ro-c').value, nc=parseInt(C)||1;
+  var ag=R*A/100, agv=ag*.05, dep=R*D/100, upfront=Math.round(R/nc)+ag+agv+dep+E;
+  var sp=[];if(u.bd)sp.push(u.bd+' bedroom');if(u.bua)sp.push('BUA '+u.bua.toLocaleString()+' sqft');
+  var txt='RENTAL OFFER\n'+u.p+'\n'+u.t+'\n'+(sp.length?sp.join(' · ')+'\n':'');
+  txt+='\nRENT\nAnnual rent: '+money(R)+'\nPayment: '+C+' of '+money(R/nc)+'\n';
+  txt+='\nUPFRONT\nFirst cheque: '+money(R/nc)+'\nAgency fee '+A+'% incl VAT: '+money(ag+agv)+'\nSecurity deposit '+D+'%: '+money(dep)+'\nEjari: '+money(E)+'\n';
+  txt+='\nTOTAL TO MOVE IN: '+money(upfront)+'\n';
+  if(u.h)txt+='\nAvailability: '+u.h+'\n';
+  if(u.n)txt+='\n'+u.n+'\n';
+  txt+='\nDeposit is refundable at the end of the tenancy, subject to condition.\n\nMustafa Saleh\nAllegiance Real Estate';
+  COPYTEXT=txt;
+  document.getElementById('ro-out').innerHTML=
+   '<div class="row"><div class="lab">Annual rent</div><div class="v2">'+money(R)+'</div></div>'+
+   '<div class="row"><div class="lab">'+C+', each</div><div class="v2">'+money(R/nc)+'</div></div>'+
+   '<div class="row"><div class="lab">Agency '+A+'% incl VAT</div><div class="v2">'+money(ag+agv)+'</div></div>'+
+   '<div class="row"><div class="lab">Deposit '+D+'%</div><div class="v2">'+money(dep)+'</div></div>'+
+   '<div class="row"><div class="lab">Ejari</div><div class="v2">'+money(E)+'</div></div>'+
+   '<div class="row tot"><div class="lab">Total to move in</div><div class="v2">'+money(upfront)+'</div></div>';
+ }
+ ['ro-r','ro-a','ro-s','ro-e'].forEach(function(id){document.getElementById(id).oninput=go;});
+ document.getElementById('ro-c').onchange=go;
+ document.getElementById('ro-pdf').onclick=function(){
+  var R=num(document.getElementById('ro-r').value), A=num(document.getElementById('ro-a').value),
+   D=num(document.getElementById('ro-s').value), E=num(document.getElementById('ro-e').value),
+   C=document.getElementById('ro-c').value, nc=parseInt(C)||1;
+  var ag=R*A/100, agv=ag*.05, dep=R*D/100, upfront=Math.round(R/nc)+ag+agv+dep+E, sp=[];
+  if(u.bd)sp.push(u.bd+' bedroom');if(u.bua)sp.push('BUA '+u.bua.toLocaleString()+' sqft');
+  function row(l,val,c){return '<tr class="'+(c||'')+'"><td>'+l+'</td><td class="r">'+val+'</td></tr>';}
+  var h='<div class="ph"><h1>'+esc(u.p)+'</h1><div class="sub2">'+esc(u.t)+(sp.length?' &middot; '+sp.join(' &middot; '):'')+' &middot; For rent</div></div>';
+  h+='<h3>Rent</h3><table>'+row('Annual rent',money(R))+row('Payment terms',C)+row('Each cheque',money(R/nc))+'</table>';
+  h+='<h3>Move in costs</h3><table>'+row('First cheque',money(R/nc))+row('Agency fee '+A+'% incl VAT',money(ag+agv))+
+   row('Security deposit '+D+'%',money(dep))+row('Ejari registration',money(E))+row('Total to move in',money(upfront),'tot')+'</table>';
+  if(u.h)h+='<h3>Availability</h3><div class="note2">'+esc(u.h)+'</div>';
+  if(u.n)h+='<h3>Notes</h3><div class="note2">'+esc(u.n)+'</div>';
+  var tail2='<div class="foot2">Security deposit is refundable at the end of the tenancy, subject to condition. Figures are indicative and confirmed on signing. Prepared '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'.<br><b>Mustafa Saleh</b> &middot; Allegiance Real Estate &middot; Dubai</div>';
+  Promise.all([loadImg(u,i,'img'),loadImg(u,i,'fp')]).then(function(im){
+   if(im[0])h+='<figure><img src="'+im[0]+'"><figcaption>Masterplan &middot; unit position</figcaption></figure>';
+   if(im[1])h+='<figure><img src="'+im[1]+'"><figcaption>Floorplan</figcaption></figure>';
+   document.getElementById('printwrap').innerHTML=h+tail2;
+   setTimeout(function(){window.print();},250);});
+ };
+ go();
+}
+
+document.getElementById('moved').value=day.moved||'';
+document.getElementById('comm').value=day.comm||'';
+document.getElementById('fix').value=day.fix||'';
+document.getElementById('save').onclick=function(){
+ day.moved=document.getElementById('moved').value;
+ day.comm=num(document.getElementById('comm').value);
+ day.fix=document.getElementById('fix').value;
+ S.days[TD]=day;put(S);drawHero();drawEarn();drawMap();drawStreak();drawMore();
+ var b=document.getElementById('save');b.textContent='Saved ✓';setTimeout(function(){b.textContent='Save today';},1400);
+};
+document.getElementById('dq').oninput=function(e){DQ=e.target.value.trim().toLowerCase();drawDeals();};
+document.getElementById('uq').oninput=function(e){UQ=e.target.value.trim().toLowerCase();drawUnits();};
+document.getElementById('cq').oninput=function(e){CQ=e.target.value.trim().toLowerCase();drawComps();};
+drawStockSeg();drawNav();drawNums();drawTogs();drawScore();drawStreak();drawHero();drawEarn();drawDeals();drawDealSeg();drawLater();drawUpNext();drawMoves();drawMap();drawNag();drawNet();drawEye();DREW={};
+</script>
+</body>
+</html>

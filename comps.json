@@ -1,0 +1,229 @@
+{
+ "updated": "2026-08-13",
+ "communities": [
+  {
+   "name": "Orania, The Valley",
+   "dev": "Emaar",
+   "type": "Townhouse",
+   "beds": [
+    {
+     "b": 3,
+     "med": 2750000,
+     "psf": 1421,
+     "n": 52
+    },
+    {
+     "b": 4,
+     "med": 3700000,
+     "psf": 1610,
+     "n": 16
+    }
+   ],
+   "trend": "Peaked Q1 2026 at 1,464 psf, now ~1,387. Down about 5% off peak.",
+   "read": "Capital growth phase closing. 42% of the community has traded, flippers made a median +27.8% over 14 months. Sell from strength, buy on negotiation.",
+   "last": [
+    [
+     "73",
+     "22-Jul-26",
+     2680000
+    ],
+    [
+     "212",
+     "22-Jul-26",
+     2780000
+    ],
+    [
+     "6",
+     "10-Jul-26",
+     2600000
+    ]
+   ]
+  },
+  {
+   "name": "Elora, The Valley",
+   "dev": "Emaar",
+   "type": "Townhouse",
+   "beds": [
+    {
+     "b": 3,
+     "med": 2550000,
+     "psf": 1218,
+     "n": 9
+    },
+    {
+     "b": 4,
+     "med": 3350000,
+     "psf": 1285,
+     "n": 7
+    }
+   ],
+   "trend": "Thin data, 16 title deeds Apr to Jul 2026. Flat.",
+   "read": "Trades below Orania. DLD valuation for 3BR Type B 2,180 sqft is 2.50 to 2.58M. Anything above 2.6M needs a specific reason.",
+   "last": [
+    [
+     "362",
+     "17-Jul-26",
+     3350000
+    ]
+   ]
+  },
+  {
+   "name": "Rivana, The Valley",
+   "dev": "Emaar",
+   "type": "Villa",
+   "beds": [
+    {
+     "b": 3,
+     "med": 3400000,
+     "psf": 976,
+     "n": 15
+    },
+    {
+     "b": 4,
+     "med": 3800000,
+     "psf": 1107,
+     "n": 106
+    },
+    {
+     "b": 5,
+     "med": 4900000,
+     "psf": 1010,
+     "n": 31
+    }
+   ],
+   "trend": "3BR psf up from 945 in 2024 to 1,055 in 2025, about +12%.",
+   "read": "4 beds are the depth here, 3 beds are rare and the newest 3BR print is Nov 2025 so do not quote them as live comps.",
+   "last": [
+    [
+     "431",
+     "05-Nov-25",
+     3550000
+    ],
+    [
+     "412",
+     "21-Oct-25",
+     3450000
+    ],
+    [
+     "450",
+     "23-Feb-26",
+     5450000
+    ]
+   ]
+  },
+  {
+   "name": "Farm Gardens, The Valley",
+   "dev": "Emaar",
+   "type": "Villa",
+   "beds": [
+    {
+     "b": 4,
+     "med": 6500000,
+     "psf": 762,
+     "n": 21
+    },
+    {
+     "b": 5,
+     "med": 7837500,
+     "psf": 783,
+     "n": 26
+    }
+   ],
+   "trend": "197 transactions since Jan 2023. 146 developer sales, 51 owner resales.",
+   "read": "Resales are up a median 22% on original developer price, range +4% to +48%. 5 beds sit on 10,000 sqft plots, 4 beds 8,500 to 9,800. Only 42 of 146 owners have exited.",
+   "last": [
+    [
+     "112",
+     "18-Feb-26",
+     8600000
+    ],
+    [
+     "76",
+     "15-Jan-26",
+     7700000
+    ],
+    [
+     "28",
+     "22-May-26",
+     7100000
+    ]
+   ]
+  },
+  {
+   "name": "Nima, The Valley",
+   "dev": "Emaar",
+   "type": "Villa",
+   "beds": [
+    {
+     "b": 3,
+     "med": 2513888,
+     "psf": 1310,
+     "n": 162
+    },
+    {
+     "b": 4,
+     "med": 3109888,
+     "psf": 996,
+     "n": 59
+    }
+   ],
+   "trend": "221 transactions to Jul 2026.",
+   "read": "Deepest 3 bed market in The Valley. Registry only holds 34 of 206 traded units, so most owners here you cannot call yet.",
+   "last": [
+    [
+     "85",
+     "22-Jul-26",
+     2314888
+    ],
+    [
+     "36",
+     "07-Jul-26",
+     2750000
+    ],
+    [
+     "473",
+     "06-Jul-26",
+     2511888
+    ]
+   ]
+  },
+  {
+   "name": "Lillia, The Valley",
+   "dev": "Emaar",
+   "type": "Townhouse",
+   "beds": [
+    {
+     "b": 3,
+     "med": 2385000,
+     "psf": 1116,
+     "n": 48
+    },
+    {
+     "b": 4,
+     "med": 3150000,
+     "psf": 1108,
+     "n": 17
+    }
+   ],
+   "trend": "65 transactions, Dec 2024 to Jul 2026.",
+   "read": "Cheapest 3 bed townhouse entry in The Valley on psf. 43 traded units are missing from your owner registry.",
+   "last": [
+    [
+     "345",
+     "17-Jul-26",
+     2325000
+    ],
+    [
+     "082",
+     "09-Jul-26",
+     2300000
+    ],
+    [
+     "335",
+     "09-Jul-26",
+     3100000
+    ]
+   ]
+  }
+ ]
+}
