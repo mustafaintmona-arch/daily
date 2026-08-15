@@ -1,0 +1,5 @@
+daily-backup-*.json
+daily-restore-*.json
+*.backup.json
+index_backup_*.html
+.DS_Store
