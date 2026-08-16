@@ -556,6 +556,8 @@ const pmoney=n=>S.priv?'AED •••••••':money(n);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const num=v=>Number(v||0);
 const autoDate=n=>{const d=new Date();d.setDate(d.getDate()+n);return iso(d);};
+const ddiff=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+const lastNDays=n=>{const out=[];for(let i=n-1;i>=0;i--)out.push(iso(new Date(Date.now()-i*864e5)));return out;};
 document.getElementById('dt').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
 
 
@@ -1823,7 +1825,7 @@ function drawDeals(){
   var ns=d.s+1;
   if(ns<4&&CADENCE[ns]!==undefined)d.nd=autoDate(CADENCE[ns]);
   if(ns===4){d.nd='';}
-  d.s=ns;put(S);drawDeals();drawHero();drawMore();drawNav();drawMoves();drawMap();
+  d.s=ns;d.sAt=TD;put(S);drawDeals();drawHero();drawMore();drawNav();drawMoves();drawMap();
   if(navigator.vibrate)navigator.vibrate(12);
   if(ns===4)setTimeout(function(){if(confirm('Nice one. Log the commission now?'))logComm();},120);};});
  document.querySelectorAll('[data-bk]').forEach(function(b){b.onclick=function(){
