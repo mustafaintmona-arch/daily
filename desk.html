@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Daily Desk</title>
+<link rel="icon" href="icon-192.png">
+<style>
+*{box-sizing:border-box;margin:0}
+:root{--navy:#0B1F33;--gold:#B9975B;--ink:#EDE9E1;--dim:#8C8578;--card:#12293F;--card2:#0E2334;
+ --line:#1E3A54;--ok:#4CAF7D;--bad:#D46A5E}
+body{background:var(--navy);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+ font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+button,input,select,textarea{font-family:inherit}
+.hide{display:none!important}
+header{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);
+ background:var(--card2);flex:0 0 auto}
+header h1{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600;white-space:nowrap}
+header .sp{flex:1}
+.tabs{display:flex;gap:4px;background:var(--navy);border:1px solid var(--line);border-radius:11px;padding:3px}
+.tabs b{font-size:12.5px;padding:7px 15px;border-radius:8px;color:var(--dim);font-weight:600;cursor:pointer;white-space:nowrap}
+.tabs b.on{background:var(--gold);color:var(--navy)}
+.tabs b i{font-style:normal;opacity:.6;margin-left:6px}
+.btn{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:9px;
+ padding:8px 14px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--gold);color:var(--gold)}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:600}
+.pill{font-size:11px;color:var(--dim);white-space:nowrap}
+.pill b{color:var(--gold);font-weight:600}
+main{flex:1;overflow:auto}
+.empty{max-width:620px;margin:70px auto;text-align:center;padding:0 20px}
+.empty h2{font-family:Georgia,serif;font-size:26px;margin-bottom:12px;font-weight:400}
+.empty p{color:var(--dim);font-size:14px;line-height:1.7;margin-bottom:22px}
+.drop{border:2px dashed var(--line);border-radius:16px;padding:44px 20px;color:var(--dim);cursor:pointer}
+.drop.over{border-color:var(--gold);background:rgba(185,151,91,.07);color:var(--gold)}
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:13px}
+thead th{position:sticky;top:0;z-index:5;background:var(--card2);border-bottom:1px solid var(--line);
+ text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+ font-weight:600;padding:10px 9px;white-space:nowrap}
+tbody td{border-bottom:1px solid var(--line);padding:0;vertical-align:middle}
+tbody tr:hover td{background:rgba(255,255,255,.02)}
+tbody tr.dead td{opacity:.45}
+td input,td select{width:100%;background:transparent;border:0;color:var(--ink);padding:9px;font-size:13px;
+ outline:0;min-width:72px}
+td input:focus,td select:focus{background:var(--card);box-shadow:inset 0 0 0 1px var(--gold);border-radius:4px}
+td select{cursor:pointer}
+td select option{background:var(--card)}
+td.num input{text-align:right;font-variant-numeric:tabular-nums}
+td.calc{padding:9px;text-align:right;font-family:Georgia,serif;color:var(--gold);white-space:nowrap;
+ font-variant-numeric:tabular-nums}
+td.wide input{min-width:190px}
+td.idx{padding:9px;color:var(--dim);font-size:11px;text-align:right;width:38px;position:sticky;left:0;
+ background:var(--navy);z-index:2}
+tbody tr:hover td.idx{background:var(--card2)}
+td.del{width:34px;text-align:center}
+td.del button{background:none;border:0;color:var(--dim);font-size:15px;cursor:pointer;padding:6px}
+td.del button:hover{color:var(--bad)}
+.stage0{color:#5A6B7C}.stage1{color:#3E7CA6}.stage2{color:var(--gold)}.stage3{color:#D9A64A}
+.stage4{color:var(--ok)}.stage5{color:var(--bad)}
+.bar{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--line);
+ background:var(--navy);flex-wrap:wrap;flex:0 0 auto}
+.bar input[type=text]{background:var(--card2);border:1px solid var(--line);border-radius:9px;
+ color:var(--ink);padding:8px 12px;font-size:13px;width:250px;outline:0}
+.bar input[type=text]:focus{border-color:var(--gold)}
+.bar select{background:var(--card2);border:1px solid var(--line);border-radius:9px;color:var(--ink);
+ padding:8px 10px;font-size:12.5px;outline:0;cursor:pointer}
+.sheet{position:fixed;inset:0;background:rgba(4,12,20,.72);z-index:60;display:none;
+ align-items:center;justify-content:center;padding:30px}
+.sheet.on{display:flex}
+.sheet .inner{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;
+ width:100%;max-width:860px;max-height:86vh;overflow:auto}
+.sheet h3{font-family:Georgia,serif;font-size:20px;font-weight:400;margin-bottom:6px}
+.sheet p.h{color:var(--dim);font-size:12.5px;line-height:1.6;margin-bottom:14px}
+.sheet textarea{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:11px;
+ color:var(--ink);padding:12px;font-size:13px;outline:0;resize:vertical;
+ font-family:ui-monospace,Menlo,monospace;line-height:1.6}
+.sheet textarea:focus{border-color:var(--gold)}
+.sbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.prev{margin-top:14px;border:1px solid var(--line);border-radius:11px;overflow:auto;max-height:38vh}
+.prev table{font-size:12px}
+.prev td{padding:7px 9px;border-bottom:1px solid var(--line)}
+.prev .miss{color:var(--dim)}
+.ck{width:15px;height:15px;accent-color:var(--gold);cursor:pointer;margin:0}
+td.idx{text-align:center}
+.mk{padding:18px}
+.mk .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:11px;margin-bottom:20px}
+.mk .grid div{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.mk .grid u{display:block;text-decoration:none;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.mk .grid b{font-family:Georgia,serif;font-size:21px;color:var(--gold);font-weight:400;display:block;margin-top:5px}
+.mk .grid s{display:block;text-decoration:none;font-size:10.5px;color:var(--dim);margin-top:3px}
+.mk h4{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:22px 0 10px}
+.mk table{width:100%;min-width:0}
+.mk td,.mk th{padding:8px 10px}
+.qbars{display:flex;align-items:flex-end;gap:5px;height:110px;margin-bottom:6px}
+.qbars s{flex:1;text-decoration:none;display:flex;flex-direction:column;justify-content:flex-end;height:100%;position:relative}
+.qbars s em{display:block;background:var(--gold);border-radius:4px 4px 0 0;min-height:2px;opacity:.65}
+.qbars s.pk em{opacity:1}
+.qbars s q{position:absolute;bottom:-17px;left:0;right:0;text-align:center;font-size:9px;color:var(--dim);quotes:none}
+.qwrap{padding-bottom:22px}
+.cmpt{width:100%;font-size:13px}
+.cmpt th{background:var(--card2)}
+.cmpt td{border-bottom:1px solid var(--line);padding:9px 11px}
+.cmpt td.lab{color:var(--dim);font-size:11px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.cmpt td.best{color:var(--ok)}
+.pres{position:fixed;inset:0;background:var(--navy);z-index:80;display:none;flex-direction:column;padding:40px 46px}
+.pres.on{display:flex}
+.pres .ph{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--gold);
+ padding-bottom:14px;margin-bottom:26px}
+.pres .ph h2{font-family:Georgia,serif;font-size:30px;font-weight:400}
+.pres .ph span{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.pres .body{flex:1;overflow:auto}
+.pres table{width:100%;font-size:17px}
+.pres td{padding:14px 12px;border-bottom:1px solid var(--line)}
+.pres td.lab{color:var(--dim);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.pres td.v{font-family:Georgia,serif;font-size:20px;color:var(--gold);text-align:right}
+.pres .pf{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+@media print{body>*{display:none!important}.pres{display:flex!important;position:static;background:#fff;color:#111}
+ .pres .ph h2{color:#0B1F33}.pres td.v{color:#0B1F33}.pres .pf{display:none}
+ .pres td{border-color:#ddd}.pres td.lab{color:#666}}
+.demoban{background:rgba(185,151,91,.13);border-bottom:1px solid rgba(185,151,91,.4);color:var(--gold);
+ padding:8px 18px;font-size:12px;display:flex;align-items:center;gap:12px;flex:0 0 auto}
+.demoban button{background:transparent;border:1px solid rgba(185,151,91,.5);color:var(--gold);
+ border-radius:8px;padding:5px 11px;font-size:11.5px;cursor:pointer}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--navy);
+ padding:11px 20px;border-radius:11px;font-size:13px;font-weight:600;z-index:90;opacity:0;
+ transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>Daily Desk</h1>
+  <div class="tabs" id="tabs"></div>
+  <span class="pill" id="count"></span>
+  <div class="sp"></div>
+  <span class="pill" id="src"></span>
+  <button class="btn hide" id="cmp">Compare</button>
+  <button class="btn hide" id="present">Present</button>
+  <button class="btn hide" id="paste">Paste units</button>
+  <button class="btn" id="addrow">Add row</button>
+  <button class="btn" id="load">Load backup</button>
+  <button class="btn gold" id="save">Export for phone</button>
+  <input type="file" id="file" accept="application/json,.json" class="hide">
+  <input type="file" id="mfile" accept=".csv,.tsv,text/csv,text/plain" class="hide">
+</header>
+<div class="demoban hide" id="demoban"><span>Sample data, not your real pipeline.</span><button id="demoout">Clear it and load my backup</button></div>
+<div class="bar hide" id="bar">
+  <input type="text" id="q" placeholder="Search">
+  <select id="filt"></select>
+  <span class="pill" id="hint"></span>
+</div>
+<main id="main"></main>
+<div class="sheet" id="sheet"><div class="inner">
+  <h3>Paste units</h3>
+  <p class="h" id="sh-h"></p>
+  <textarea id="sh-x" rows="9"></textarea>
+  <div id="sh-p"></div>
+  <div class="sbtns"><button class="btn" id="sh-c">Cancel</button><button class="btn gold" id="sh-ok">Add them</button></div>
+</div></div>
+<div class="pres" id="pres"></div>
+<div class="toast" id="toast"></div>
+<script>
+var KEY='desk-v1';
+var STAGES=['To call','Contacted','Interested','Agreed','Won','Lost'];
+var DTYPES=['Ready','Off-plan','Resale','Commercial','Rent','Land'];
+var CHEQ=['1 cheque','2 cheques','3 cheques','4 cheques','6 cheques','12 cheques'];
+var SRCS=['Referral','Repeat client','Portal lead','Walk in','Prospecting call','Social','Other'];
+var OBJ=['','Price','Payment plan','Mortgage or funds','Location','Developer','Timing','Spouse or family',
+ 'Wanted a discount','Bought elsewhere','Market uncertainty','Went quiet','Other'];
+var LTYPES=['Handover coming','Lease ending','Seller not now','Buyer not ready','Investor watching','Mortgage pending','Other'];
+function num(v){var n=Number(String(v==null?0:v).replace(/[^0-9.\-]/g,''));return isNaN(n)?0:n;}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function money(n){return 'AED '+Math.round(n||0).toLocaleString();}
+function iso(d){return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);}
+var TD=iso(new Date());
+var BK=null, TAB='deals', Q='', F='All';
+function dealFee(d){return d.ty==='Rent'?num(d.rent)*0.05:num(d.v)*num(d.r)/100;}
+function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');
+ clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on');},2200);}
+function persist(){if(!BK||BK.demo)return;try{localStorage.setItem(KEY,JSON.stringify(BK));}catch(e){}}
+function S(){return BK.S;}
+function loadDemo(){
+ var t=function(n){var d=new Date();d.setDate(d.getDate()+n);return iso(d);};
+ BK={demo:1,v:30,at:new Date().toISOString(),imgs:{},S:{
+  deals:[
+   {w:'A. Rahman',ph:'+971500000001',u:'Elora 3BR park backing',ty:'Resale',v:2750000,r:2,s:2,
+    na:'Close at 2.75M, rival offer at 2.65M',nd:t(0),src:'Repeat client',ref:'',n:'Wants the park unit.',
+    ch:'1 cheque',rent:0,lbd:3,lmax:2800000,lcom:'The Valley',npd:'',npa:0,lost:'',hist:[],cAt:t(-40)},
+   {w:'S. Mehta',ph:'+971500000002',u:'Sobha 4BR corner',ty:'Off-plan',v:5831000,r:2,s:1,
+    na:'Get a yes, no or not now',nd:t(-5),src:'Repeat client',ref:'A. Rahman',n:'4% DLD waived.',
+    ch:'1 cheque',rent:0,lbd:4,lmax:6000000,lcom:'The Valley, Creek Harbour',npd:'',npa:0,lost:'',hist:[],cAt:t(-60)},
+   {w:'K. Okafor',ph:'+971500000003',u:'Ready unit, mortgage',ty:'Ready',v:2000000,r:2,s:1,
+    na:'Chase the pre-approval document',nd:t(-9),src:'Referral',ref:'M. Idris',n:'Ready stock only.',
+    ch:'1 cheque',rent:0,lbd:3,lmax:2600000,lcom:'The Valley, Dubai South',npd:'',npa:0,lost:'',hist:[],cAt:t(-30)},
+   {w:'L. Fontaine',ph:'+971500000004',u:'Golf Estates lake view',ty:'Ready',v:18500000,r:2,s:3,
+    na:'Confirm the weekend viewing',nd:t(2),src:'Repeat client',ref:'',n:'Buys with a design team.',
+    ch:'1 cheque',rent:0,lbd:5,lmax:35000000,lcom:'Palm Jumeirah, Golf Estates',npd:'',npa:0,lost:'',hist:[],cAt:t(-20)},
+   {w:'D. Prasad',ph:'+971500000005',u:'Farm Gardens 5BR',ty:'Resale',v:9000000,r:2,s:0,
+    na:'',nd:'',src:'Prospecting call',ref:'',n:'Seller, needs liquidity.',
+    ch:'1 cheque',rent:0,lbd:0,lmax:0,lcom:'',npd:t(14),npa:520000,lost:'',hist:[],cAt:t(-12)},
+   {w:'R. Haddad',ph:'+971500000006',u:'Marina 1BR',ty:'Resale',v:1450000,r:2,s:5,
+    na:'',nd:'',src:'Portal lead',ref:'',n:'Went to another agent.',
+    ch:'1 cheque',rent:0,lbd:1,lmax:1500000,lcom:'Marina',npd:'',npa:0,lost:'Price',hist:[],cAt:t(-70),lostAt:t(-6)}],
+  units:[
+   {lt:'Sale',p:'Elora 104, The Valley',com:'The Valley',t:'3BR townhouse',bd:3,bua:2180,plot:1483,
+    pr:2750000,rent:0,ch:'1 cheque',op:2380000,h:'Q4 2027',pl:'60/40',n:'Backs the pocket park.',tag:'Resale',img:'',fp:'',link:''},
+   {lt:'Sale',p:'Elora 161, The Valley',com:'The Valley',t:'3BR townhouse',bd:3,bua:2180,plot:1483,
+    pr:2800000,rent:0,ch:'1 cheque',op:2410000,h:'Q4 2027',pl:'60/40',n:'',tag:'Resale',img:'',fp:'',link:''},
+   {lt:'Sale',p:'Rivana 233, The Valley',com:'The Valley',t:'3BR townhouse',bd:3,bua:2095,plot:1483,
+    pr:2850000,rent:0,ch:'1 cheque',op:0,h:'Ready',pl:'',n:'Ready to move in.',tag:'Ready',img:'',fp:'',link:''},
+   {lt:'Sale',p:'Farm Gardens 41, The Valley',com:'The Valley',t:'5BR standalone villa',bd:5,bua:5657,plot:10009,
+    pr:11000000,rent:0,ch:'1 cheque',op:6997888,h:'Ready',pl:'',n:'Asking well above the community median.',tag:'Resale',img:'',fp:'',link:''},
+   {lt:'Sale',p:'Farm Gardens 42, The Valley',com:'The Valley',t:'5BR standalone villa',bd:5,bua:5657,plot:10009,
+    pr:9000000,rent:0,ch:'1 cheque',op:7061888,h:'Ready',pl:'',n:'The only one priced sensibly.',tag:'Resale',img:'',fp:'',link:''},
+   {lt:'Sale',p:'Motor City Grade A office',com:'Motor City',t:'Office',bd:0,bua:1960,plot:0,
+    pr:5000000,rent:0,ch:'1 cheque',op:0,h:'Q1 2030',pl:'50/50',n:'G+18, only 70 offices.',tag:'Commercial',img:'',fp:'',link:''},
+   {lt:'Sale',p:'DAMAC Islands 4BR',com:'DAMAC Islands',t:'4BR townhouse',bd:4,bua:2400,plot:1800,
+    pr:3200000,rent:0,ch:'1 cheque',op:0,h:'2029',pl:'60/40',n:'',tag:'Off-plan',img:'',fp:'',link:''},
+   {lt:'Rent',p:'The Valley 3BR townhouse',com:'The Valley',t:'3BR townhouse',bd:3,bua:2100,plot:1483,
+    pr:0,rent:155000,ch:'2 cheques',op:0,h:'Available now',pl:'',n:'Near the water parks.',tag:'Rental',img:'',fp:'',link:''}],
+  later:[
+   {n:'H. Al Zaabi',ph:'+971500000011',w:'Farm Gardens 109 · listing',ty:'Seller not now',wd:t(0),v:8000000,
+    n2:'#1 HOT · a neighbour sold May-26 for AED 8,000,000'},
+   {n:'P. Nair',ph:'+971500000012',w:'Talia 131 · renewal',ty:'Lease ending',wd:t(21),v:0,
+    n2:'Renewal due, rents down about 20% in the community'},
+   {n:'B. Osei',ph:'+971500000013',w:'Murooj villa',ty:'Handover coming',wd:t(75),v:4200000,
+    n2:'Quiet asset, worth a valuation conversation'},
+   {n:'T. Suzuki',ph:'+971500000014',w:'Creek Harbour 2BR',ty:'Buyer not ready',wd:t(45),v:1800000,
+    n2:'Waiting on funds, asked to be called in six weeks'}],
+  op:[],diary:[],days:{},ledger:[],trash:[],priv:0}};
+ render();
+ document.getElementById('demoban').classList.remove('hide');
+ toast('Sample data loaded. Nothing is saved.');
+}
+document.getElementById('demoout').onclick=function(){
+ BK=null;document.getElementById('demoban').classList.add('hide');
+ try{localStorage.removeItem(KEY);}catch(e){}
+ renderEmpty();
+};
+function boot(){
+ try{var raw=localStorage.getItem(KEY); if(raw)BK=JSON.parse(raw);}catch(e){}
+ if(BK&&BK.S)render(); else renderEmpty();
+}
+function renderEmpty(){
+ document.getElementById('bar').classList.add('hide');
+ document.getElementById('tabs').innerHTML='';
+ document.getElementById('count').textContent='';
+ document.getElementById('src').textContent='';
+ document.getElementById('paste').classList.add('hide');
+ document.getElementById('main').innerHTML=
+ '<div class="empty"><h2>Load your phone backup</h2>'+
+ '<p>On your phone open Daily, go to More, tap Backup, save the file. Then drop it here.<br><br>'+
+ 'Changes stay on this laptop until you hit Export for phone, which gives you a file to restore back on the phone.</p>'+
+ '<div class="drop" id="drop">Drop the backup file here, or click to choose</div>'+
+ '<p style="margin-top:20px;font-size:13px">Just looking? <a href="#" id="demo" style="color:var(--gold)">Load sample data</a> to see how it works. Nothing real, and you can clear it in one click.</p></div>';
+ document.getElementById('demo').onclick=function(e){e.preventDefault();loadDemo();};
+ var d=document.getElementById('drop');
+ d.onclick=function(){document.getElementById('file').click();};
+ d.ondragover=function(e){e.preventDefault();d.classList.add('over');};
+ d.ondragleave=function(){d.classList.remove('over');};
+ d.ondrop=function(e){e.preventDefault();d.classList.remove('over');
+  if(e.dataTransfer.files[0])readFile(e.dataTransfer.files[0]);};
+}
+document.getElementById('load').onclick=function(){document.getElementById('file').click();};
+document.getElementById('file').onchange=function(){if(this.files[0])readFile(this.files[0]);this.value='';};
+function readFile(f){
+ var r=new FileReader();
+ r.onload=function(ev){
+  var o; try{o=JSON.parse(ev.target.result);}catch(e){toast('That file is not readable');return;}
+  var D=o.S||o;
+  if(!D||(!D.deals&&!D.units)){toast('That is not a Daily backup');return;}
+  D.deals=D.deals||[];D.units=D.units||[];D.later=D.later||[];D.op=D.op||[];
+  D.diary=D.diary||[];D.days=D.days||{};D.ledger=D.ledger||[];D.trash=D.trash||[];
+  BK={v:o.v||30,at:o.at||new Date().toISOString(),S:D,imgs:o.imgs||{}};
+  persist();document.getElementById('demoban').classList.add('hide');render();
+  toast(D.deals.length+' clients, '+D.units.length+' units, '+D.later.length+' prospects loaded');
+ };
+ r.readAsText(f);
+}
+document.getElementById('save').onclick=function(){
+ if(!BK){toast('Nothing loaded yet');return;}
+ if(BK.demo){toast('That is sample data. Load your real backup first.');return;}
+ BK.at=new Date().toISOString();
+ var blob=new Blob([JSON.stringify(BK)],{type:'application/json'});
+ var url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='daily-from-desk-'+TD+'.json';document.body.appendChild(a);a.click();
+ setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);
+ toast('Saved. Restore this file on your phone.');
+};
+var COLS={
+ deals:[
+  {k:'w',t:'Client',w:1},{k:'ph',t:'Mobile'},{k:'u',t:'Unit or project',w:1},
+  {k:'ty',t:'Type',opts:DTYPES},{k:'v',t:'Value',n:1},{k:'r',t:'%',n:1},
+  {k:'_fee',t:'Fee',calc:function(d){return money(dealFee(d));}},
+  {k:'s',t:'Stage',opts:STAGES,idx:1},{k:'lost',t:'Why lost',opts:OBJ},
+  {k:'na',t:'Next action',w:1},{k:'nd',t:'Next date',d:1},{k:'src',t:'Source',opts:SRCS},
+  {k:'lbd',t:'Wants beds',n:1},{k:'lmax',t:'Max budget',n:1},{k:'lcom',t:'Areas',w:1},
+  {k:'npd',t:'Next payment',d:1},{k:'npa',t:'Amount',n:1},{k:'ref',t:'Referred by'},
+  {k:'n',t:'Note',w:1}],
+ units:[
+  {k:'lt',t:'For',opts:['Sale','Rent']},{k:'p',t:'Project',w:1},{k:'com',t:'Community'},
+  {k:'t',t:'Type'},{k:'bd',t:'Beds',n:1},{k:'bua',t:'BUA',n:1},{k:'plot',t:'Plot',n:1},
+  {k:'pr',t:'Price',n:1},{k:'rent',t:'Rent',n:1},{k:'ch',t:'Cheques',opts:CHEQ},
+  {k:'op',t:'Original',n:1},
+  {k:'_psf',t:'psf',calc:function(u){var p=(u.lt||'Sale')==='Rent'?0:num(u.pr),b=num(u.bua);
+   return (b&&p)?Math.round(p/b).toLocaleString():'';}},
+  {k:'_up',t:'On OP',calc:function(u){var o=num(u.op);
+   return o?(((num(u.pr)-o)/o*100).toFixed(0)+'%'):'';}},
+  {k:'h',t:'Handover'},{k:'pl',t:'Plan',w:1},{k:'tag',t:'Tag'},{k:'n',t:'Note',w:1}],
+ later:[
+  {k:'n',t:'Name',w:1},{k:'ph',t:'Mobile'},{k:'w',t:'About',w:1},
+  {k:'ty',t:'Why later',opts:LTYPES},{k:'wd',t:'Call again',d:1},
+  {k:'v',t:'Est value',n:1},{k:'n2',t:'The hook',w:1}]
+};
+var BLANK={
+ deals:function(){return {w:'',ph:'',u:'',ty:'Ready',v:0,r:2,s:0,na:'',nd:'',src:'Referral',n:'',
+  ch:'1 cheque',rent:0,ref:'',lbd:0,lmax:0,lcom:'',npd:'',npa:0,lost:'',hist:[],cAt:TD};},
+ units:function(){return {lt:'Sale',p:'',com:'',t:'',bd:0,bua:0,plot:0,pr:0,rent:0,ch:'1 cheque',
+  op:0,h:'',pl:'',n:'',tag:'',img:'',fp:'',link:''};},
+ later:function(){return {n:'',ph:'',w:'',ty:LTYPES[0],wd:'',v:0,n2:''};}
+};
+var LIST={deals:function(){return S().deals;},units:function(){return S().units;},
+ later:function(){return S().later;},market:function(){return [];}};
+var SEL={}; var MKT=null;
+try{var mraw=localStorage.getItem('desk-market'); if(mraw)MKT=JSON.parse(mraw);}catch(e){}
+function uniq(a){var o=[],seen={};a.forEach(function(x){if(x&&!seen[x]){seen[x]=1;o.push(x);}});return o;}
+function render(){
+ document.getElementById('bar').classList.remove('hide');
+ var tabs=[['deals','Clients'],['units','Inventory'],['later','Prospects'],['market','Market']];
+ document.getElementById('tabs').innerHTML=tabs.map(function(t){
+  return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+'<i>'+LIST[t[0]]().length+'</i></b>';}).join('');
+ document.querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){
+  TAB=b.dataset.t;Q='';F='All';document.getElementById('q').value='';render();};});
+ document.getElementById('src').textContent=BK.at?
+  ('Loaded '+new Date(BK.at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})):'';
+ document.getElementById('paste').classList.toggle('hide',TAB!=='units');
+ document.getElementById('cmp').classList.toggle('hide',TAB!=='units');
+ document.getElementById('present').classList.toggle('hide',TAB!=='units');
+ if(TAB==='market'){document.getElementById('bar').classList.add('hide');
+  document.getElementById('count').innerHTML='';drawMarket();return;}
+ drawFilter();drawTable();
+}
+function drawFilter(){
+ var el=document.getElementById('filt'), rows=LIST[TAB]();
+ var opts=['All'];
+ if(TAB==='deals')opts=opts.concat(STAGES).concat(['No next date','No criteria']);
+ if(TAB==='units')opts=opts.concat(['For sale','For rent','No price','No original price'])
+  .concat(uniq(rows.map(function(u){return u.com;})));
+ if(TAB==='later')opts=opts.concat(['Due now']).concat(uniq(rows.map(function(x){return x.ty;})));
+ el.innerHTML=opts.map(function(o){return '<option'+(o===F?' selected':'')+'>'+esc(o)+'</option>';}).join('');
+ el.onchange=function(){F=el.value;drawTable();};
+ document.getElementById('q').oninput=function(e){Q=e.target.value.toLowerCase();drawTable();};
+}
+function pass(r){
+ if(Q){if(JSON.stringify(r).toLowerCase().indexOf(Q)<0)return false;}
+ if(F==='All')return true;
+ if(TAB==='deals'){
+  if(F==='No next date')return !r.nd&&num(r.s)<4;
+  if(F==='No criteria')return !num(r.lmax)&&!num(r.lbd)&&!(r.lcom||'');
+  return STAGES[num(r.s)]===F;}
+ if(TAB==='units'){
+  if(F==='For sale')return (r.lt||'Sale')==='Sale';
+  if(F==='For rent')return r.lt==='Rent';
+  if(F==='No price')return !num(r.pr)&&!num(r.rent);
+  if(F==='No original price')return !num(r.op);
+  return r.com===F;}
+ if(TAB==='later'){
+  if(F==='Due now')return r.wd&&r.wd<=TD;
+  return r.ty===F;}
+ return true;
+}
+function drawTable(){
+ var cols=COLS[TAB], rows=LIST[TAB](), idx=[];
+ rows.forEach(function(r,i){if(pass(r))idx.push(i);});
+ document.getElementById('count').innerHTML='<b>'+idx.length+'</b> of '+rows.length;
+ var h='<table><thead><tr><th></th>'+cols.map(function(c){return '<th>'+c.t+'</th>';}).join('')+'<th></th></tr></thead><tbody>';
+ idx.forEach(function(i){
+  var r=rows[i], dead=(TAB==='deals'&&num(r.s)===5);
+  h+='<tr class="'+(dead?'dead':'')+'"><td class="idx">'+
+   (TAB==='units'?'<input type="checkbox" class="ck" data-s="'+i+'"'+(SEL[i]?' checked':'')+'>':(i+1))+'</td>';
+  cols.forEach(function(c){
+   if(c.calc){h+='<td class="calc">'+esc(c.calc(r))+'</td>';return;}
+   var v=r[c.k];
+   if(c.opts){
+    var sel=c.idx?num(v):v;
+    h+='<td><select data-i="'+i+'" data-k="'+c.k+'"'+(c.idx?' data-idx="1"':'')+
+     (c.k==='s'?' class="stage'+num(v)+'"':'')+'>'+
+     c.opts.map(function(o,j){
+      var val=c.idx?j:o, on=c.idx?(j===sel):(o===(v||''));
+      return '<option value="'+esc(val)+'"'+(on?' selected':'')+'>'+esc(o||'-')+'</option>';}).join('')+
+     '</select></td>';
+   } else {
+    var cl=c.n?'num':(c.w?'wide':'');
+    var tp=c.n?'number':(c.d?'date':'text');
+    var val=c.n?(num(v)||''):(v==null?'':v);
+    h+='<td class="'+cl+'"><input data-i="'+i+'" data-k="'+c.k+'" type="'+tp+'" value="'+esc(val)+'"></td>';
+   }
+  });
+  h+='<td class="del"><button data-x="'+i+'" title="Delete">x</button></td></tr>';
+ });
+ h+='</tbody></table>';
+ if(!idx.length)h='<div class="empty"><p>Nothing matches. Clear the search or filter, or add a row.</p></div>';
+ document.getElementById('main').innerHTML=h;
+ bindCells();
+ document.getElementById('hint').textContent=TAB==='deals'
+  ? 'Fill Wants beds, Max budget and Areas to power Who fits this on the phone.'
+  : (TAB==='units'?'Paste units takes a whole WhatsApp forward at once.':'Your parked prospects and their call dates.');
+}
+function bindCells(){
+ document.querySelectorAll('#main input,#main select').forEach(function(el){
+  function commit(){
+   var r=LIST[TAB]()[+el.dataset.i], k=el.dataset.k, val=el.value;
+   if(el.dataset.idx)val=num(val);
+   else if(el.type==='number')val=num(val);
+   r[k]=val;
+   if(k==='s'){
+    el.className='stage'+num(val);
+    if(num(val)===5&&!r.lostAt)r.lostAt=TD;
+    r.sAt=TD;
+    var t1=el.closest('tr'); if(t1)t1.classList.toggle('dead',num(val)===5);
+   }
+   var row=el.closest('tr');
+   if(row&&TAB==='deals'){var c=row.querySelector('.calc'); if(c)c.textContent=money(dealFee(r));}
+   persist();
+  }
+  el.onchange=commit;
+  if(el.tagName==='INPUT')el.onblur=commit;
+  el.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();commit();el.blur();}};
+ });
+ document.querySelectorAll('.ck').forEach(function(c){c.onchange=function(){
+  if(c.checked)SEL[c.dataset.s]=1; else delete SEL[c.dataset.s];
+  document.getElementById('cmp').textContent='Compare'+(Object.keys(SEL).length?' ('+Object.keys(SEL).length+')':'');};});
+ document.querySelectorAll('[data-x]').forEach(function(b){b.onclick=function(){
+  var i=+b.dataset.x, r=LIST[TAB]()[i];
+  var label=r.w||r.p||r.n||'this row';
+  if(!confirm('Delete '+label+'?'))return;
+  LIST[TAB]().splice(i,1);persist();render();toast('Deleted');
+ };});
+}
+document.getElementById('addrow').onclick=function(){
+ if(!BK){toast('Load a backup first');return;}
+ LIST[TAB]().unshift(BLANK[TAB]());persist();Q='';F='All';
+ document.getElementById('q').value='';render();
+ var first=document.querySelector('#main tbody input'); if(first)first.focus();
+};
+function parseUnit(txt){
+ var t=' '+txt.replace(/ /g,' ')+' ';
+ function n(x){return Number(String(x).replace(/,/g,''));}
+ function mm(re){return t.match(re);}
+ var o={};
+ var price=mm(/(?:aed|price|asking|selling)\D{0,12}([\d,]{5,})\s*(m|mn|million)?/i);
+ if(price){var v=n(price[1]); if(price[2])v*=1e6; o.pr=Math.round(v);}
+ if(!o.pr){var alt=mm(/([\d.]+)\s*(?:m|mn|million)\b/i); if(alt)o.pr=Math.round(parseFloat(alt[1])*1e6);}
+ if(!o.pr){var bare=t.match(/\b\d{1,3}(?:,\d{3})+\b/g);
+  if(bare){var c=bare.map(n).filter(function(x){return x>=50000;});
+   if(c.length)o.pr=Math.max.apply(null,c);}}
+ var bd=mm(/(\d+)\s*(?:br|bed|bedroom|bhk)/i); if(bd)o.bd=+bd[1];
+ var bua=mm(/([\d,]{3,})\s*(?:sq\.?\s?ft|sqft)\s*(?:bua|built[\s-]?up)/i);
+ if(!bua)bua=mm(/(?:bua|built[\s-]?up|size|area)[^\d]{0,8}([\d,]{3,})/i);
+ if(bua)o.bua=n(bua[1]);
+ if(!o.bua){var sq=mm(/([\d,]{3,})\s*(?:sq\.?\s?ft|sqft|sf)\b/i); if(sq)o.bua=n(sq[1]);}
+ var plot=mm(/(?:plot|land)\D{0,10}([\d,]{3,})/i); if(plot)o.plot=n(plot[1]);
+ var ho=mm(/(?:handover|completion|ready(?:\s+in)?)\D{0,12}(q[1-4]\s*\d{4}|\w{3,9}\s*\d{4}|\d{4})/i);
+ if(ho)o.h=ho[1].replace(/\s+/g,' ').trim();
+ var un=mm(/(?:unit|villa|no\.?|#)\s*([A-Z]?-?\d{1,4}[A-Z]?)\b/i);
+ var rent=/\b(rent|rental|per\s*(?:year|annum)|p\.?a\.?|yearly)\b/i.test(t);
+ o.lt=rent?'Rent':'Sale';
+ if(rent&&o.pr){o.rent=o.pr;o.pr=0;}
+ var COMS=['Farm Gardens','Farm Grove','Elora','Rivana','Nima','Lillia','Orania','Talia','Nara','Eden','Alana','Elea',
+  'DAMAC Lagoons','DAMAC Islands','DAMAC Hills','Ghaf Woods','Golf Estates','Jumeirah Park','Palm Jumeirah',
+  'Creek Harbour','Dubai Hills','Mina Rashid','Maritime City','Motor City','Arabian Ranches',
+  'Emaar South','Dubai South','Business Bay','Marina','The Valley'];
+ var found=COMS.filter(function(cm){return t.toLowerCase().indexOf(cm.toLowerCase())>=0;});
+ if(found.length){o.com=found[0];o.p=o.com+(un?' '+un[1]:'');}
+ else {o.p=((txt.trim().split('\n')[0])||'').slice(0,44)||'Untitled unit';}
+ o.t=(o.bd?o.bd+'BR ':'')+(/town\s*house|\bth\b/i.test(t)?'townhouse':(/villa/i.test(t)?'villa':
+  (/apartment|apt|flat/i.test(t)?'apartment':(/office/i.test(t)?'office':'unit'))));
+ o.tag=/off[\s-]?plan|launch|payment plan/i.test(t)?'Off-plan':(/resale|secondary/i.test(t)?'Resale':
+  (/distress|motivated|urgent/i.test(t)?'Distress':''));
+ o.n=txt.trim().slice(0,300);
+ return o;
+}
+var SH=document.getElementById('sheet');
+document.getElementById('paste').onclick=function(){
+ if(!BK){toast('Load a backup first');return;}
+ document.getElementById('sh-h').textContent='Paste one or many. Leave a blank line between each unit. It shows you what it read before anything is added.';
+ document.getElementById('sh-x').value='';
+ document.getElementById('sh-p').innerHTML='';
+ SH.classList.add('on');
+ setTimeout(function(){document.getElementById('sh-x').focus();},80);
+};
+document.getElementById('sh-c').onclick=function(){SH.classList.remove('on');};
+SH.onclick=function(e){if(e.target===SH)SH.classList.remove('on');};
+document.getElementById('sh-x').oninput=function(){
+ var blocks=this.value.split(/\n\s*\n/).map(function(b){return b.trim();})
+  .filter(function(b){return b.length>7;});
+ var p=document.getElementById('sh-p');
+ if(!blocks.length){p.innerHTML='';p._got=null;return;}
+ var got=blocks.map(parseUnit);
+ p.innerHTML='<div class="prev"><table><thead><tr><th>Project</th><th>Type</th><th>Beds</th><th>BUA</th><th>Plot</th><th>Price</th><th>Handover</th></tr></thead><tbody>'+
+  got.map(function(o){return '<tr><td>'+esc(o.p)+'</td><td>'+esc(o.t)+'</td>'+
+   '<td class="'+(o.bd?'':'miss')+'">'+(o.bd||'-')+'</td>'+
+   '<td class="'+(o.bua?'':'miss')+'">'+(o.bua?o.bua.toLocaleString():'-')+'</td>'+
+   '<td class="'+(o.plot?'':'miss')+'">'+(o.plot?o.plot.toLocaleString():'-')+'</td>'+
+   '<td class="'+((o.pr||o.rent)?'':'miss')+'">'+((o.pr||o.rent)?money(o.pr||o.rent):'-')+'</td>'+
+   '<td class="'+(o.h?'':'miss')+'">'+esc(o.h||'-')+'</td></tr>';}).join('')+
+  '</tbody></table></div>';
+ p._got=got;
+};
+document.getElementById('sh-ok').onclick=function(){
+ var got=document.getElementById('sh-p')._got;
+ if(!got||!got.length){toast('Nothing to add yet');return;}
+ got.forEach(function(o){var u=BLANK.units();
+  Object.keys(o).forEach(function(k){u[k]=o[k];});
+  S().units.unshift(u);});
+ persist();SH.classList.remove('on');TAB='units';render();
+ toast(got.length+' unit'+(got.length>1?'s':'')+' added');
+};
+
+/* ================= MARKET: CSV ANALYSIS ================= */
+function med(a){if(!a.length)return 0;var b=a.slice().sort(function(x,y){return x-y;});
+ var m=Math.floor(b.length/2);return b.length%2?b[m]:(b[m-1]+b[m])/2;}
+function splitCSV(line,d){
+ var out=[],cur='',q=false;
+ for(var i=0;i<line.length;i++){var c=line[i];
+  if(c==='"'){if(q&&line[i+1]==='"'){cur+='"';i++;}else q=!q;}
+  else if(c===d&&!q){out.push(cur);cur='';}
+  else cur+=c;}
+ out.push(cur);return out.map(function(x){return x.trim().replace(/^"|"$/g,'');});
+}
+function parseCSV(txt){
+ var lines=txt.split(/\r?\n/).filter(function(l){return l.trim().length;});
+ if(lines.length<2)return null;
+ var d=(lines[0].split('\t').length>lines[0].split(',').length)?'\t':',';
+ var head=splitCSV(lines[0],d).map(function(h){return h.toLowerCase();});
+ var rows=lines.slice(1).map(function(l){return splitCSV(l,d);});
+ function find(){var pats=[].slice.call(arguments);
+  for(var p=0;p<pats.length;p++)for(var i=0;i<head.length;i++)
+   if(head[i].indexOf(pats[p])>=0)return i;
+  return -1;}
+ var cPrice=find('price','amount','value','consideration');
+ var cDate=find('date','instance');
+ var cPsf=find('per sqft','/sqft','psf','price per');
+ var cArea=find('sqft','size','area','built');
+ var cBed=find('bed','br');
+ var cUnit=find('unit','no.','property no');
+ var cSold=find('sold by','seller','buyer type','transaction type','party');
+ var cRec=find('record type','type of record','registration');
+ var cGain=find('capital gain','gain','appreciation');
+ var out=[];
+ rows.forEach(function(r){
+  function g(i){return i>=0?(r[i]||''):'';}
+  var rec=g(cRec).toLowerCase();
+  if(rec&&(rec.indexOf('oqood')>=0||rec.indexOf('valuation')>=0||rec.indexOf('average')>=0))return;
+  var pr=num(g(cPrice)); if(!pr)return;
+  var dt=g(cDate), dd=null;
+  if(dt){var t=Date.parse(dt.replace(/(\d{2}),\s*/, '$1 ')); if(!isNaN(t))dd=new Date(t);}
+  out.push({pr:pr,d:dd,psf:num(g(cPsf)),area:num(g(cArea)),
+   bed:num(g(cBed)),unit:g(cUnit),sold:g(cSold),gain:num(g(cGain))});
+ });
+ if(!out.length)return null;
+ return {rows:out,cols:{price:cPrice>=0,date:cDate>=0,psf:cPsf>=0,area:cArea>=0,bed:cBed>=0,sold:cSold>=0,gain:cGain>=0}};
+}
+function analyse(M){
+ var R=M.rows;
+ R.forEach(function(r){if(!r.psf&&r.area&&r.pr)r.psf=Math.round(r.pr/r.area);});
+ var prices=R.map(function(r){return r.pr;}).filter(Boolean);
+ var psfs=R.map(function(r){return r.psf;}).filter(Boolean);
+ var dated=R.filter(function(r){return r.d;});
+ dated.sort(function(a,b){return a.d-b.d;});
+ var q={},qs=[];
+ dated.forEach(function(r){if(!r.psf)return;
+  var k=r.d.getFullYear()+' Q'+(Math.floor(r.d.getMonth()/3)+1);
+  if(!q[k]){q[k]=[];qs.push(k);}q[k].push(r.psf);});
+ var qmed=qs.map(function(k){return {k:k,v:Math.round(med(q[k])),n:q[k].length};});
+ var resale=R.filter(function(r){return /individual|resale|secondary/i.test(r.sold||'');});
+ var dev=R.filter(function(r){return /developer|primary|off/i.test(r.sold||'');});
+ var gains=R.map(function(r){return r.gain;}).filter(function(g){return g&&g<200;});
+ var beds={};
+ R.forEach(function(r){if(!r.bed)return;beds[r.bed]=beds[r.bed]||[];beds[r.bed].push(r.pr);});
+ var bedRows=Object.keys(beds).sort(function(a,b){return a-b;}).map(function(b){
+  return {b:b,n:beds[b].length,p:Math.round(med(beds[b]))};});
+ var last=qmed.length?qmed[qmed.length-1]:null;
+ var peak=qmed.reduce(function(a,x){return (!a||x.v>a.v)?x:a;},null);
+ var trough=qmed.reduce(function(a,x){return (!a||x.v<a.v)?x:a;},null);
+ return {n:R.length,medPrice:Math.round(med(prices)),medPsf:Math.round(med(psfs)),
+  from:dated.length?dated[0].d:null,to:dated.length?dated[dated.length-1].d:null,
+  qmed:qmed,resale:resale.length,dev:dev.length,
+  medGain:gains.length?Math.round(med(gains)):null,gainN:gains.length,
+  profitable:gains.length?Math.round(gains.filter(function(g){return g>0;}).length/gains.length*100):null,
+  bedRows:bedRows,last:last,peak:peak,trough:trough};
+}
+function drawMarket(){
+ var m=document.getElementById('main');
+ if(!MKT){
+  m.innerHTML='<div class="empty"><h2>Drop a transaction export</h2>'+
+  '<p>A CSV from DLD or Property Monitor. It works out medians, the price per sqft trend by quarter, '+
+  'the developer versus resale split and the honest read on momentum.<br><br>'+
+  'This stays on the laptop and is never sent back to your phone.</p>'+
+  '<div class="drop" id="mdrop">Drop the CSV here, or click to choose</div></div>';
+  var d=document.getElementById('mdrop');
+  d.onclick=function(){document.getElementById('mfile').click();};
+  d.ondragover=function(e){e.preventDefault();d.classList.add('over');};
+  d.ondragleave=function(){d.classList.remove('over');};
+  d.ondrop=function(e){e.preventDefault();d.classList.remove('over');
+   if(e.dataTransfer.files[0])readCSV(e.dataTransfer.files[0]);};
+  return;
+ }
+ var a=analyse(MKT), h='<div class="mk">';
+ var span=(a.from&&a.to)?(a.from.toLocaleDateString('en-GB',{month:'short',year:'numeric'})+' to '+
+  a.to.toLocaleDateString('en-GB',{month:'short',year:'numeric'})):'no dates found';
+ h+='<div class="grid">'+
+  '<div><u>Transactions</u><b>'+a.n+'</b><s>'+span+'</s></div>'+
+  '<div><u>Median price</u><b>'+money(a.medPrice)+'</b><s>'+(a.bedRows.length?a.bedRows.length+' bed types':'')+'</s></div>'+
+  '<div><u>Median per sqft</u><b>'+(a.medPsf?a.medPsf.toLocaleString():'-')+'</b><s>AED</s></div>'+
+  '<div><u>Resale vs developer</u><b>'+a.resale+' / '+a.dev+'</b><s>'+
+   (a.resale+a.dev?Math.round(a.resale/(a.resale+a.dev)*100)+'% resale':'not stated')+'</s></div>'+
+  (a.medGain!==null?'<div><u>Median gain</u><b>'+a.medGain+'%</b><s>'+a.profitable+'% sold at a profit, n='+a.gainN+'</s></div>':'')+
+  '</div>';
+ if(a.qmed.length>1){
+  var mx=Math.max.apply(null,a.qmed.map(function(x){return x.v;}));
+  h+='<h4>Price per sqft by quarter</h4><div class="qwrap"><div class="qbars">'+
+   a.qmed.map(function(x){return '<s class="'+(x===a.peak?'pk':'')+'" title="'+x.k+': '+x.v+' psf, n='+x.n+'">'+
+    '<em style="height:'+Math.round(x.v/mx*100)+'%"></em><q>'+x.k.replace(' ','<br>')+'</q></s>';}).join('')+
+   '</div></div>';
+  var mom=(a.last&&a.peak)?(a.last.v<a.peak.v?
+   'Down '+Math.round((a.peak.v-a.last.v)/a.peak.v*100)+'% from the peak in '+a.peak.k+'. The market here has stopped rising, and that is the honest thing to tell a seller.'
+   :'At or near the peak. Momentum is still positive.'):'';
+  if(mom)h+='<div class="grid"><div style="grid-column:1/-1"><u>Momentum</u><s style="font-size:13px;color:var(--ink);margin-top:6px;line-height:1.6">'+esc(mom)+'</s></div></div>';
+ }
+ if(a.bedRows.length){
+  h+='<h4>By bedrooms</h4><table><thead><tr><th>Beds</th><th>Sales</th><th>Median price</th></tr></thead><tbody>'+
+   a.bedRows.map(function(r){return '<tr><td>'+r.b+'</td><td>'+r.n+'</td><td>'+money(r.p)+'</td></tr>';}).join('')+
+   '</tbody></table>';
+ }
+ h+='<div class="sbtns" style="justify-content:flex-start;margin-top:24px">'+
+  '<button class="btn" id="mclear">Clear and load another</button>'+
+  '<button class="btn" id="mcopy">Copy summary</button></div></div>';
+ m.innerHTML=h;
+ document.getElementById('mclear').onclick=function(){MKT=null;
+  try{localStorage.removeItem('desk-market');}catch(e){} drawMarket();};
+ document.getElementById('mcopy').onclick=function(){
+  var t=a.n+' transactions, '+span+'\nMedian price '+money(a.medPrice)+
+   '\nMedian psf '+(a.medPsf||'-')+
+   (a.medGain!==null?'\nMedian gain '+a.medGain+'%, '+a.profitable+'% sold at a profit':'')+
+   (a.peak&&a.last?'\nPeak '+a.peak.v+' psf in '+a.peak.k+', latest '+a.last.v+' psf in '+a.last.k:'');
+  navigator.clipboard.writeText(t).then(function(){toast('Copied');},function(){toast('Could not copy');});};
+}
+function readCSV(f){
+ var r=new FileReader();
+ r.onload=function(ev){
+  var M=parseCSV(ev.target.result);
+  if(!M){toast('Could not read that as a transaction export');return;}
+  MKT=M;try{localStorage.setItem('desk-market',JSON.stringify(M));}catch(e){}
+  drawMarket();toast(M.rows.length+' transactions read');
+ };
+ r.readAsText(f);
+}
+
+
+/* ================= COMPARE + PRESENT ================= */
+function selIdx(){return Object.keys(SEL).map(Number).sort(function(a,b){return a-b;});}
+function uPrice(u){return (u.lt||'Sale')==='Rent'?num(u.rent):num(u.pr);}
+function uPsf(u){var p=(u.lt||'Sale')==='Rent'?0:num(u.pr),b=num(u.bua);return (b&&p)?Math.round(p/b):0;}
+function cmpRows(us){
+ var psfs=us.map(uPsf).filter(Boolean), lowPsf=psfs.length?Math.min.apply(null,psfs):0;
+ var prices=us.map(uPrice).filter(Boolean), lowPr=prices.length?Math.min.apply(null,prices):0;
+ var plots=us.map(function(u){return num(u.plot);}), bigPlot=Math.max.apply(null,plots.concat([0]));
+ var buas=us.map(function(u){return num(u.bua);}), bigBua=Math.max.apply(null,buas.concat([0]));
+ var R=[];
+ function row(lab,fn,best){R.push({lab:lab,vals:us.map(fn),best:best||function(){return false;}});}
+ row('Community',function(u){return u.com||'-';});
+ row('Type',function(u){return u.t||'-';});
+ row('Bedrooms',function(u){return num(u.bd)||'-';});
+ row('BUA sqft',function(u){return num(u.bua)?num(u.bua).toLocaleString():'-';},
+  function(u){return bigBua&&num(u.bua)===bigBua;});
+ row('Plot sqft',function(u){return num(u.plot)?num(u.plot).toLocaleString():'-';},
+  function(u){return bigPlot&&num(u.plot)===bigPlot;});
+ row('Price',function(u){return uPrice(u)?money(uPrice(u)):'-';},
+  function(u){return lowPr&&uPrice(u)===lowPr;});
+ row('Per sqft',function(u){return uPsf(u)?uPsf(u).toLocaleString():'-';},
+  function(u){return lowPsf&&uPsf(u)===lowPsf;});
+ row('Original price',function(u){return num(u.op)?money(num(u.op)):'-';});
+ row('Uplift on original',function(u){var o=num(u.op);
+  return o?(((num(u.pr)-o)/o*100).toFixed(0)+'%'):'-';});
+ row('Handover',function(u){return u.h||'-';});
+ row('Payment plan',function(u){return u.pl||'-';});
+ row('Status',function(u){return u.tag||'-';});
+ return R;
+}
+function openPres(us,title){
+ if(!us.length){toast('Tick some units first');return;}
+ var P=document.getElementById('pres');
+ var h='<div class="ph"><h2>'+esc(title)+'</h2><span>Allegiance Real Estate</span></div><div class="body">';
+ if(us.length===1){
+  var u=us[0], rows=cmpRows(us);
+  h+='<table>'+rows.map(function(r){
+   return '<tr><td class="lab">'+esc(r.lab)+'</td><td class="v">'+esc(r.vals[0])+'</td></tr>';}).join('')+'</table>';
+ } else {
+  h+='<table class="cmpt"><thead><tr><th></th>'+us.map(function(u){
+   return '<th style="font-family:Georgia,serif;font-size:19px;color:var(--gold);font-weight:400;padding:12px">'+esc(u.p||'Unit')+'</th>';}).join('')+'</tr></thead><tbody>'+
+   cmpRows(us).map(function(r){
+    return '<tr><td class="lab">'+esc(r.lab)+'</td>'+
+     us.map(function(u,i){return '<td class="'+(r.best(u)?'best':'')+'">'+esc(r.vals[i])+'</td>';}).join('')+'</tr>';
+   }).join('')+'</tbody></table>';
+ }
+ h+='</div><div class="pf"><button class="btn" id="pprint">Print or save PDF</button>'+
+  '<button class="btn gold" id="pclose">Close</button></div>';
+ P.innerHTML=h;P.classList.add('on');
+ document.getElementById('pclose').onclick=function(){P.classList.remove('on');};
+ document.getElementById('pprint').onclick=function(){window.print();};
+}
+document.getElementById('cmp').onclick=function(){
+ if(!BK)return;
+ var ix=selIdx();
+ if(!ix.length){toast('Tick the units you want to compare');return;}
+ if(ix.length>4){toast('Four at a time reads best');return;}
+ var us=ix.map(function(i){return S().units[i];});
+ openPres(us,us.length===1?(us[0].p||'Unit'):'Comparison');
+};
+document.getElementById('present').onclick=function(){
+ if(!BK)return;
+ var ix=selIdx();
+ var us=ix.length?ix.map(function(i){return S().units[i];})
+  :S().units.filter(function(u){return pass(u);}).slice(0,1);
+ openPres(us,us.length===1?(us[0].p||'Unit'):'Comparison');
+};
+document.addEventListener('keydown',function(e){
+ if(e.key==='Escape'){document.getElementById('pres').classList.remove('on');
+  document.getElementById('sheet').classList.remove('on');}
+});
+
+boot();
+</script>
+</body>
+</html>
