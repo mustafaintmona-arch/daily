@@ -82,6 +82,38 @@ td.del button:hover{color:var(--bad)}
 .prev .miss{color:var(--dim)}
 .ck{width:15px;height:15px;accent-color:var(--gold);cursor:pointer;margin:0}
 td.idx{text-align:center}
+.rv{padding:18px 20px 40px;max-width:1500px}
+.rv h3{font-family:Georgia,serif;font-size:22px;font-weight:400;margin:0 0 4px}
+.rv .sub{color:var(--dim);font-size:12.5px;margin-bottom:20px}
+.rv h4{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+ margin:26px 0 11px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+.rv .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:22px}
+.rvg{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:11px}
+.rvg div{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.rvg u{display:block;text-decoration:none;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.rvg b{font-family:Georgia,serif;font-size:20px;color:var(--gold);font-weight:400;display:block;margin-top:5px}
+.rvg s{display:block;text-decoration:none;font-size:10.5px;color:var(--dim);margin-top:3px}
+.rvg div.bad b{color:var(--bad)} .rvg div.good b{color:var(--ok)}
+.need{background:rgba(185,151,91,.1);border:1px solid rgba(185,151,91,.4);border-radius:12px;
+ padding:13px 15px;margin-top:12px;font-size:13.5px;line-height:1.7}
+.need b{color:var(--gold)}
+.rvl{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.rvl .r{display:flex;justify-content:space-between;gap:12px;padding:10px 13px;border-bottom:1px solid var(--line);font-size:13px}
+.rvl .r:last-child{border-bottom:0}
+.rvl .r span.m{color:var(--dim);font-size:11.5px}
+.rvl .r em{font-style:normal;font-family:Georgia,serif;color:var(--gold);white-space:nowrap}
+.rvl .r.warn em{color:var(--bad)}
+.rvl .none{padding:12px 13px;color:var(--dim);font-size:12.5px}
+.sd{display:flex;justify-content:space-between;gap:10px;padding:9px 13px;border-bottom:1px solid var(--line);font-size:13px}
+.sd:last-child{border-bottom:0}
+.sd u{text-decoration:none;color:var(--dim);font-size:11px}
+.sd .bar2{flex:1;display:flex;gap:3px;align-items:center;max-width:190px}
+.sd .bar2 i{height:7px;border-radius:3px;display:block}
+.sd .bar2 i.b{background:#3E7CA6}.sd .bar2 i.s{background:var(--gold)}
+.jbox{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:10px}
+.jbox label{display:block;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.jbox textarea{width:100%;background:transparent;border:0;color:var(--ink);font-size:13.5px;outline:0;
+ resize:vertical;line-height:1.6;font-family:inherit;min-height:46px}
 .mk{padding:18px}
 .mk .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:11px;margin-bottom:20px}
 .mk .grid div{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
@@ -321,13 +353,13 @@ var BLANK={
  later:function(){return {n:'',ph:'',w:'',ty:LTYPES[0],wd:'',v:0,n2:''};}
 };
 var LIST={deals:function(){return S().deals;},units:function(){return S().units;},
- later:function(){return S().later;},market:function(){return [];}};
+ later:function(){return S().later;},market:function(){return [];},review:function(){return [];}};
 var SEL={}; var MKT=null;
 try{var mraw=localStorage.getItem('desk-market'); if(mraw)MKT=JSON.parse(mraw);}catch(e){}
 function uniq(a){var o=[],seen={};a.forEach(function(x){if(x&&!seen[x]){seen[x]=1;o.push(x);}});return o;}
 function render(){
  document.getElementById('bar').classList.remove('hide');
- var tabs=[['deals','Clients'],['units','Inventory'],['later','Prospects'],['market','Market']];
+ var tabs=[['deals','Clients'],['units','Inventory'],['later','Prospects'],['market','Market'],['review','Review']];
  document.getElementById('tabs').innerHTML=tabs.map(function(t){
   return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+'<i>'+LIST[t[0]]().length+'</i></b>';}).join('');
  document.querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){
@@ -339,6 +371,8 @@ function render(){
  document.getElementById('present').classList.toggle('hide',TAB!=='units');
  if(TAB==='market'){document.getElementById('bar').classList.add('hide');
   document.getElementById('count').innerHTML='';drawMarket();return;}
+ if(TAB==='review'){document.getElementById('bar').classList.add('hide');
+  document.getElementById('count').innerHTML='';drawReview();return;}
  drawFilter();drawTable();
 }
 function drawFilter(){
@@ -730,6 +764,176 @@ document.addEventListener('keydown',function(e){
  if(e.key==='Escape'){document.getElementById('pres').classList.remove('on');
   document.getElementById('sheet').classList.remove('on');}
 });
+
+/* ================= WEEKLY REVIEW ================= */
+var TARGET=500000, DEADLINE='2026-09-27';
+var PROB=[0.10,0.25,0.50,0.80,1.00];
+function dayd(a,b){return Math.round((new Date(a)-new Date(b))/864e5);}
+function matchScore(d,u){
+ var isR=(u.lt||'Sale')==='Rent', price=isR?num(u.rent):num(u.pr), sc=0;
+ var bud=num(d.lmax)||num(d.v);
+ if(bud&&price){
+  if(price<=bud)sc+=40; else if(price<=bud*1.1)sc+=22;
+  else if(price<=bud*1.25)sc+=8; else return 0;}
+ if(num(d.lbd)&&num(u.bd)){
+  if(num(d.lbd)===num(u.bd))sc+=25; else if(Math.abs(num(d.lbd)-num(u.bd))===1)sc+=10;}
+ var areas=(d.lcom||'').toLowerCase().split(/[,;\/]+/).map(function(x){return x.trim();}).filter(Boolean);
+ var ucom=((u.com||'')+' '+(u.p||'')).toLowerCase();
+ if(areas.length&&areas.some(function(a){return a&&ucom.indexOf(a)>=0;}))sc+=25;
+ if(d.ty==='Rent'&&!isR)return 0;
+ if(num(d.s)>=4)return 0;
+ return sc<20?0:Math.min(100,sc);
+}
+function drawReview(){
+ var D=S().deals, U=S().units, L=S().later;
+ var active=D.filter(function(d){return num(d.s)<4;});
+ var won=D.filter(function(d){return num(d.s)===4;});
+ var lost=D.filter(function(d){return num(d.s)===5;});
+ var wonV=won.reduce(function(a,d){return a+dealFee(d);},0);
+ var near=D.filter(function(d){return num(d.s)===3;}).reduce(function(a,d){return a+dealFee(d);},0);
+ var weighted=active.reduce(function(a,d){return a+dealFee(d)*(PROB[num(d.s)]||0);},0);
+ var best=active.reduce(function(a,d){return a+dealFee(d);},0);
+ var banked=(S().ledger||[]).reduce(function(a,e){return a+num(e.amt);},0);
+ Object.keys(S().days||{}).forEach(function(k){banked+=num((S().days[k]||{}).comm);});
+ var gap=Math.max(0,TARGET-banked-wonV);
+ var rates=active.filter(function(d){return d.ty!=='Rent'&&num(d.r)>0;}).map(function(d){return num(d.r);});
+ var avgR=rates.length?rates.reduce(function(a,b){return a+b;},0)/rates.length:2;
+ var sizes=active.filter(function(d){return num(d.v)>0;}).map(function(d){return num(d.v);});
+ var avgV=sizes.length?sizes.reduce(function(a,b){return a+b;},0)/sizes.length:0;
+ var vol=avgR>0?gap/(avgR/100):0, ndeals=avgV>0?Math.ceil(vol/avgV):0;
+ var left=Math.max(0,dayd(DEADLINE,TD)), wks=Math.max(1,Math.ceil(left/7));
+
+ var h='<div class="rv"><h3>Weekly review</h3><div class="sub">'+
+  new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+
+  ' · from the backup loaded on this laptop. Nothing here is invented.</div>';
+
+ h+='<h4>Money map</h4><div class="rvg">'+
+  '<div><u>Target</u><b>'+money(TARGET)+'</b><s>by '+new Date(DEADLINE).toLocaleDateString("en-GB",{day:"numeric",month:"long"})+', '+left+' days left</s></div>'+
+  '<div class="good"><u>Banked</u><b>'+money(banked)+'</b><s>commission logged</s></div>'+
+  '<div class="good"><u>Won, not paid</u><b>'+money(wonV)+'</b><s>'+won.length+' deal'+(won.length===1?'':'s')+'</s></div>'+
+  '<div><u>Near certain</u><b>'+money(near)+'</b><s>at Agreed</s></div>'+
+  '<div><u>Weighted pipeline</u><b>'+money(weighted)+'</b><s>best case '+money(best)+'</s></div>'+
+  '<div class="'+(gap>0?'bad':'good')+'"><u>Gap</u><b>'+money(gap)+'</b><s>'+(gap>0?money(gap/wks)+' a week':'target hit')+'</s></div>'+
+  '</div>';
+ if(gap>0&&avgR>0){
+  h+='<div class="need">To close that gap at your average <b>'+avgR.toFixed(1)+'%</b> you need about <b>'+money(vol)+'</b> of sales volume.'+
+   (ndeals?' At your average deal size of '+money(avgV)+' that is roughly <b>'+ndeals+' deal'+(ndeals>1?'s':'')+'</b> in '+left+' days.':'')+'</div>';
+ }
+ var conc=null;
+ if(active.length){
+  var byFee=active.slice().sort(function(a,b){return dealFee(b)-dealFee(a);});
+  var top=byFee[0];
+  if(weighted>0){
+   var share=Math.round(dealFee(top)*(PROB[num(top.s)]||0)/weighted*100);
+   if(share>=35)conc='<div class="need"><b>'+esc(top.w||'One client')+'</b> is carrying '+share+'% of your weighted pipeline on their own. If that one slips, the rest does not cover it.</div>';
+  }
+ }
+ if(conc)h+=conc;
+
+ h+='<div class="cols">';
+ h+='<div><h4>Pipeline by stage</h4><div class="rvl">'+
+  STAGES.slice(0,4).map(function(st,j){
+   var g=D.filter(function(d){return num(d.s)===j;});
+   var v=g.reduce(function(a,d){return a+dealFee(d);},0);
+   return '<div class="r"><div>'+st+'<br><span class="m">'+g.length+' client'+(g.length===1?'':'s')+'</span></div><em>'+money(v)+'</em></div>';
+  }).join('')+'</div></div>';
+
+ var stuck=active.filter(function(d){
+   return !d.nd || dayd(TD,d.nd)>0 || (d.sAt && dayd(TD,d.sAt)>21);})
+  .map(function(d){
+   var late=d.nd?dayd(TD,d.nd):0;
+   var why=!d.nd?'no next step set':(late>0?late+' day'+(late===1?'':'s')+' past its date':
+    'no stage change in '+dayd(TD,d.sAt)+' days');
+   return {d:d,why:why,age:late};})
+  .sort(function(a,b){return dealFee(b.d)-dealFee(a.d);});
+ var slipV=stuck.reduce(function(a,x){return a+dealFee(x.d);},0);
+ h+='<div><h4>Slipping · '+stuck.length+' · '+money(slipV)+'</h4><div class="rvl">'+
+  (stuck.length?stuck.slice(0,12).map(function(x){
+   return '<div class="r warn"><div>'+esc(pv(x.d.w))+'<br><span class="m">'+esc(x.why)+'</span></div><em>'+money(dealFee(x.d))+'</em></div>';
+  }).join(''):'<div class="none">Nothing slipping. Everything has a live next step.</div>')+'</div></div>';
+
+ var next7=active.filter(function(d){var k=d.nd?dayd(d.nd,TD):null;return k!==null&&k>=0&&k<=7;})
+  .sort(function(a,b){return a.nd.localeCompare(b.nd);});
+ var lat7=(L||[]).filter(function(x){var k=x.wd?dayd(x.wd,TD):null;return k!==null&&k>=0&&k<=7;});
+ h+='<div><h4>Next seven days · '+next7.length+' client'+(next7.length===1?'':'s')+'</h4><div class="rvl">'+
+  (next7.length?
+   next7.map(function(d){return '<div class="r"><div>'+esc(pv(d.w))+'<br><span class="m">'+esc(d.na||'no action written')+'</span></div><em>'+
+    new Date(d.nd).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</em></div>';}).join('')
+   :'<div class="none">Nothing scheduled with a client. That is the problem, not the good news.</div>')+
+  (lat7.length?'<div class="r"><div>Prospect reconnects<br><span class="m">parked owners coming due, in the Prospects tab</span></div><em>'+lat7.length+'</em></div>':'')+
+  '</div></div>';
+
+ var byReason={};
+ lost.forEach(function(d){var k=d.lost||'not recorded';byReason[k]=byReason[k]||{n:0,v:0};
+  byReason[k].n++;byReason[k].v+=dealFee(d);});
+ var rk=Object.keys(byReason).sort(function(a,b){return byReason[b].n-byReason[a].n;});
+ h+='<div><h4>Lost · '+lost.length+'</h4><div class="rvl">'+
+  (rk.length?rk.map(function(k){return '<div class="r warn"><div>'+esc(k)+'<br><span class="m">'+byReason[k].n+' deal'+(byReason[k].n===1?'':'s')+'</span></div><em>'+money(byReason[k].v)+'</em></div>';}).join('')
+   :'<div class="none">Nothing marked Lost. Either a good week, or dead deals are still sitting in your pipeline inflating it.</div>')+'</div></div>';
+
+ var srcs={};
+ D.forEach(function(d){var k=d.src||'not recorded';srcs[k]=srcs[k]||{n:0,w:0};srcs[k].n++;
+  if(num(d.s)===4)srcs[k].w++;});
+ var sk=Object.keys(srcs).sort(function(a,b){return srcs[b].n-srcs[a].n;});
+ h+='<div><h4>Where they came from</h4><div class="rvl">'+
+  sk.map(function(k){return '<div class="r"><div>'+esc(k)+'<br><span class="m">'+srcs[k].w+' won</span></div><em>'+srcs[k].n+'</em></div>';}).join('')+
+  '</div></div>';
+ h+='</div>';
+
+ var areas={};
+ active.forEach(function(d){
+  (d.lcom||'').split(/[,;\/]+/).map(function(x){return x.trim();}).filter(Boolean)
+   .forEach(function(a){var k=a.toLowerCase();areas[k]=areas[k]||{name:a,buyers:0,stock:0,names:[]};
+    areas[k].buyers++;areas[k].names.push(d.w);});
+ });
+ U.forEach(function(u){
+  var t=((u.com||'')+' '+(u.p||'')).toLowerCase();
+  Object.keys(areas).forEach(function(k){if(t.indexOf(k)>=0)areas[k].stock++;});
+  var k2=(u.com||'').toLowerCase().trim();
+  if(k2&&!areas[k2])areas[k2]={name:u.com,buyers:0,stock:0,names:[]};
+  if(k2&&areas[k2])areas[k2].stock=areas[k2].stock;
+ });
+ U.forEach(function(u){var k=(u.com||'').toLowerCase().trim();
+  if(k&&areas[k]&&areas[k].buyers===0)areas[k].stock++;});
+ var ak=Object.keys(areas).sort(function(a,b){return (areas[b].buyers+areas[b].stock)-(areas[a].buyers+areas[a].stock);});
+ h+='<h4>Supply against demand</h4><div class="rvl">'+
+  (ak.length?ak.map(function(k){
+   var a=areas[k], mx=Math.max(a.buyers,a.stock,1);
+   var flag=(a.buyers&&!a.stock)?'<span class="m" style="color:var(--bad)">buyers, no stock</span>':
+     ((a.stock&&!a.buyers)?'<span class="m">stock, no buyer asking</span>':'');
+   return '<div class="sd"><div style="min-width:130px">'+esc(a.name||k)+'<br>'+flag+'</div>'+
+    '<div class="bar2"><i class="b" style="width:'+Math.round(a.buyers/mx*46)+'%"></i>'+
+    '<u>'+a.buyers+' buyer'+(a.buyers===1?'':'s')+'</u></div>'+
+    '<div class="bar2"><i class="s" style="width:'+Math.round(a.stock/mx*46)+'%"></i>'+
+    '<u>'+a.stock+' unit'+(a.stock===1?'':'s')+'</u></div></div>';
+  }).join(''):'<div class="none">No client areas filled in yet. Add Areas on the Clients tab and this becomes the most useful section here.</div>')+
+  '</div>';
+
+ var nofit=U.filter(function(u){return !D.some(function(d){return matchScore(d,u)>=45;});});
+ h+='<div class="need" style="margin-top:12px">'+
+  '<b>'+nofit.length+'</b> of your '+U.length+' units have nobody in the book who fits them at a decent score. '+
+  (nofit.length?'Either they are the wrong stock, or your client criteria are not filled in.':'')+'</div>';
+
+ h+='<h4>Your call</h4><div class="cols">'+
+  ['Who could realistically transact in the next 30 days?',
+   'Where is the bottleneck?',
+   'One thing to fix next week'].map(function(q,i){
+   return '<div class="jbox"><label>'+esc(q)+'</label><textarea data-j="'+i+'" rows="3"></textarea></div>';}).join('')+
+  '</div>';
+ h+='<div class="sbtns" style="justify-content:flex-start;margin-top:22px">'+
+  '<button class="btn" id="rvprint">Print or save PDF</button></div>';
+ h+='</div>';
+ document.getElementById('main').innerHTML=h;
+ var saved={};
+ try{saved=JSON.parse(localStorage.getItem('desk-review')||'{}');}catch(e){}
+ document.querySelectorAll('[data-j]').forEach(function(t){
+  t.value=saved[t.dataset.j]||'';
+  t.onblur=function(){saved[t.dataset.j]=t.value;
+   try{localStorage.setItem('desk-review',JSON.stringify(saved));}catch(e){}};
+ });
+ document.getElementById('rvprint').onclick=function(){window.print();};
+}
+function pv(x){return x||'unnamed';}
 
 boot();
 </script>
