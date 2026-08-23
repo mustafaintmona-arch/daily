@@ -114,6 +114,40 @@ td.idx{text-align:center}
 .jbox label{display:block;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
 .jbox textarea{width:100%;background:transparent;border:0;color:var(--ink);font-size:13.5px;outline:0;
  resize:vertical;line-height:1.6;font-family:inherit;min-height:46px}
+.cl{padding:16px 18px 44px;max-width:1180px}
+.clseg{display:flex;gap:5px;background:var(--card2);border:1px solid var(--line);border-radius:13px;
+ padding:4px;margin-bottom:16px;width:max-content}
+.clseg b{font-size:12.5px;padding:8px 16px;border-radius:10px;color:var(--dim);font-weight:600;cursor:pointer}
+.clseg b.on{background:var(--gold);color:var(--navy)}
+.clf{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.clf div{background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:11px 13px}
+.clf u{display:block;text-decoration:none;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.clf b{font-family:Georgia,serif;font-size:19px;color:var(--gold);font-weight:400;display:block;margin-top:4px}
+.clf s{display:block;text-decoration:none;font-size:10px;color:var(--dim);margin-top:2px}
+.pc{background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--line);
+ border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.pc.due{border-left-color:var(--bad)}
+.pc.soon{border-left-color:var(--gold)}
+.pc .ph2{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.pc .nm{font-size:15.5px;font-weight:600}
+.pc .mt{font-size:11.5px;color:var(--dim);margin-top:3px}
+.pc .wh{font-size:12.5px;color:var(--ink);background:rgba(255,255,255,.03);border:1px solid var(--line);
+ border-radius:9px;padding:9px 11px;margin-top:10px;line-height:1.5}
+.pc .when{font-size:12px;color:var(--dim);white-space:nowrap;text-align:right}
+.pc .when.od{color:var(--bad)}
+.pc .acts2{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap}
+.pc .acts2 a,.pc .acts2 button{border:1px solid var(--line);background:transparent;color:var(--gold);
+ border-radius:10px;padding:9px 15px;font-size:12.5px;text-decoration:none;cursor:pointer;font-family:inherit}
+.pc .acts2 a.wa{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:600}
+.pc .acts2 button.lnk{border:0;color:var(--dim);padding:9px 4px;text-decoration:underline}
+.outs{display:flex;gap:6px;margin-top:11px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:11px}
+.outs button{flex:1;min-width:96px;background:transparent;border:1px solid var(--line);color:var(--dim);
+ border-radius:9px;padding:9px 6px;font-size:11.5px;cursor:pointer;font-family:inherit}
+.outs button:hover{border-color:var(--gold);color:var(--gold)}
+.outs button.warn:hover{border-color:var(--bad);color:var(--bad)}
+.tplbox{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;background:var(--card2)}
+.tplbox h5{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:0 0 8px}
+.tplbox p{font-size:13px;line-height:1.65;white-space:pre-wrap;color:var(--ink);margin:0 0 11px}
 .mk{padding:16px 18px 40px}
 .mksets{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}
 .mksets b{display:flex;align-items:center;gap:7px;font-size:12.5px;padding:8px 13px;border-radius:20px;
@@ -369,13 +403,14 @@ var BLANK={
  later:function(){return {n:'',ph:'',w:'',ty:LTYPES[0],wd:'',v:0,n2:''};}
 };
 var LIST={deals:function(){return S().deals;},units:function(){return S().units;},
- later:function(){return S().later;},market:function(){return [];},review:function(){return [];}};
+ later:function(){return S().later;},market:function(){return [];},review:function(){return [];},
+ call:function(){return S().later;}};
 var SEL={}; var MKT=null;
 try{var mraw=localStorage.getItem('desk-market'); if(mraw)MKT=JSON.parse(mraw);}catch(e){}
 function uniq(a){var o=[],seen={};a.forEach(function(x){if(x&&!seen[x]){seen[x]=1;o.push(x);}});return o;}
 function render(){
  document.getElementById('bar').classList.remove('hide');
- var tabs=[['deals','Clients'],['units','Inventory'],['later','Prospects'],['market','Market'],['review','Review']];
+ var tabs=[['deals','Clients'],['units','Inventory'],['call','Call list'],['later','Prospects'],['market','Market'],['review','Review']];
  document.getElementById('tabs').innerHTML=tabs.map(function(t){
   return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+'<i>'+LIST[t[0]]().length+'</i></b>';}).join('');
  document.querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){
@@ -389,6 +424,8 @@ function render(){
   document.getElementById('count').innerHTML='';drawMarket();return;}
  if(TAB==='review'){document.getElementById('bar').classList.add('hide');
   document.getElementById('count').innerHTML='';drawReview();return;}
+ if(TAB==='call'){document.getElementById('bar').classList.add('hide');
+  document.getElementById('count').innerHTML='';drawCall();return;}
  drawFilter();drawTable();
 }
 function drawFilter(){
@@ -536,6 +573,8 @@ document.getElementById('paste').onclick=function(){
  if(!BK){toast('Load a backup first');return;}
  document.getElementById('sh-h').textContent='Paste one or many. Leave a blank line between each unit. It shows you what it read before anything is added.';
  document.getElementById('sh-x').value='';
+ document.getElementById('sh-x').classList.remove('hide');
+ document.getElementById('sh-ok').classList.remove('hide');
  document.getElementById('sh-p').innerHTML='';
  SH.classList.add('on');
  setTimeout(function(){document.getElementById('sh-x').focus();},80);
@@ -983,6 +1022,150 @@ function drawReview(){
  document.getElementById('rvprint').onclick=function(){window.print();};
 }
 function pv(x){return x||'unnamed';}
+
+/* ================= CALL LIST / PROSPECTING ================= */
+var OUT=[['noans','No answer',1],['maybe','Maybe later',90],['no','Not selling',180],
+ ['val','Wants a valuation',0],['listed','Already listed',300],['remove','Remove me',-1]];
+var OUTL={};OUT.forEach(function(o){OUTL[o[0]]=o[1];});
+var CLSEG='due', CHAN={};
+function digits(x){return String(x||'').replace(/[^\d]/g,'');}
+function waLink(ph,txt){return 'https://wa.me/'+digits(ph)+'?text='+encodeURIComponent(txt);}
+function firstName(n){var w=String(n||'').trim().split(/\s+/)[0].replace(/[^A-Za-z'-]/g,'');
+ if(!w)return 'there';
+ return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();}
+function propName(x){return String(x.w||'').split('·')[0].trim()||'your property';}
+function cleanHook(h){return String(h||'').replace(/^#\d+\s*(HOT|WARM|COLD)\s*·\s*/i,'').trim();}
+function isDnc(x){return x.dnc||(S().dnc||[]).indexOf(digits(x.ph))>=0;}
+var PROTPL=[
+['Neighbour sold', function(x){var h=cleanHook(x.n2);
+ return 'Hi '+firstName(x.n)+', Mustafa here from Allegiance.\n\n'+
+ (h?h+'.\n\n':'')+
+ 'I have buyers looking in this community and I am short of stock.\n\n'+
+ 'Would you take a number for '+propName(x)+', or is it not something you would consider right now?';}],
+['Reply with a number', function(x){var h=cleanHook(x.n2);
+ return 'Hi '+firstName(x.n)+', Mustafa from Allegiance.\n\n'+
+ (h?h+'.\n\n':'')+
+ 'Rather than a long message, just reply with a number so I know how to help:\n\n'+
+ '1 open to selling\n2 open to renting it out\n3 not now, but keep me posted\n4 remove me from your list';}],
+['No hook', function(x){
+ return 'Hi '+firstName(x.n)+', Mustafa here from Allegiance.\n\n'+
+ 'I track every sale in this community. A good share of owners have already resold at a profit, and I have buyers on my list now.\n\n'+
+ 'Want me to put together what '+propName(x)+' would fetch today? No obligation either way.';}],
+['Follow up', function(x){
+ return 'Hi '+firstName(x.n)+', Mustafa again.\n\n'+
+ 'No pressure at all. If you ever want a number on '+propName(x)+', I am here.\n\n'+
+ 'I will leave it with you.';}]
+];
+function pickTpl(x){return cleanHook(x.n2)?0:2;}
+function proMsg(x,i){return PROTPL[(i==null?pickTpl(x):i)][1](x);}
+function addDays(d,n){var t=new Date(d);t.setDate(t.getDate()+n);
+ while(t.getDay()>=5&&n>0&&n<7)t.setDate(t.getDate()+1);
+ return iso(t);}
+function logOutcome(i,key){
+ var L=S().later, x=L[i];
+ var conf=OUT.filter(function(o){return o[0]===key;})[0];
+ if(!x.att)x.att=[];
+ x.att.push({d:TD,ch:CHAN[i]||'call',out:key});
+ if(key==='remove'){
+  if(!confirm('Remove '+x.n+' permanently? They will never appear again.'))
+   {x.att.pop();return;}
+  x.dnc=1; S().dnc=S().dnc||[];
+  if(digits(x.ph))S().dnc.push(digits(x.ph));
+  persist();drawCall();toast('Removed and blocked');return;}
+ if(key==='val'){
+  if(!confirm('Move '+x.n+' into your pipeline as a live deal?'))
+   {x.att.pop();return;}
+  S().deals.unshift({w:x.n,ph:x.ph||'',u:x.w||'',ty:'Resale',v:num(x.v)||0,r:2,s:1,
+   na:'Send the valuation',nd:TD,src:'Prospecting call',ref:'',n:cleanHook(x.n2),
+   ch:'1 cheque',rent:0,lbd:0,lmax:0,lcom:'',npd:'',npa:0,lost:'',hist:[],cAt:TD});
+  L.splice(i,1);persist();drawCall();toast('Moved into your pipeline');return;}
+ var days=conf[2];
+ if(key==='noans'){
+  var run=0;
+  for(var k=x.att.length-1;k>=0;k--){if(x.att[k].out==='noans')run++;else break;}
+  if(run>=3){days=90;x.parked=1;}
+ }
+ x.wd=addDays(new Date(),days);
+ persist();drawCall();
+ toast(OUTL[key]+' · next on '+new Date(x.wd).toLocaleDateString('en-GB',{day:'numeric',month:'short'}));
+}
+function clPass(x,i){
+ if(isDnc(x))return false;
+ if(CLSEG==='due')return x.wd&&x.wd<=TD;
+ if(CLSEG==='soon'){if(!x.wd)return true;var d=(new Date(x.wd)-new Date(TD))/864e5;return d>0&&d<=14;}
+ if(CLSEG==='touched')return (x.att||[]).length>0;
+ return true;
+}
+function drawCall(){
+ var L=S().later, m=document.getElementById('main');
+ if(!L.length){m.innerHTML='<div class="empty"><h2>No prospects loaded</h2>'+
+  '<p>Load a backup that has prospects in it, or import a prospect file on the phone and export it back.</p></div>';return;}
+ var att=0,att7=0,conn=0,vals=0;
+ L.forEach(function(x){(x.att||[]).forEach(function(a){att++;
+  if((new Date(TD)-new Date(a.d))/864e5<=7)att7++;
+  if(a.out!=='noans')conn++;
+  if(a.out==='val')vals++;});});
+ var idx=[];L.forEach(function(x,i){if(clPass(x,i))idx.push(i);});
+ idx.sort(function(a,b){return String(L[a].wd||'9999').localeCompare(String(L[b].wd||'9999'));});
+ var segs=[['due','Due now'],['soon','Next 14 days'],['touched','Contacted'],['all','Everyone']];
+ var h='<div class="cl"><div class="clseg">'+segs.map(function(g){
+  return '<b class="'+(CLSEG===g[0]?'on':'')+'" data-cs="'+g[0]+'">'+g[1]+'</b>';}).join('')+'</div>';
+ h+='<div class="clf">'+
+  '<div><u>Attempts</u><b>'+att+'</b><s>'+att7+' in the last 7 days</s></div>'+
+  '<div><u>Connects</u><b>'+conn+'</b><s>someone actually answered</s></div>'+
+  '<div><u>Valuations</u><b>'+vals+'</b><s>moved into the pipeline</s></div>'+
+  '<div><u>'+(att>=20?'Attempts per connect':'Conversion')+'</u><b>'+
+   (att>=20?(conn?(att/conn).toFixed(1):'-'):'—')+'</b><s>'+
+   (att>=20?(vals?(conn/vals).toFixed(1)+' connects per valuation':'no valuations yet')
+          :'not enough attempts yet')+'</s></div>'+
+  '<div><u>On this list</u><b>'+idx.length+'</b><s>of '+L.filter(function(x){return !isDnc(x);}).length+' active</s></div>'+
+  '</div>';
+ if(!idx.length)h+='<div class="hint">Nobody in this view. Try Next 14 days or Everyone.</div>';
+ idx.forEach(function(i){
+  var x=L[i], ph=digits(x.ph);
+  var dd=x.wd?Math.round((new Date(x.wd)-new Date(TD))/864e5):null;
+  var when=dd===null?'no date':(dd<0?Math.abs(dd)+' days overdue':(dd===0?'due today':'in '+dd+' days'));
+  var cls=dd!==null&&dd<=0?'due':(dd!==null&&dd<=14?'soon':'');
+  var a=(x.att||[]);
+  var last=a.length?a[a.length-1]:null;
+  var hist=a.length?(a.length+' attempt'+(a.length>1?'s':'')+' · last: '+OUTL[last.out]+', '+
+    (Math.round((new Date(TD)-new Date(last.d))/864e5)||0)+' days ago'):'not contacted yet';
+  h+='<div class="pc '+cls+'"><div class="ph2"><div style="min-width:0">'+
+   '<div class="nm">'+esc(x.n)+'</div>'+
+   '<div class="mt">'+esc(x.w||'')+(x.ty?' · '+esc(x.ty):'')+'</div>'+
+   '<div class="mt">'+esc(hist)+(x.parked?' · parked after 3 tries':'')+'</div></div>'+
+   '<div class="when '+(dd!==null&&dd<0?'od':'')+'">'+when+'</div></div>';
+  if(cleanHook(x.n2))h+='<div class="wh">'+esc(cleanHook(x.n2))+'</div>';
+  h+='<div class="acts2">'+
+   (ph?'<a class="wa" href="'+waLink(x.ph,proMsg(x))+'" target="_blank" data-ch="'+i+'">WhatsApp</a>'+
+       '<a href="tel:+'+ph+'" data-cc="'+i+'">Call</a>':'<span class="mt">No number on file</span>')+
+   '<button class="lnk" data-tpl="'+i+'">change message</button></div>';
+  h+='<div class="outs">'+OUT.map(function(o){
+   return '<button class="'+(o[0]==='remove'?'warn':'')+'" data-out="'+i+'|'+o[0]+'">'+o[1]+'</button>';}).join('')+'</div>';
+  h+='</div>';
+ });
+ h+='</div>';
+ m.innerHTML=h;
+ document.querySelectorAll('[data-cs]').forEach(function(b){b.onclick=function(){CLSEG=b.dataset.cs;drawCall();};});
+ document.querySelectorAll('[data-ch]').forEach(function(b){b.onclick=function(){CHAN[b.dataset.ch]='wa';};});
+ document.querySelectorAll('[data-cc]').forEach(function(b){b.onclick=function(){CHAN[b.dataset.cc]='call';};});
+ document.querySelectorAll('[data-out]').forEach(function(b){b.onclick=function(){
+  var p=b.dataset.out.split('|');logOutcome(+p[0],p[1]);};});
+ document.querySelectorAll('[data-tpl]').forEach(function(b){b.onclick=function(){
+  var i=+b.dataset.tpl, x=S().later[i], ph=digits(x.ph);
+  var body=PROTPL.map(function(t,j){
+   var msg=t[1](x);
+   return '<div class="tplbox"><h5>'+esc(t[0])+'</h5><p>'+esc(msg)+'</p>'+
+    (ph?'<a class="btn gold" style="text-decoration:none" href="'+waLink(x.ph,msg)+'" target="_blank">Send this one</a>':'')+
+    '</div>';}).join('');
+  document.getElementById('sh-h').textContent='Pick the wording for '+x.n+'. It opens WhatsApp with the message already typed.';
+  document.getElementById('sh-x').classList.add('hide');
+  document.getElementById('sh-p').innerHTML=body;
+  document.getElementById('sh-ok').classList.add('hide');
+  SH.classList.add('on');
+  CHAN[i]='wa';
+ };});
+}
 
 boot();
 </script>
