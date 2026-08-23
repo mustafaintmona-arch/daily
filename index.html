@@ -240,6 +240,11 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 .acts,.ubtns{display:flex;gap:6px;margin-top:8px}
 .acts a,.acts button,.ub{flex:1;text-align:center;background:var(--card2);border:1px solid var(--line);color:var(--ink);
  border-radius:10px;padding:10px 3px;font-size:11.5px;font-family:inherit;text-decoration:none}
+.oacts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
+.oacts button{background:var(--card2);border:1px solid var(--line);color:var(--ink);border-radius:10px;
+ padding:9px 3px;font-size:11px;font-family:inherit}
+.oacts button.val{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:700}
+.oacts button.rm{color:#F0B9B2;border-color:rgba(212,106,94,.4)}
 .ub.gold{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700}
 .unit .d{font-size:12px;color:var(--dim);margin-top:7px;padding-top:7px;border-top:1px solid var(--line);line-height:1.6}
 .pill{display:inline-block;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;
@@ -365,6 +370,7 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
     <button class="addbtn" id="adddeal">+ Add a client</button></div>
   </div>
   <div id="d-later" class="hide">
+  <div class="sec"><h2>Funnel</h2><div class="card" id="lfunnel"></div></div>
   <div class="sec"><h2>Ready to call now <b id="lrcount"></b></h2>
     <div class="card" id="lready"></div></div>
   <div class="sec"><h2>Waiting <b id="lwcount"></b></h2>
@@ -440,6 +446,7 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
     Never ask T for money before the unit is locked.<br><br>
     US and UK clients pay by wire, not card. Send escrow details early.<br><br>
     A zero logged honestly beats a gap.</div></div></div>
+  <div class="sec"><h2>Do not contact <b id="dnccount"></b></h2><div class="card" id="dnclist"></div></div>
 </div>
 
 <div class="nav" id="nav"></div>
@@ -523,7 +530,7 @@ function flushPut(){if(!_wp)return;try{localStorage.setItem(K,JSON.stringify(_wp
 const put=d=>{_wp=d; if(_wt)return; _wt=setTimeout(function(){_wt=null;flushPut();},220);};
 window.addEventListener('pagehide',flushPut);
 document.addEventListener('visibilitychange',function(){if(document.hidden)flushPut();});
-let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(S.priv===undefined)S.priv=0;
+let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
 const SEED_DEALS=[
 {ty:'Resale',w:'Ashwini + Ashish',ph:'',u:'Emaar distress 3BR',v:4700000,r:2,s:2,na:'Book the call with Ashish',nd:'',src:'Repeat client',ref:'',n:'One wallet with the Sobha deal. Pick one.',ch:'1 cheque',rent:0},
 {ty:'Off-plan',w:'Dr Ashish',ph:'',u:'Sobha 4BR corner',v:5831000,r:2,s:1,na:'Get a yes, no or not now',nd:'',src:'Repeat client',ref:'Ashwini',n:'4% DLD waived, 80% deferred to 2030.',ch:'1 cheque',rent:0},
@@ -737,7 +744,7 @@ function searchAll(q){
   r.push({k:'Unit',t:u.p,s:u.t+' · '+money((u.lt||'Sale')==='Rent'?u.rent:u.pr),go:'stock',seg:'units'});});
  S.op.forEach(function(o){if(hit(o.n)||hit(o.dev)||hit(o.t)||hit(o.note))
   r.push({k:'Off-plan',t:o.n,s:o.dev+' · handover '+o.h,go:'stock',seg:'offplan'});});
- S.later.forEach(function(x){if(hit(x.n)||hit(x.w)||hit(x.n2)||hit(x.ty))
+ S.later.forEach(function(x){if(!x.dnc&&(hit(x.n)||hit(x.w)||hit(x.n2)||hit(x.ty)))
   r.push({k:'Later',t:x.n,s:x.ty+' · '+lWhen(x),go:'deals',dseg:'Later'});});
  S.diary.forEach(function(e){if(hit(e.n)||hit(e.w))
   r.push({k:'Diary',t:e.n,s:(e.w||'')+' · '+new Date(e.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'}),go:'diary',day:e.d});});
@@ -816,7 +823,7 @@ function buildMoves(){
    act:d.na||'Set the next step',why:why});
  });
  S.later.forEach(function(x,i){
-  if(!x.wd||x.wd>TD)return;
+  if(x.dnc||!x.wd||x.wd>TD)return;
   var late=Math.round((new Date(TD)-new Date(x.wd))/864e5);
   out.push({k:'later',i:i,sc:30+Math.min(20,late*2),t:x.n,ph:x.ph,fee:0,
    sub:(x.w||'')+' · '+(x.ty||'parked'),act:'Reconnect, you parked this',
@@ -1371,11 +1378,8 @@ function icsFile(events,name){
 }
 function icsOneDiary(i){var e=S.diary[i];
  icsFile([icsEvent({n:e.n,d:e.d,t:e.t,desc:(e.w||'')+(e.ty?' · '+e.ty:'')})],'event');}
-function icsOneLater(i){var x=S.later[i];
- icsFile([icsEvent({n:'Call '+x.n+(x.w?' · '+x.w:''),d:x.wd,t:'',
-  desc:(x.ty||'')+(x.n2?'\n'+x.n2:'')+(x.ph?'\n'+x.ph:'')})],'reconnect');}
 function icsAllLater(){
- var L=S.later.filter(function(x){return x.wd;});
+ var L=S.later.filter(function(x){return x.wd&&!x.dnc;});
  if(!L.length){alert('Nothing in your Later list yet.');return;}
  icsFile(L.map(function(x){return icsEvent({n:'Call '+x.n+(x.w?' · '+x.w:''),d:x.wd,t:'',
   desc:(x.ty||'')+(x.n2?'\n'+x.n2:'')+(x.ph?'\n'+x.ph:'')});}),'later-list');
@@ -1393,12 +1397,44 @@ function pfLink(u){return 'https://www.propertyfinder.ae/en/search?c=1&q='+encod
 
 /* ================= LATER / NURTURE ================= */
 const LTYPES=['Handover coming','Lease ending','Seller not now','Buyer not ready','Investor watching','Mortgage pending','Other'];
+const OUT=[
+ ['noans','No answer',1],
+ ['maybe','Maybe later',90],
+ ['no','Not selling',180],
+ ['val','Wants a valuation',0],
+ ['listed','Already listed',300],
+ ['remove','Remove me',-1]
+];
+const PROTPL=[
+['Neighbour sold',
+ '{name}, quick one on your {unit}.\n\n{hook}\n\nI have buyers actively looking in the area right now, and stock is thin.\n\nWant me to send what your place could fetch today?'],
+['No hook',
+ '{name}, quick note on your {unit}.\n\nA good share of owners in the community have already resold at a profit since launch.\n\nI can put together a current value for your place, no obligation.\n\nWant me to send it over?'],
+['Follow up',
+ '{name}, tried you on the phone about {unit} earlier.\n\nNo answer, so following up here instead.\n\nI have the latest median for the area to hand.\n\nWant me to send it over?']];
+function digits(p){return String(p||'').replace(/[^\d]/g,'');}
+function waLink(phone,text){
+ var n=String(phone||'').replace(/[^\d]/g,'');
+ return 'https://wa.me/'+n+'?text='+encodeURIComponent(text);
+}
+function proMsg(x,body){
+ var name=String(x.n||'').trim().split(' ')[0]||'there';
+ var unit=x.w||'the property';
+ var hook=String(x.n2||'').replace(/^#\d+[^·]*·\s*/,'').trim();
+ return body.split('{name}').join(name).split('{unit}').join(unit).split('{hook}').join(hook).split('{agent}').join('Mustafa');
+}
+function consecNoans(x){
+ var att=x.att||[], c=0;
+ for(var j=att.length-1;j>=0;j--){ if(att[j].out==='noans')c++; else break; }
+ return c;
+}
 var DSEG='Active';
 function drawDealSeg(){
- var due=S.later.filter(function(x){return x.wd&&x.wd<=TD;}).length;
+ var active=S.later.filter(function(x){return !x.dnc;});
+ var due=active.filter(function(x){return x.wd&&x.wd<=TD;}).length;
  var opts=['Active','Later'];
  document.getElementById('dseg').innerHTML=opts.map(function(o){
-  var lbl=o==='Later'?('Later'+(S.later.length?' ('+S.later.length+')':'')):o;
+  var lbl=o==='Later'?('Later'+(active.length?' ('+active.length+')':'')):o;
   return '<b class="'+(DSEG===o?'on':'')+'" data-ds="'+o+'">'+lbl+(o==='Later'&&due?' ●':'')+'</b>';}).join('');
  document.querySelectorAll('#dseg b').forEach(function(b){b.onclick=function(){
   DSEG=b.dataset.ds;
@@ -1415,22 +1451,99 @@ function lWhen(x){
  if(days<31)return 'In '+days+' days';
  return d.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
 }
+function attSummary(x){
+ var att=x.att||[]; if(!att.length)return '';
+ var last=att[att.length-1], lo=OUT.filter(function(o){return o[0]===last.out;})[0];
+ var lbl=lo?lo[1].toLowerCase():last.out;
+ var since=Math.round((new Date(TD)-new Date(last.d))/864e5);
+ var when=since<=0?'today':since+' day'+(since>1?'s':'')+' ago';
+ var parked=consecNoans(x)>=3?' · parked after 3 attempts':'';
+ return att.length+' attempt'+(att.length>1?'s':'')+' · last: '+lbl+', '+when+parked;
+}
 function lRow(x,i,ready){
  var ph=(x.ph||'').replace(/[^\d+]/g,'');
+ var as=attSummary(x);
+ var wa=waLink(x.ph,proMsg(x,PROTPL[x.n2?0:1][1]));
  return '<div class="deal'+(ready?' ldue':'')+'"><div class="top"><div>'+
   '<div class="who">'+esc(pvName(x.n))+'</div>'+
-  '<div class="sub">'+esc(pvNum(x.w||''))+(x.w&&x.ty?' · ':'')+esc(x.ty||'')+'</div></div>'+
+  '<div class="sub">'+esc(pvNum(x.w||''))+(x.w&&x.ty?' · ':'')+esc(x.ty||'')+'</div>'+
+  (as?'<div class="sub">'+esc(as)+'</div>':'')+
+  '</div>'+
   '<div class="fee" style="font-size:12px;'+(ready?'':'color:var(--dim)')+'">'+esc(lWhen(x))+'</div></div>'+
   (x.n2?'<div class="next"><b>Why later:</b> '+esc(pvAll(x.n2))+'</div>':'')+
-  '<div class="acts">'+(ph&&!S.priv?'<a href="tel:'+ph+'">Call</a><a href="https://wa.me/'+ph.replace('+','')+'" target="_blank">WhatsApp</a>':'')+
-  '<button data-lics="'+i+'">Remind me</button><button data-lmv="'+i+'">Move to pipeline</button><button data-lsn="'+i+'">Snooze</button><button data-led="'+i+'">Edit</button></div></div>';
+  (ph&&!S.priv?'<div class="acts"><a href="tel:'+ph+'" data-lch="'+i+':call">Call</a>'+
+   '<a href="'+wa+'" target="_blank" data-lch="'+i+':wa">WhatsApp</a></div>'+
+   '<div style="margin-top:7px;font-size:11.5px"><a href="#" data-lmsg="'+i+'" style="color:var(--gold)">change message</a>'+
+   ' &middot; <a href="#" data-led="'+i+'" style="color:var(--dim)">edit</a></div>'
+   :'<div style="margin-top:7px;font-size:11.5px"><a href="#" data-led="'+i+'" style="color:var(--dim)">edit</a></div>')+
+  '<div class="oacts">'+OUT.map(function(o){
+   var cls=o[0]==='remove'?'rm':(o[0]==='val'?'val':'');
+   return '<button class="'+cls+'" data-lout="'+i+':'+o[0]+'">'+o[1]+'</button>';}).join('')+
+  '</div></div>';
+}
+function drawFunnel(){
+ var el=document.getElementById('lfunnel'); if(!el)return;
+ var all=[],now7=[], cut=iso(new Date(Date.now()-7*864e5));
+ S.later.forEach(function(x){if(x.dnc)return;
+  (x.att||[]).forEach(function(a){all.push(a); if(a.d>=cut)now7.push(a);});});
+ var connects=all.filter(function(a){return a.out!=='noans';}).length;
+ var vals=all.filter(function(a){return a.out==='val';}).length;
+ var h='<div class="row"><div class="lab">Attempts</div><div class="val hit">'+all.length+
+  '<span style="color:var(--dim);font-weight:400;font-size:11px"> · '+now7.length+' last 7 days</span></div></div>'+
+  '<div class="row"><div class="lab">Connects</div><div class="val">'+connects+'</div></div>'+
+  '<div class="row"><div class="lab">Valuations</div><div class="val">'+vals+'</div></div>';
+ if(all.length>=20){
+  var apc=connects?(all.length/connects).toFixed(1):'n/a', cpv=vals?(connects/vals).toFixed(1):'n/a';
+  h+='<div class="hint" style="margin-top:9px">'+apc+' attempts per connect &middot; '+cpv+' connects per valuation</div>';
+ } else h+='<div class="hint" style="margin-top:9px">Not enough attempts yet to be meaningful</div>';
+ el.innerHTML=h;
+}
+function laterOutcome(i,k){
+ var x=S.later[i]; if(!x)return;
+ var row=OUT.filter(function(o){return o[0]===k;})[0]; if(!row)return;
+ if(k==='val'&&!confirm('Move '+x.n+' into your pipeline as wanting a valuation?'))return;
+ if(k==='remove'&&!confirm('Mark '+x.n+' as do not contact. They will never be shown again and this cannot be undone from here. Continue?'))return;
+ x.att=x.att||[];
+ x.att.push({d:TD,ch:x._ch||'call',out:k});
+ delete x._ch;
+ if(k==='val'){
+  S.deals.push({ty:'Resale',w:x.n,ph:x.ph||'',u:x.w||'',v:num(x.v)||0,r:2,s:1,
+   na:'Send the valuation',nd:TD,src:'Prospecting call',ref:'',n:x.n2||'',ch:'1 cheque',rent:0});
+  S.later.splice(i,1);
+  put(S);drawLater();drawDeals();drawHero();drawDealSeg();
+  alert('Moved into your pipeline');
+  return;
+ }
+ if(k==='remove'){
+  x.dnc=1; x.wd='';
+  var d=digits(x.ph); if(d&&S.dnc.indexOf(d)<0)S.dnc.push(d);
+  put(S);drawLater();drawDealSeg();drawMore();
+  alert(x.n+' will not be contacted again.');
+  return;
+ }
+ x.wd=(k==='noans')?autoDate(consecNoans(x)>=3?90:1):autoDate(row[2]);
+ put(S);drawLater();drawDealSeg();drawUpNext();
+ alert('Logged. Next call: '+lWhen(x)+'.');
+}
+function laterMsgSheet(i){
+ var x=S.later[i];
+ var h='<div class="hint">Pick the wording for '+esc(x.n)+'. Each is filled in for them already.</div>'+
+  PROTPL.map(function(t){
+   var msg=proMsg(x,t[1]);
+   return '<div class="tmpl"><div class="tt">'+esc(t[0])+'</div>'+
+    '<div class="tp" style="white-space:pre-line">'+esc(msg)+'</div>'+
+    '<a class="addbtn" href="'+waLink(x.ph,msg)+'" target="_blank" style="display:block;text-align:center;text-decoration:none;margin-top:9px">Send on WhatsApp</a></div>';
+  }).join('');
+ openTool('Message for '+x.n,h,'');
+ document.getElementById('tcopy').textContent='Close';
 }
 function drawLater(){
+ drawFunnel();
  var ready=[],wait=[];
- S.later.forEach(function(x,i){ (x.wd&&x.wd<=TD?ready:wait).push([x,i]); });
+ S.later.forEach(function(x,i){ if(x.dnc)return; (x.wd&&x.wd<=TD?ready:wait).push([x,i]); });
  wait.sort(function(a,b){return (a[0].wd||'9999').localeCompare(b[0].wd||'9999');});
  var f=document.getElementById('lfilt'), cur=f.value||'All types';
- var ts=['All types'].concat(LTYPES.filter(function(t){return S.later.some(function(x){return x.ty===t;});}));
+ var ts=['All types'].concat(LTYPES.filter(function(t){return S.later.some(function(x){return x.ty===t&&!x.dnc;});}));
  f.innerHTML=ts.map(function(t){return '<option'+(t===cur?' selected':'')+'>'+t+'</option>';}).join('');
  if(cur!=='All types')wait=wait.filter(function(p){return p[0].ty===cur;});
  document.getElementById('lrcount').textContent=ready.length?ready.length+' waiting on you':'';
@@ -1439,18 +1552,12 @@ function drawLater(){
   :'<div class="hint">Nobody is due yet. Good.</div>';
  document.getElementById('llist').innerHTML=wait.length?wait.map(function(p){return lRow(p[0],p[1],0);}).join('')
   :'<div class="hint">Nobody parked here yet. Add the ones who said not now.</div>';
- document.querySelectorAll('[data-lmv]').forEach(function(b){b.onclick=function(){
-  var x=S.later[+b.dataset.lmv];
-  S.deals.push({ty:'Ready',w:x.n,ph:x.ph||'',u:x.w||'',v:num(x.v)||0,r:2,s:0,
-   na:'Reconnect, '+(x.ty||'was parked'),nd:TD,src:'Repeat client',ref:'',n:x.n2||'',ch:'1 cheque',rent:0});
-  S.later.splice(+b.dataset.lmv,1);put(S);drawLater();drawDeals();drawHero();drawDealSeg();
-  alert(x.n+' moved into your pipeline.');};});
- document.querySelectorAll('[data-lsn]').forEach(function(b){b.onclick=function(){
-  var x=S.later[+b.dataset.lsn], m=prompt('Push back by how many months?','3');
-  if(m===null)return; var d=new Date(x.wd&&x.wd>TD?x.wd:TD); d.setMonth(d.getMonth()+num(m));
-  x.wd=iso(d);put(S);drawLater();drawDealSeg();drawUpNext();};});
- document.querySelectorAll('[data-lics]').forEach(function(b){b.onclick=function(){icsOneLater(+b.dataset.lics);};});
- document.querySelectorAll('[data-led]').forEach(function(b){b.onclick=function(){laterEdit(+b.dataset.led);};});
+ document.querySelectorAll('[data-lch]').forEach(function(a){a.onclick=function(){
+  var p=a.dataset.lch.split(':'); if(S.later[+p[0]])S.later[+p[0]]._ch=p[1];};});
+ document.querySelectorAll('[data-lmsg]').forEach(function(a){a.onclick=function(e){e.preventDefault();laterMsgSheet(+a.dataset.lmsg);};});
+ document.querySelectorAll('[data-lout]').forEach(function(b){b.onclick=function(){
+  var p=b.dataset.lout.split(':'); laterOutcome(+p[0],p[1]);};});
+ document.querySelectorAll('[data-led]').forEach(function(a){a.onclick=function(e){e.preventDefault();laterEdit(+a.dataset.led);};});
 }
 function laterEdit(i){
  var x=(i>=0?JSON.parse(JSON.stringify(S.later[i])):{n:'',ph:'',w:'',ty:LTYPES[0],wd:'',n2:'',v:0});
@@ -1476,7 +1583,8 @@ function laterEdit(i){
    n2:document.getElementById('l-n2').value.trim()};
   if(!o.n){alert('Who is it?');return;}
   if(!o.wd){alert('Pick a date to call them again. That is the whole point of this list.');return;}
-  if(i>=0)S.later[i]=o; else S.later.push(o);
+  if(i>=0){o.att=S.later[i].att||[]; o.dnc=S.later[i].dnc||0; S.later[i]=o;}
+  else{o.att=[]; o.dnc=0; S.later.push(o);}
   put(S);drawLater();drawDealSeg();drawUpNext();TS.style.display='none';};
  if(i>=0)document.getElementById('l-del').onclick=function(){
   if(confirm('Remove this person?')){toTrash('later',S.later[i]);S.later.splice(i,1);put(S);drawLater();drawDealSeg();TS.style.display='none';}};
@@ -1500,17 +1608,21 @@ document.getElementById('t-impl').onclick=function(){
    var o; try{o=JSON.parse(ev.target.result);}catch(e){out.textContent='That file is not readable.';return;}
    var L=o.later||o;
    if(!Array.isArray(L)||!L.length){out.textContent='No prospects found in that file.';return;}
-   var added=0, skipped=0;
+   var added=0, skipped=0, dncSkipped=0;
    L.forEach(function(x){
     if(!x||!x.n)return;
+    var d=digits(x.ph);
+    if(d&&S.dnc.indexOf(d)>=0){dncSkipped++;return;}
     var dup=S.later.some(function(y){return y.n===x.n&&y.w===x.w;})
       ||S.deals.some(function(y){return y.w===x.n;});
     if(dup){skipped++;return;}
     S.later.push({n:x.n,ph:x.ph||'',w:x.w||'',ty:x.ty||'Seller not now',
-     wd:x.wd||TD,v:num(x.v),n2:x.n2||''});
+     wd:x.wd||TD,v:num(x.v),n2:x.n2||'',
+     att:Array.isArray(x.att)?x.att:[],dnc:x.dnc?1:0});
+    if(x.dnc&&d&&S.dnc.indexOf(d)<0)S.dnc.push(d);
     added++;});
    put(S);drawLater();drawDealSeg();drawUpNext();drawNav();
-   out.innerHTML='<b style="color:var(--gold)">'+added+' added</b> to your Later list'+(skipped?', '+skipped+' skipped as duplicates':'')+'.<br><br>Open Deals, tap Later, then send the dates to your calendar.';
+   out.innerHTML='<b style="color:var(--gold)">'+added+' added</b> to your Later list'+(skipped?', '+skipped+' skipped as duplicates':'')+(dncSkipped?', '+dncSkipped+' skipped as do not contact':'')+'.<br><br>Open Deals, tap Later, then send the dates to your calendar.';
   };
   r.readAsText(f);};
 };
@@ -1523,7 +1635,7 @@ function evOf(d){
  var own=S.diary.filter(function(e){return e.d===d;});
  var fu=S.deals.filter(function(x){return x.nd===d&&x.s<4;}).map(function(x){
   return {n:x.na||'Follow up',w:x.w,d:d,t:'',ty:'Follow up',auto:1};});
- var lt=S.later.filter(function(x){return x.wd===d;}).map(function(x){
+ var lt=S.later.filter(function(x){return x.wd===d&&!x.dnc;}).map(function(x){
   return {n:'Reconnect · '+(x.ty||''),w:x.n,d:d,t:'',ty:'Later',auto:1};});
  return own.concat(fu).concat(lt).sort(function(a,b){return (a.t||'zz').localeCompare(b.t||'zz');});}
 function t12(t){if(!t)return '';var p=t.split(':'),h=+p[0],m=p[1]||'00';
@@ -1627,7 +1739,7 @@ function goPage(k){
  if(navigator.vibrate)navigator.vibrate(6);
 }
 function drawNav(){
- var due=S.later.filter(function(x){return x.wd&&x.wd<=TD;}).length
+ var due=S.later.filter(function(x){return !x.dnc&&x.wd&&x.wd<=TD;}).length
   + S.deals.filter(function(x){return x.s<4&&x.nd&&x.nd<=TD;}).length;
  document.getElementById('nav').innerHTML=PAGES.map(function(p){
   var dot=(p[0]==='deals'&&due)?'<u class="dot"></u>':'';
@@ -2083,7 +2195,7 @@ function drawComps(){
 }
 fetch('comps.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&j.communities){COMPS=j;drawComps();}}).catch(function(){});
 
-var APPVER='v31 · 15 Aug 2026 · lowest psf sort';
+var APPVER='v32 · 23 Aug 2026 · prospecting engine';
 function drawObj(){
  var L=S.deals.filter(function(d){return d.s===LOST&&d.lost;});
  var el=document.getElementById('objbox');
@@ -2129,6 +2241,13 @@ function drawMore(){drawStore();drawObj();
  document.getElementById('refs').innerHTML=ks.length?ks.map(function(k){
   return '<div class="row"><div><div class="lab">'+esc(k)+'</div><div class="tgt">'+refs[k].n+' client'+(refs[k].n>1?'s':'')+' introduced</div></div><div style="font-family:Georgia,serif;color:var(--gold)">'+money(refs[k].v)+'</div></div>';}).join('')
   :'<div class="hint">Fill in Referred by on your deals and this shows who actually grows your book. Thank the top one this month.</div>';
+ drawDnc();
+}
+function drawDnc(){
+ document.getElementById('dnccount').textContent=S.dnc.length||'';
+ document.getElementById('dnclist').innerHTML=S.dnc.length?S.dnc.map(function(n){
+  return '<div class="row"><div class="lab">'+esc(pvNum(n))+'</div></div>';}).join('')
+  :'<div class="hint">Nobody here. Numbers land here when someone asks not to be contacted again.</div>';
 }
 
 /* ---------- image store: IndexedDB, large capacity ---------- */
@@ -2278,7 +2397,7 @@ document.getElementById('t-restore').onclick=function(){
    Promise.all(ks.map(function(k){return idbSet(k,imgs[k]).catch(function(){});}))
     .then(function(){
      S=D; if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[];
-     if(!S.op)S.op=[]; if(!S.diary)S.diary=[]; if(S.priv===undefined)S.priv=0;
+     if(!S.op)S.op=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
      try{put(S);flushPut();}catch(e){alert('Restored, but phone storage is tight. Some data may not have saved.');}
      alert('Restored. Reloading.'); location.reload();});
   };
