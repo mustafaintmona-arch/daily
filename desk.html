@@ -114,7 +114,23 @@ td.idx{text-align:center}
 .jbox label{display:block;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
 .jbox textarea{width:100%;background:transparent;border:0;color:var(--ink);font-size:13.5px;outline:0;
  resize:vertical;line-height:1.6;font-family:inherit;min-height:46px}
-.mk{padding:18px}
+.mk{padding:16px 18px 40px}
+.mksets{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}
+.mksets b{display:flex;align-items:center;gap:7px;font-size:12.5px;padding:8px 13px;border-radius:20px;
+ background:var(--card2);border:1px solid var(--line);color:var(--dim);font-weight:600;cursor:pointer}
+.mksets b.on{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.mksets b.add{color:var(--gold);border-style:dashed}
+.mksets b u{text-decoration:none;opacity:.6;font-weight:400}
+.mksets b q{quotes:none;opacity:.45;font-size:14px;line-height:1}
+.mksets b q:hover{opacity:1;color:var(--bad)}
+.mkbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:15px}
+.mkbar input[type=text]{background:var(--card2);border:1px solid var(--line);border-radius:9px;
+ color:var(--ink);padding:8px 12px;font-size:13px;width:270px;outline:0}
+.mkbar input[type=date],.mkbar select{background:var(--card2);border:1px solid var(--line);
+ border-radius:9px;color:var(--ink);padding:8px 10px;font-size:12.5px;outline:0}
+.mkbar input:focus,.mkbar select:focus{border-color:var(--gold)}
+.mkread{background:rgba(185,151,91,.11);border:1px solid rgba(185,151,91,.4);border-radius:11px;
+ padding:12px 14px;font-size:13px;color:var(--ink);margin-top:6px}
 .mk .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:11px;margin-bottom:20px}
 .mk .grid div{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .mk .grid u{display:block;text-decoration:none;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
@@ -552,7 +568,12 @@ document.getElementById('sh-ok').onclick=function(){
  toast(got.length+' unit'+(got.length>1?'s':'')+' added');
 };
 
-/* ================= MARKET: CSV ANALYSIS ================= */
+/* ================= MARKET: TRANSACTION LIBRARY ================= */
+var MK={sets:{},sel:''};
+try{var _m=localStorage.getItem('desk-market'); if(_m){var o=JSON.parse(_m); if(o&&o.sets)MK=o;}}catch(e){}
+var MF={q:'',bd:'All',from:'',to:''};
+function mkSave(){try{localStorage.setItem('desk-market',JSON.stringify(MK));}
+ catch(e){toast('Laptop storage full. Delete a dataset.');}}
 function med(a){if(!a.length)return 0;var b=a.slice().sort(function(x,y){return x-y;});
  var m=Math.floor(b.length/2);return b.length%2?b[m]:(b[m-1]+b[m])/2;}
 function splitCSV(line,d){
@@ -570,69 +591,54 @@ function parseCSV(txt){
  var head=splitCSV(lines[0],d).map(function(h){return h.toLowerCase();});
  var rows=lines.slice(1).map(function(l){return splitCSV(l,d);});
  function find(){var pats=[].slice.call(arguments);
-  for(var p=0;p<pats.length;p++)for(var i=0;i<head.length;i++)
-   if(head[i].indexOf(pats[p])>=0)return i;
+  for(var pi=0;pi<pats.length;pi++)for(var i=0;i<head.length;i++)
+   if(head[i].indexOf(pats[pi])>=0)return i;
   return -1;}
- var cPrice=find('price','amount','value','consideration');
- var cDate=find('date','instance');
+ var isRent=head.join(' ').match(/annual amount|contract amount|ejari|tenant|contract start/)?1:0;
+ var cAmt=isRent?find('annual amount','contract amount','rent','amount')
+                :find('price','amount','value','consideration');
+ var cDate=find('instance date','transaction date','contract start','date');
  var cPsf=find('per sqft','/sqft','psf','price per');
- var cArea=find('sqft','size','area','built');
- var cBed=find('bed','br');
+ var cArea=find('sqft','size','area sq','built','property size','actual area');
+ var cBed=find('bed','rooms','br');
+ var cLoc=find('community','master project','area name','location','project','building');
  var cUnit=find('unit','no.','property no');
- var cSold=find('sold by','seller','buyer type','transaction type','party');
- var cRec=find('record type','type of record','registration');
- var cGain=find('capital gain','gain','appreciation');
+ var cSold=find('sold by','seller','buyer type','party','transaction type');
+ var cRec=find('record type','type of record','registration','procedure');
+ var cUse=find('usage','property type','property sub');
  var out=[];
  rows.forEach(function(r){
   function g(i){return i>=0?(r[i]||''):'';}
   var rec=g(cRec).toLowerCase();
   if(rec&&(rec.indexOf('oqood')>=0||rec.indexOf('valuation')>=0||rec.indexOf('average')>=0))return;
-  var pr=num(g(cPrice)); if(!pr)return;
-  var dt=g(cDate), dd=null;
-  if(dt){var t=Date.parse(dt.replace(/(\d{2}),\s*/, '$1 ')); if(!isNaN(t))dd=new Date(t);}
-  out.push({pr:pr,d:dd,psf:num(g(cPsf)),area:num(g(cArea)),
-   bed:num(g(cBed)),unit:g(cUnit),sold:g(cSold),gain:num(g(cGain))});
+  var amt=num(g(cAmt)); if(!amt)return;
+  var dt=g(cDate),dd='';
+  if(dt){var t=Date.parse(dt.replace(/(\d{2}),\s*/,'$1 ')); if(!isNaN(t))dd=iso(new Date(t));}
+  out.push({a:amt,d:dd,p:num(g(cPsf)),s:num(g(cArea)),b:num(g(cBed)),
+   l:g(cLoc).slice(0,42),u:g(cUnit).slice(0,14),o:g(cSold).slice(0,24),t:g(cUse).slice(0,26)});
  });
  if(!out.length)return null;
- return {rows:out,cols:{price:cPrice>=0,date:cDate>=0,psf:cPsf>=0,area:cArea>=0,bed:cBed>=0,sold:cSold>=0,gain:cGain>=0}};
+ out.forEach(function(r){if(!r.p&&r.s&&r.a)r.p=Math.round(r.a/r.s);});
+ if(out.length>25000)out=out.slice(-25000);
+ return {kind:isRent?'rent':'sale',rows:out};
 }
-function analyse(M){
- var R=M.rows;
- R.forEach(function(r){if(!r.psf&&r.area&&r.pr)r.psf=Math.round(r.pr/r.area);});
- var prices=R.map(function(r){return r.pr;}).filter(Boolean);
- var psfs=R.map(function(r){return r.psf;}).filter(Boolean);
- var dated=R.filter(function(r){return r.d;});
- dated.sort(function(a,b){return a.d-b.d;});
- var q={},qs=[];
- dated.forEach(function(r){if(!r.psf)return;
-  var k=r.d.getFullYear()+' Q'+(Math.floor(r.d.getMonth()/3)+1);
-  if(!q[k]){q[k]=[];qs.push(k);}q[k].push(r.psf);});
- var qmed=qs.map(function(k){return {k:k,v:Math.round(med(q[k])),n:q[k].length};});
- var resale=R.filter(function(r){return /individual|resale|secondary/i.test(r.sold||'');});
- var dev=R.filter(function(r){return /developer|primary|off/i.test(r.sold||'');});
- var gains=R.map(function(r){return r.gain;}).filter(function(g){return g&&g<200;});
- var beds={};
- R.forEach(function(r){if(!r.bed)return;beds[r.bed]=beds[r.bed]||[];beds[r.bed].push(r.pr);});
- var bedRows=Object.keys(beds).sort(function(a,b){return a-b;}).map(function(b){
-  return {b:b,n:beds[b].length,p:Math.round(med(beds[b]))};});
- var last=qmed.length?qmed[qmed.length-1]:null;
- var peak=qmed.reduce(function(a,x){return (!a||x.v>a.v)?x:a;},null);
- var trough=qmed.reduce(function(a,x){return (!a||x.v<a.v)?x:a;},null);
- return {n:R.length,medPrice:Math.round(med(prices)),medPsf:Math.round(med(psfs)),
-  from:dated.length?dated[0].d:null,to:dated.length?dated[dated.length-1].d:null,
-  qmed:qmed,resale:resale.length,dev:dev.length,
-  medGain:gains.length?Math.round(med(gains)):null,gainN:gains.length,
-  profitable:gains.length?Math.round(gains.filter(function(g){return g>0;}).length/gains.length*100):null,
-  bedRows:bedRows,last:last,peak:peak,trough:trough};
+function mkPass(r){
+ if(MF.q){var h=((r.l||'')+' '+(r.u||'')+' '+(r.t||'')).toLowerCase();
+  if(h.indexOf(MF.q)<0)return false;}
+ if(MF.bd!=='All'&&String(r.b||'')!==MF.bd)return false;
+ if(MF.from&&r.d&&r.d<MF.from)return false;
+ if(MF.to&&r.d&&r.d>MF.to)return false;
+ return true;
 }
 function drawMarket(){
  var m=document.getElementById('main');
- if(!MKT){
-  m.innerHTML='<div class="empty"><h2>Drop a transaction export</h2>'+
-  '<p>A CSV from DLD or Property Monitor. It works out medians, the price per sqft trend by quarter, '+
-  'the developer versus resale split and the honest read on momentum.<br><br>'+
-  'This stays on the laptop and is never sent back to your phone.</p>'+
-  '<div class="drop" id="mdrop">Drop the CSV here, or click to choose</div></div>';
+ var names=Object.keys(MK.sets);
+ if(!names.length){
+  m.innerHTML='<div class="empty"><h2>Build your transaction library</h2>'+
+  '<p>Drop a DLD or Property Monitor export here. Sales or rent contracts, both work. '+
+  'Add as many communities as you like and switch between them.<br><br>'+
+  'It stays on this laptop and is never written into your phone backup.</p>'+
+  '<div class="drop" id="mdrop">Drop a CSV here, or click to choose</div></div>';
   var d=document.getElementById('mdrop');
   d.onclick=function(){document.getElementById('mfile').click();};
   d.ondragover=function(e){e.preventDefault();d.classList.add('over');};
@@ -641,44 +647,84 @@ function drawMarket(){
    if(e.dataTransfer.files[0])readCSV(e.dataTransfer.files[0]);};
   return;
  }
- var a=analyse(MKT), h='<div class="mk">';
- var span=(a.from&&a.to)?(a.from.toLocaleDateString('en-GB',{month:'short',year:'numeric'})+' to '+
-  a.to.toLocaleDateString('en-GB',{month:'short',year:'numeric'})):'no dates found';
+ if(!MK.sel||!MK.sets[MK.sel])MK.sel=names[0];
+ var set=MK.sets[MK.sel];
+ var rows=set.rows.filter(mkPass);
+ var isRent=set.kind==='rent';
+ var amts=rows.map(function(r){return r.a;}).filter(Boolean);
+ var psfs=rows.map(function(r){return r.p;}).filter(Boolean);
+ var dated=rows.filter(function(r){return r.d;}).sort(function(a,b){return a.d.localeCompare(b.d);});
+ var q={},qs=[];
+ dated.forEach(function(r){var v=isRent?r.a:(r.p||r.a); if(!v)return;
+  var k=r.d.slice(0,4)+' Q'+(Math.floor((+r.d.slice(5,7)-1)/3)+1);
+  if(!q[k]){q[k]=[];qs.push(k);}q[k].push(v);});
+ var qm=qs.map(function(k){return {k:k,v:Math.round(med(q[k])),n:q[k].length};});
+ var peak=qm.reduce(function(a,x){return (!a||x.v>a.v)?x:a;},null);
+ var last=qm.length?qm[qm.length-1]:null;
+ var beds={};rows.forEach(function(r){if(r.b)beds[r.b]=(beds[r.b]||0)+1;});
+ var bedOpts=['All'].concat(Object.keys(beds).sort(function(a,b){return a-b;}));
+
+ var h='<div class="mk">';
+ h+='<div class="mksets">'+names.map(function(n){
+  return '<b class="'+(n===MK.sel?'on':'')+'" data-ms="'+esc(n)+'">'+esc(n)+
+   '<u>'+MK.sets[n].rows.length+'</u><q data-mx="'+esc(n)+'">×</q></b>';}).join('')+
+  '<b class="add" id="mkadd">+ Add a dataset</b></div>';
+ h+='<div class="mkbar"><input type="text" id="mq" placeholder="Search community, unit or type" value="'+esc(MF.q)+'">'+
+  '<select id="mbd">'+bedOpts.map(function(b){
+   return '<option'+(String(b)===MF.bd?' selected':'')+'>'+b+(b==='All'?'':' bed')+'</option>';}).join('')+'</select>'+
+  '<input type="date" id="mfrom" value="'+esc(MF.from)+'"><span class="pill">to</span>'+
+  '<input type="date" id="mto" value="'+esc(MF.to)+'">'+
+  '<span class="pill"><b>'+rows.length+'</b> of '+set.rows.length+' · '+
+  (isRent?'rent contracts':'sales')+'</span></div>';
  h+='<div class="grid">'+
-  '<div><u>Transactions</u><b>'+a.n+'</b><s>'+span+'</s></div>'+
-  '<div><u>Median price</u><b>'+money(a.medPrice)+'</b><s>'+(a.bedRows.length?a.bedRows.length+' bed types':'')+'</s></div>'+
-  '<div><u>Median per sqft</u><b>'+(a.medPsf?a.medPsf.toLocaleString():'-')+'</b><s>AED</s></div>'+
-  '<div><u>Resale vs developer</u><b>'+a.resale+' / '+a.dev+'</b><s>'+
-   (a.resale+a.dev?Math.round(a.resale/(a.resale+a.dev)*100)+'% resale':'not stated')+'</s></div>'+
-  (a.medGain!==null?'<div><u>Median gain</u><b>'+a.medGain+'%</b><s>'+a.profitable+'% sold at a profit, n='+a.gainN+'</s></div>':'')+
+  '<div><u>'+(isRent?'Median annual rent':'Median price')+'</u><b>'+money(med(amts))+'</b><s>'+rows.length+' records</s></div>'+
+  (isRent?'':'<div><u>Median per sqft</u><b>'+(psfs.length?Math.round(med(psfs)).toLocaleString():'-')+'</b><s>AED</s></div>')+
+  '<div><u>Range</u><b>'+(amts.length?money(Math.min.apply(null,amts)):'-')+'</b><s>to '+(amts.length?money(Math.max.apply(null,amts)):'-')+'</s></div>'+
+  '<div><u>Period</u><b>'+(dated.length?dated[0].d.slice(0,7):'-')+'</b><s>to '+(dated.length?dated[dated.length-1].d.slice(0,7):'-')+'</s></div>'+
   '</div>';
- if(a.qmed.length>1){
-  var mx=Math.max.apply(null,a.qmed.map(function(x){return x.v;}));
-  h+='<h4>Price per sqft by quarter</h4><div class="qwrap"><div class="qbars">'+
-   a.qmed.map(function(x){return '<s class="'+(x===a.peak?'pk':'')+'" title="'+x.k+': '+x.v+' psf, n='+x.n+'">'+
-    '<em style="height:'+Math.round(x.v/mx*100)+'%"></em><q>'+x.k.replace(' ','<br>')+'</q></s>';}).join('')+
-   '</div></div>';
-  var mom=(a.last&&a.peak)?(a.last.v<a.peak.v?
-   'Down '+Math.round((a.peak.v-a.last.v)/a.peak.v*100)+'% from the peak in '+a.peak.k+'. The market here has stopped rising, and that is the honest thing to tell a seller.'
-   :'At or near the peak. Momentum is still positive.'):'';
-  if(mom)h+='<div class="grid"><div style="grid-column:1/-1"><u>Momentum</u><s style="font-size:13px;color:var(--ink);margin-top:6px;line-height:1.6">'+esc(mom)+'</s></div></div>';
+ if(qm.length>1){
+  var mx=Math.max.apply(null,qm.map(function(x){return x.v;}));
+  h+='<h4>'+(isRent?'Median rent by quarter':'Median price per sqft by quarter')+'</h4>'+
+   '<div class="qwrap"><div class="qbars">'+qm.map(function(x){
+    return '<s class="'+(x===peak?'pk':'')+'" title="'+x.k+': '+x.v.toLocaleString()+', n='+x.n+'">'+
+     '<em style="height:'+Math.round(x.v/mx*100)+'%"></em><q>'+x.k.replace(' ','<br>')+'</q></s>';}).join('')+'</div></div>';
+  if(last&&peak&&last.v<peak.v)
+   h+='<div class="mkread">Down '+Math.round((peak.v-last.v)/peak.v*100)+'% from the peak in '+peak.k+
+    '. Tell a seller that plainly rather than promising more growth.</div>';
  }
- if(a.bedRows.length){
-  h+='<h4>By bedrooms</h4><table><thead><tr><th>Beds</th><th>Sales</th><th>Median price</th></tr></thead><tbody>'+
-   a.bedRows.map(function(r){return '<tr><td>'+r.b+'</td><td>'+r.n+'</td><td>'+money(r.p)+'</td></tr>';}).join('')+
-   '</tbody></table>';
- }
- h+='<div class="sbtns" style="justify-content:flex-start;margin-top:24px">'+
-  '<button class="btn" id="mclear">Clear and load another</button>'+
-  '<button class="btn" id="mcopy">Copy summary</button></div></div>';
+ var show=rows.slice().sort(function(a,b){return (b.d||'').localeCompare(a.d||'');}).slice(0,80);
+ h+='<h4>Transactions · newest first</h4><table><thead><tr><th>Date</th><th>Location</th>'+
+  '<th>Unit</th><th>Type</th><th>Beds</th><th>Size</th><th>'+(isRent?'Annual rent':'Price')+'</th>'+
+  (isRent?'':'<th>per sqft</th>')+'</tr></thead><tbody>'+
+  show.map(function(r){return '<tr><td>'+esc(r.d||'-')+'</td><td>'+esc(r.l||'-')+'</td>'+
+   '<td>'+esc(r.u||'-')+'</td><td>'+esc(r.t||'-')+'</td><td>'+(r.b||'-')+'</td>'+
+   '<td>'+(r.s?r.s.toLocaleString():'-')+'</td><td>'+money(r.a)+'</td>'+
+   (isRent?'':'<td>'+(r.p?r.p.toLocaleString():'-')+'</td>')+'</tr>';}).join('')+
+  '</tbody></table>';
+ if(rows.length>80)h+='<div class="hint" style="margin-top:8px">Showing the newest 80 of '+rows.length+'. Narrow the filters to see others.</div>';
+ h+='<div class="sbtns" style="justify-content:flex-start;margin-top:20px">'+
+  '<button class="btn" id="mkcopy">Copy summary</button></div></div>';
  m.innerHTML=h;
- document.getElementById('mclear').onclick=function(){MKT=null;
-  try{localStorage.removeItem('desk-market');}catch(e){} drawMarket();};
- document.getElementById('mcopy').onclick=function(){
-  var t=a.n+' transactions, '+span+'\nMedian price '+money(a.medPrice)+
-   '\nMedian psf '+(a.medPsf||'-')+
-   (a.medGain!==null?'\nMedian gain '+a.medGain+'%, '+a.profitable+'% sold at a profit':'')+
-   (a.peak&&a.last?'\nPeak '+a.peak.v+' psf in '+a.peak.k+', latest '+a.last.v+' psf in '+a.last.k:'');
+ document.querySelectorAll('[data-ms]').forEach(function(b){b.onclick=function(e){
+  if(e.target.dataset.mx)return; MK.sel=b.dataset.ms;MF={q:'',bd:'All',from:'',to:''};mkSave();drawMarket();};});
+ document.querySelectorAll('[data-mx]').forEach(function(x){x.onclick=function(e){
+  e.stopPropagation();
+  if(!confirm('Remove '+x.dataset.mx+'?'))return;
+  delete MK.sets[x.dataset.mx];
+  if(MK.sel===x.dataset.mx)MK.sel=Object.keys(MK.sets)[0]||'';
+  mkSave();drawMarket();};});
+ document.getElementById('mkadd').onclick=function(){document.getElementById('mfile').click();};
+ document.getElementById('mq').oninput=function(){MF.q=this.value.toLowerCase();drawMarket();
+  var e2=document.getElementById('mq'); e2.focus(); e2.setSelectionRange(e2.value.length,e2.value.length);};
+ document.getElementById('mbd').onchange=function(){MF.bd=this.value.replace(' bed','');drawMarket();};
+ document.getElementById('mfrom').onchange=function(){MF.from=this.value;drawMarket();};
+ document.getElementById('mto').onchange=function(){MF.to=this.value;drawMarket();};
+ document.getElementById('mkcopy').onclick=function(){
+  var t=MK.sel+'\n'+rows.length+' '+(isRent?'rent contracts':'sales')+
+   (dated.length?', '+dated[0].d.slice(0,7)+' to '+dated[dated.length-1].d.slice(0,7):'')+
+   '\nMedian '+(isRent?'annual rent ':'price ')+money(med(amts))+
+   (isRent?'':'\nMedian psf '+(psfs.length?Math.round(med(psfs)).toLocaleString():'-'))+
+   (peak&&last?'\nPeak '+peak.v.toLocaleString()+' in '+peak.k+', latest '+last.v.toLocaleString()+' in '+last.k:'');
   navigator.clipboard.writeText(t).then(function(){toast('Copied');},function(){toast('Could not copy');});};
 }
 function readCSV(f){
@@ -686,12 +732,15 @@ function readCSV(f){
  r.onload=function(ev){
   var M=parseCSV(ev.target.result);
   if(!M){toast('Could not read that as a transaction export');return;}
-  MKT=M;try{localStorage.setItem('desk-market',JSON.stringify(M));}catch(e){}
-  drawMarket();toast(M.rows.length+' transactions read');
+  var base=f.name.replace(/\.(csv|tsv|txt)$/i,'').replace(/[_-]+/g,' ').slice(0,40);
+  var name=prompt('Name this dataset',base)||base;
+  if(MK.sets[name]&&!confirm('Replace the existing '+name+'?'))return;
+  MK.sets[name]=M; MK.sel=name; MF={q:'',bd:'All',from:'',to:''};
+  mkSave(); drawMarket();
+  toast(M.rows.length+' '+(M.kind==='rent'?'rent contracts':'sales')+' loaded');
  };
  r.readAsText(f);
 }
-
 
 /* ================= COMPARE + PRESENT ================= */
 function selIdx(){return Object.keys(SEL).map(Number).sort(function(a,b){return a-b;});}
