@@ -207,6 +207,50 @@ td.idx{text-align:center}
  padding:11px 20px;border-radius:11px;font-size:13px;font-weight:600;z-index:90;opacity:0;
  transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
+
+/* ---- unit panel + tools ---- */
+.udrawer{position:fixed;top:0;right:0;width:min(760px,92vw);height:100%;background:var(--navy);
+ border-left:1px solid rgba(185,151,91,.35);z-index:60;overflow:auto;transform:translateX(102%);
+ transition:transform .18s ease;box-shadow:-18px 0 50px rgba(0,0,0,.45)}
+.udrawer.on{transform:none}
+.udh{position:sticky;top:0;background:var(--navy);padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.08);
+ display:flex;align-items:center;gap:12px;z-index:2}
+.udh h3{margin:0;font-size:16px;color:var(--ink);flex:1}
+.udb{padding:18px 20px 60px}
+.uimgs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.uimg{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden}
+.uimg .cap{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);padding:8px 10px}
+.uimg img{width:100%;display:block;cursor:zoom-in;background:#08131e}
+.uspec{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.uspec div{background:var(--card2);border-radius:8px;padding:10px 12px}
+.uspec .l{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.uspec .v{font-size:15px;color:var(--ink);margin-top:3px}
+.lightbox{position:fixed;inset:0;background:rgba(4,10,16,.94);z-index:90;display:none;
+ align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+.lightbox.on{display:flex}
+.lightbox img{max-width:100%;max-height:100%;border-radius:8px}
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;padding:18px}
+.tool{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px}
+.tool h4{margin:0 0 4px;font-size:14px;color:var(--gold)}
+.tool .sub{font-size:11px;color:var(--dim);margin-bottom:12px}
+.tool label{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:9px 0 4px}
+.tool input,.tool select{width:100%;background:var(--card2);border:1px solid rgba(255,255,255,.12);
+ border-radius:7px;color:var(--ink);padding:8px 10px;font-size:14px;font-family:inherit}
+.tool input:focus,.tool select:focus{outline:none;border-color:var(--gold)}
+.t2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tout{margin-top:14px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px}
+.trow{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:13px;
+ border-bottom:1px solid rgba(255,255,255,.05)}
+.trow .l{color:var(--dim)}
+.trow .l b{display:block;color:var(--ink);font-weight:400}
+.trow.big{font-size:15px}
+.trow.big .v{color:var(--gold);font-weight:600}
+.tseg{display:flex;gap:0;margin-bottom:10px;border:1px solid rgba(255,255,255,.14);border-radius:8px;overflow:hidden}
+.tseg b{flex:1;text-align:center;padding:7px;font-size:12px;font-weight:500;cursor:pointer;color:var(--dim)}
+.tseg b.on{background:var(--gold);color:var(--navy);font-weight:600}
+.warnline{color:#E88;font-size:12px;margin-top:8px}
+@media print{body *{visibility:hidden}#pr,#pr *{visibility:visible}
+ #pr{position:absolute;left:0;top:0;width:100%}}
 </style>
 </head>
 <body>
@@ -241,6 +285,13 @@ td.idx{text-align:center}
 </div></div>
 <div class="pres" id="pres"></div>
 <div class="toast" id="toast"></div>
+
+<div class="udrawer" id="ud"><div class="udh"><h3 id="ud-t">Unit</h3>
+ <button class="btn" id="ud-offer">Sales offer</button>
+ <button class="btn" id="ud-close">Close</button></div>
+ <div class="udb" id="ud-b"></div></div>
+<div class="lightbox" id="lb"><img id="lb-i" alt=""></div>
+<div id="pr" style="display:none"></div>
 <script>
 var KEY='desk-v1';
 var STAGES=['To call','Contacted','Interested','Agreed','Won','Lost'];
@@ -404,15 +455,15 @@ var BLANK={
 };
 var LIST={deals:function(){return S().deals;},units:function(){return S().units;},
  later:function(){return S().later;},market:function(){return [];},review:function(){return [];},
- call:function(){return S().later;}};
+ call:function(){return S().later;},tools:function(){return [];}};
 var SEL={}; var MKT=null;
 try{var mraw=localStorage.getItem('desk-market'); if(mraw)MKT=JSON.parse(mraw);}catch(e){}
 function uniq(a){var o=[],seen={};a.forEach(function(x){if(x&&!seen[x]){seen[x]=1;o.push(x);}});return o;}
 function render(){
  document.getElementById('bar').classList.remove('hide');
- var tabs=[['deals','Clients'],['units','Inventory'],['call','Call list'],['later','Prospects'],['market','Market'],['review','Review']];
+ var tabs=[['deals','Clients'],['units','Inventory'],['call','Call list'],['later','Prospects'],['market','Market'],['tools','Tools'],['review','Review']];
  document.getElementById('tabs').innerHTML=tabs.map(function(t){
-  return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+'<i>'+LIST[t[0]]().length+'</i></b>';}).join('');
+  return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+(t[0]==='tools'?'':'<i>'+LIST[t[0]]().length+'</i>')+'</b>';}).join('');
  document.querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){
   TAB=b.dataset.t;Q='';F='All';document.getElementById('q').value='';render();};});
  document.getElementById('src').textContent=BK.at?
@@ -426,6 +477,8 @@ function render(){
   document.getElementById('count').innerHTML='';drawReview();return;}
  if(TAB==='call'){document.getElementById('bar').classList.add('hide');
   document.getElementById('count').innerHTML='';drawCall();return;}
+ if(TAB==='tools'){document.getElementById('bar').classList.add('hide');
+  document.getElementById('count').innerHTML='';drawTools();return;}
  drawFilter();drawTable();
 }
 function drawFilter(){
@@ -484,7 +537,8 @@ function drawTable(){
     h+='<td class="'+cl+'"><input data-i="'+i+'" data-k="'+c.k+'" type="'+tp+'" value="'+esc(val)+'"></td>';
    }
   });
-  h+='<td class="del"><button data-x="'+i+'" title="Delete">x</button></td></tr>';
+  h+='<td class="del">'+(TAB==='units'?'<button class="opn" data-o="'+i+'" title="Open unit">&#9744;</button>':'')+
+   '<button data-x="'+i+'" title="Delete">x</button></td></tr>';
  });
  h+='</tbody></table>';
  if(!idx.length)h='<div class="empty"><p>Nothing matches. Clear the search or filter, or add a row.</p></div>';
@@ -518,6 +572,8 @@ function bindCells(){
  document.querySelectorAll('.ck').forEach(function(c){c.onchange=function(){
   if(c.checked)SEL[c.dataset.s]=1; else delete SEL[c.dataset.s];
   document.getElementById('cmp').textContent='Compare'+(Object.keys(SEL).length?' ('+Object.keys(SEL).length+')':'');};});
+ document.querySelectorAll('[data-o]').forEach(function(b){b.onclick=function(e){
+  e.stopPropagation(); openUnit(+b.dataset.o);};});
  document.querySelectorAll('[data-x]').forEach(function(b){b.onclick=function(){
   var i=+b.dataset.x, r=LIST[TAB]()[i];
   var label=r.w||r.p||r.n||'this row';
@@ -848,10 +904,271 @@ document.getElementById('present').onclick=function(){
   :S().units.filter(function(u){return pass(u);}).slice(0,1);
  openPres(us,us.length===1?(us[0].p||'Unit'):'Comparison');
 };
+document.getElementById('ud-close').onclick=closeUnit;
+document.getElementById('ud-offer').onclick=makeOffer;
+document.getElementById('lb').onclick=function(){this.classList.remove('on');};
+document.getElementById('ud').addEventListener('click',function(e){
+ var b=e.target.getAttribute&&e.target.getAttribute('data-big');
+ if(b){document.getElementById('lb-i').src=b;document.getElementById('lb').classList.add('on');}
+});
 document.addEventListener('keydown',function(e){
- if(e.key==='Escape'){document.getElementById('pres').classList.remove('on');
+ if(e.key==='Escape'){closeUnit();document.getElementById('lb').classList.remove('on');document.getElementById('pres').classList.remove('on');
   document.getElementById('sheet').classList.remove('on');}
 });
+
+
+/* ================= UNIT PANEL, IMAGES, OFFERS ================= */
+function imgSrc(v,i,kind){
+ if(!v&&i!=null){v=(BK.imgs||{})['u'+i+'_'+kind];}
+ if(!v)return '';
+ v=String(v);
+ if(v.indexOf('data:')===0)return v;
+ return (BK.imgs||{})[v]||'';
+}
+function unitImgs(u,i){
+ var out=[];
+ var a=imgSrc(u.img,i,'img'); if(a)out.push(['Masterplan / photo',a]);
+ var b=imgSrc(u.fp,i,'fp');   if(b)out.push(['Floorplan',b]);
+ return out;
+}
+function psfOf(u){var pr=num(u.pr),b=num(u.bua);return (pr&&b)?Math.round(pr/b):0;}
+function openUnit(i){
+ var u=S().units[i]; if(!u)return;
+ CURU=i;
+ document.getElementById('ud-t').textContent=u.p||'Unit';
+ var ims=unitImgs(u,i), h='';
+ if(ims.length){
+  h+='<div class="uimgs">'+ims.map(function(x){
+   return '<div class="uimg"><div class="cap">'+esc(x[0])+'</div><img src="'+x[1]+'" data-big="'+x[1]+'"></div>';
+  }).join('')+'</div>';
+ } else {
+  h+='<div class="hint">No masterplan or floorplan saved on this unit. Add it on your phone, then Load backup here.</div>';
+ }
+ var sp=[['Type',u.t||'-'],['Beds',num(u.bd)||'-'],['BUA',num(u.bua)?num(u.bua).toLocaleString()+' sqft':'-'],
+  ['Plot',num(u.plot)?num(u.plot).toLocaleString()+' sqft':'-'],
+  [(u.lt==='Rent'?'Rent':'Price'),(u.lt==='Rent'?(num(u.rent)?money(u.rent):'-'):(num(u.pr)?money(u.pr):'-'))],
+  ['AED/sqft',psfOf(u)?psfOf(u).toLocaleString():'-'],
+  ['Original price',num(u.op)?money(u.op):'-'],
+  ['Uplift',(num(u.op)&&num(u.pr))?(((num(u.pr)-num(u.op))/num(u.op)*100).toFixed(1)+'%'):'-'],
+  ['Handover',u.h||'-']];
+ h+='<div class="uspec">'+sp.map(function(x){
+  return '<div><div class="l">'+esc(x[0])+'</div><div class="v">'+esc(String(x[1]))+'</div></div>';}).join('')+'</div>';
+ if(u.pl)h+='<div class="hint"><b>Payment plan</b><br>'+esc(u.pl)+'</div>';
+ if(u.n)h+='<div class="hint" style="margin-top:8px"><b>Note</b><br>'+esc(u.n)+'</div>';
+ document.getElementById('ud-b').innerHTML=h;
+ document.getElementById('ud').classList.add('on');
+}
+var CURU=null;
+function closeUnit(){document.getElementById('ud').classList.remove('on');}
+
+/* ---- offer one pager ---- */
+function offerHTML(u){
+ var isR=(u.lt||'Sale')==='Rent';
+ var P=isR?num(u.rent):num(u.pr);
+ var dld=isR?0:P*0.04, ag=isR?P*0.05:P*0.02, agv=ag*0.05;
+ var tru=isR?0:4200, adm=isR?0:3000;
+ var total=P+dld+ag+agv+tru+adm;
+ var sp=[]; if(num(u.bd))sp.push(num(u.bd)+' bedroom');
+ if(num(u.bua))sp.push('BUA '+num(u.bua).toLocaleString()+' sqft');
+ if(num(u.plot))sp.push('Plot '+num(u.plot).toLocaleString()+' sqft');
+ var ims=unitImgs(u,CURU);
+ var rows=[];
+ if(isR){rows.push(['Annual rent',money(P)],['Agency 5% incl VAT',money(ag+agv)],['Cheques',u.ch||'1 cheque']);}
+ else{
+  rows.push(['Property price',money(P)]);
+  if(psfOf(u))rows.push(['Price per sqft','AED '+psfOf(u).toLocaleString()]);
+  rows.push(['DLD transfer 4%',money(dld)],['Agency 2% incl VAT',money(ag+agv)],
+   ['Trustee office fee',money(tru)],['Admin / NOC',money(adm)]);
+ }
+ var css='body{font-family:Georgia,serif;color:#0B1F33;margin:0;padding:34px 40px}'+
+  'h1{font-size:20px;margin:0 0 2px;color:#0B1F33}h2{font-size:12px;margin:0 0 18px;color:#8A8375}'+
+  '.gold{color:#B9975B}table{width:100%;border-collapse:collapse;margin-top:14px}'+
+  'td{padding:8px 0;border-bottom:1px solid #E6E1D6;font-size:14px}'+
+  'td.v{text-align:right;font-weight:600}tr.tot td{border-top:2px solid #B9975B;border-bottom:none;'+
+  'font-size:16px;padding-top:12px;color:#0B1F33}'+
+  '.imgs{display:flex;gap:10px;margin:16px 0}.imgs img{width:50%;border-radius:6px}'+
+  '.ft{margin-top:26px;font-size:11px;color:#7A7365;border-top:1px solid #E6E1D6;padding-top:10px}';
+ return '<html><head><meta charset="utf-8"><title>'+esc(u.p||'Offer')+'</title><style>'+css+'</style></head><body>'+
+  '<div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase" class="gold">Allegiance Real Estate</div>'+
+  '<h1>'+esc(u.p||'Unit')+'</h1>'+
+  '<h2>'+esc(u.t||'')+(sp.length?' &middot; '+esc(sp.join(' · ')):'')+'</h2>'+
+  (ims.length?'<div class="imgs">'+ims.map(function(x){return '<img src="'+x[1]+'">';}).join('')+'</div>':'')+
+  '<div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase" class="gold">'+
+   (isR?'Rental offer':'Sales offer')+'</div><table>'+
+  rows.map(function(r){return '<tr><td>'+esc(r[0])+'</td><td class="v">'+esc(String(r[1]))+'</td></tr>';}).join('')+
+  (isR?'':'<tr class="tot"><td>Total to buy</td><td class="v">'+money(total)+'</td></tr>')+
+  '</table>'+
+  (u.pl?'<p style="font-size:13px;margin-top:16px"><b>Payment plan</b><br>'+esc(u.pl)+'</p>':'')+
+  (u.h?'<p style="font-size:13px"><b>Handover</b> '+esc(u.h)+'</p>':'')+
+  '<div class="ft">Mustafa Saleh &middot; Allegiance Real Estate &middot; Figures are indicative and subject to '+
+  'developer and DLD confirmation on the day of transfer.</div></body></html>';
+}
+function makeOffer(){
+ if(CURU==null)return;
+ var u=S().units[CURU];
+ var wdw=window.open('','_blank');
+ if(!wdw){toast('Allow pop-ups to generate the offer');return;}
+ wdw.document.write(offerHTML(u)); wdw.document.close();
+ setTimeout(function(){wdw.focus();wdw.print();},400);
+}
+
+
+/* ================= CALCULATORS ================= */
+var FEES={trustLo:4000,trustHi:4200,adminReady:580,adminOff:40,deed:250,map:250,mortReg:290,mortPct:0.0025};
+var LTVS=[['Resident, first home, under 5M',80],['Resident, first home, over 5M',70],
+ ['Resident, second or investment',65],['Non-resident',60],['Off-plan',50]];
+function TV(id){var e=document.getElementById(id);return e?num(e.value):0;}
+function TS(id){var e=document.getElementById(id);return e?e.value:'';}
+function TR(l,v,t,big){return '<div class="trow'+(big?' big':'')+'"><div class="l">'+esc(l)+
+ (t?'<b>'+esc(t)+'</b>':'')+'</div><div class="v">'+v+'</div></div>';}
+
+function costRows(o){
+ var pr=o.pr, r=[];
+ r.push(['Purchase price',pr,1]);
+ r.push(['DLD transfer fee 4%',o.dldw?0:pr*0.04,0,o.dldw?'Waived by the developer':'']);
+ r.push(['Trustee office fee',pr>500000?FEES.trustHi:FEES.trustLo,0]);
+ r.push(['DLD admin fee',o.off?FEES.adminOff:FEES.adminReady,0]);
+ r.push(['Title deed issuance',FEES.deed,0]);
+ if(!o.off)r.push(['Property map',FEES.map,0]);
+ var ag=pr*o.ag/100; if(ag)r.push(['Agency fee '+o.ag+'%',ag,0]);
+ if(o.ln){
+  r.push(['Mortgage registration 0.25%',o.ln*FEES.mortPct+FEES.mortReg,0]);
+  r.push(['Bank arrangement fee '+o.bk+'%',o.ln*o.bk/100,0]);
+  r.push(['Property valuation',o.val,0]);
+ }
+ if(o.noc)r.push(['Developer NOC',o.noc,0]);
+ if(o.sc&&o.bua)r.push(['Service charge, first year',o.sc*o.bua,0,o.sc+' per sqft']);
+ return r;
+}
+function costTotals(o){
+ var rows=costRows(o), extra=0;
+ rows.forEach(function(x){if(!x[2])extra+=x[1];});
+ return {rows:rows,price:o.pr,extra:extra,total:o.pr+extra,
+  cash:o.pr-o.ln+extra,pct:o.pr?extra/o.pr*100:0};
+}
+function runCost(){
+ var o={pr:TV('c-pr'),off:num(TS('c-off')),dldw:num(TS('c-dldw')),ag:TV('c-ag'),
+  noc:TV('c-noc'),ln:TV('c-ln'),bk:TV('c-bk'),val:TV('c-val'),bua:TV('c-bua'),sc:TV('c-sc')};
+ var out=document.getElementById('c-out');
+ if(!o.pr){out.innerHTML='<div class="hint">Enter a purchase price.</div>';return;}
+ var t=costTotals(o);
+ out.innerHTML=t.rows.map(function(r){
+  return TR(r[0],money(r[1]),r[3]||'',!!r[2]);}).join('')+
+  TR('Fees on top',money(t.extra),t.pct.toFixed(1)+'% of the price',1)+
+  TR('Total to buy',money(t.total),'',1)+
+  (o.ln?TR('Cash you need',money(t.cash),'after the '+money(o.ln)+' loan',1):'');
+}
+function runMort(){
+ var inc=TV('m-inc'),deb=TV('m-deb'),ltv=num(TS('m-ltv')),r=TV('m-r'),y=TV('m-y'),age=TV('m-age');
+ var out=document.getElementById('m-out');
+ if(!inc){out.innerHTML='<div class="hint">Enter a gross monthly income.</div>';return;}
+ var maxY=Math.max(0,65-age), yrs=Math.min(y,maxY||y);
+ var cap=inc*0.5-deb;
+ if(cap<=0){out.innerHTML='<div class="warnline">Existing commitments already use the whole 50% cap. No borrowing room.</div>';return;}
+ var i=r/100/12, n=yrs*12;
+ var loan=i>0?cap*(1-Math.pow(1+i,-n))/i:cap*n;
+ var price=ltv?loan/(ltv/100):0;
+ var dep=price-loan;
+ var fees=price*0.04+price*0.02*1.05+FEES.trustHi+FEES.adminReady+FEES.deed+FEES.map+loan*FEES.mortPct+FEES.mortReg;
+ out.innerHTML=
+  TR('Monthly they can pay',money(cap),'50% of income less commitments',1)+
+  TR('Maximum loan',money(loan),yrs+' years at '+r+'%',1)+
+  TR('Property they can buy',money(price),'at '+ltv+'% loan to value',1)+
+  TR('Deposit needed',money(dep))+
+  TR('Fees on top',money(fees),'DLD, agency, trustee, mortgage reg')+
+  TR('Total cash on day one',money(dep+fees),'',1)+
+  (yrs<y?'<div class="warnline">Term cut to '+yrs+' years. Most banks want the loan repaid by 65.</div>':'')+
+  (ltv===80&&price>5000000?'<div class="warnline">That lands above AED 5M, where first-home LTV drops to 70%. '+
+   'Switch the profile to the over-5M tier for the real number.</div>':'');
+}
+var FSIDE='sell';
+function runFlip(){
+ var o={op:TV('f-op'),pd:TV('f-pd'),rp:TV('f-rp'),ic:TV('f-ic'),gap:TV('f-gap'),
+  ho:TV('f-ho'),h:TS('f-h'),ag:TV('f-ag'),tr:TV('f-tr'),dld:num(TS('f-dld'))};
+ var out=document.getElementById('f-out');
+ if(!o.op||!o.rp){out.innerHTML='<div class="hint">Enter the original price and the resale price.</div>';return;}
+ var paid=o.op*o.pd/100, prem=o.rp-o.op, remain=o.op-paid;
+ var hoAmt=o.op*o.ho/100, instTotal=Math.max(0,remain-hoAmt);
+ var each=o.ic>0?instTotal/o.ic:0, rows=[], c=new Date();
+ for(var k=1;k<=o.ic;k++){c=new Date(c);c.setMonth(c.getMonth()+o.gap);rows.push(['Instalment '+k,each,new Date(c)]);}
+ if(o.h)rows.push(['On handover',hoAmt,new Date(o.h+'-01')]);
+ var sAg=o.rp*o.ag/100, sNet=prem-sAg, sRoi=paid>0?sNet/paid*100:0;
+ var bToSeller=paid+prem, bDld=o.dld?o.rp*0.04:0, bTrust=o.tr;
+ var bFees=bDld+bTrust+290, bDay1=bToSeller+bFees, bTotal=bDay1+remain;
+ var h='';
+ if(FSIDE==='sell'){
+  h=TR('Original price',money(o.op))+
+   TR('Paid to the developer so far',money(paid),o.pd+'% of price')+
+   TR('Resale price',money(o.rp))+
+   TR('Premium over original',money(prem),(prem/o.op*100).toFixed(1)+'% on price',1)+
+   TR('Agency '+o.ag+'%','-'+money(sAg))+
+   TR('Net profit',money(sNet),'after every fee',1)+
+   TR('Return on cash in',sRoi.toFixed(0)+'%','on the '+money(paid)+' actually paid',1);
+  if(sNet<0)h+='<div class="warnline">This flip loses money at that price. The premium does not cover the fees.</div>';
+ } else {
+  h=TR('Pay the seller',money(bToSeller),'their '+money(paid)+' back plus '+money(prem)+' premium',1)+
+   TR('DLD 4% on resale price',money(bDld),o.dld?'Charged again on assignment':'Waived')+
+   TR('Trustee office fee',money(bTrust),'paid by you, not the seller')+
+   TR('Oqood admin and title',money(290))+
+   TR('Cash needed on transfer day',money(bDay1),'seller plus all fees',1)+
+   rows.map(function(r){return TR(r[0],money(r[1]),
+    r[2].toLocaleDateString('en-GB',{month:'short',year:'numeric'}));}).join('')+
+   TR('Still owed to the developer',money(remain),'across '+o.ic+' instalments plus handover')+
+   TR('Total to own it outright',money(bTotal),'day one plus everything to the developer',1);
+ }
+ out.innerHTML=h;
+}
+function drawTools(){
+ var h='<div class="tools">'+
+ '<div class="tool"><h4>True cost of buying</h4><div class="sub">Every fee a buyer actually pays. DLD is buyer side only.</div>'+
+ '<label>Purchase price AED</label><input id="c-pr" type="number" placeholder="2750000">'+
+ '<div class="t2"><div><label>Property</label><select id="c-off"><option value="0">Ready</option><option value="1">Off-plan</option></select></div>'+
+ '<div><label>DLD 4%</label><select id="c-dldw"><option value="0">Payable</option><option value="1">Waived</option></select></div></div>'+
+ '<div class="t2"><div><label>Agency fee %</label><input id="c-ag" type="number" step="0.5" value="2"></div>'+
+ '<div><label>Developer NOC</label><input id="c-noc" type="number" value="0"></div></div>'+
+ '<div class="t2"><div><label>Loan amount AED</label><input id="c-ln" type="number" value="0"></div>'+
+ '<div><label>Bank fee %</label><input id="c-bk" type="number" step="0.05" value="1"></div></div>'+
+ '<div class="t2"><div><label>Valuation fee</label><input id="c-val" type="number" value="3150"></div>'+
+ '<div><label>BUA sqft</label><input id="c-bua" type="number" value="0"></div></div>'+
+ '<label>Service charge per sqft</label><input id="c-sc" type="number" step="0.5" value="0">'+
+ '<div class="tout" id="c-out"></div></div>'+
+
+ '<div class="tool"><h4>What can they afford</h4><div class="sub">Central Bank caps total monthly debt at 50% of gross income.</div>'+
+ '<label>Gross monthly income AED</label><input id="m-inc" type="number" placeholder="45000">'+
+ '<label>Existing monthly commitments</label><input id="m-deb" type="number" value="0">'+
+ '<label>Buyer profile</label><select id="m-ltv">'+LTVS.map(function(l,i){
+   return '<option value="'+l[1]+'"'+(i===0?' selected':'')+'>'+l[0]+' · '+l[1]+'%</option>';}).join('')+'</select>'+
+ '<div class="t2"><div><label>Rate % a year</label><input id="m-r" type="number" step="0.05" value="4.19"></div>'+
+ '<div><label>Years</label><input id="m-y" type="number" value="25"></div></div>'+
+ '<label>Age today</label><input id="m-age" type="number" value="40">'+
+ '<div class="tout" id="m-out"></div></div>'+
+
+ '<div class="tool"><h4>Flip before handover</h4><div class="sub">Switch sides to see it as the seller or the new buyer.</div>'+
+ '<div class="tseg" id="f-seg"><b class="on" data-fs="sell">Seller</b><b data-fs="buy">New buyer</b></div>'+
+ '<label>Original purchase price AED</label><input id="f-op" type="number" placeholder="2640000">'+
+ '<div class="t2"><div><label>Paid to developer %</label><input id="f-pd" type="number" value="40"></div>'+
+ '<div><label>Resale price AED</label><input id="f-rp" type="number" placeholder="3100000"></div></div>'+
+ '<div class="t2"><div><label>Instalments left</label><input id="f-ic" type="number" value="4"></div>'+
+ '<div><label>Months apart</label><input id="f-gap" type="number" value="3"></div></div>'+
+ '<div class="t2"><div><label>Handover %</label><input id="f-ho" type="number" step="0.5" value="40"></div>'+
+ '<div><label>Handover month</label><input id="f-h" type="month"></div></div>'+
+ '<div class="t2"><div><label>Agency %</label><input id="f-ag" type="number" step="0.5" value="2"></div>'+
+ '<div><label>Trustee AED</label><input id="f-tr" type="number" value="4200"></div></div>'+
+ '<label>DLD on the resale</label><select id="f-dld"><option value="1">Charged 4%</option><option value="0">Waived</option></select>'+
+ '<div class="tout" id="f-out"></div></div></div>';
+ document.getElementById('main').innerHTML=h;
+ document.getElementById('hint').textContent='Same formulas as your phone, so the numbers match.';
+ ['c-pr','c-off','c-dldw','c-ag','c-noc','c-ln','c-bk','c-val','c-bua','c-sc'].forEach(function(id){
+  var e=document.getElementById(id); e.oninput=runCost; e.onchange=runCost;});
+ ['m-inc','m-deb','m-ltv','m-r','m-y','m-age'].forEach(function(id){
+  var e=document.getElementById(id); e.oninput=runMort; e.onchange=runMort;});
+ ['f-op','f-pd','f-rp','f-ic','f-gap','f-ho','f-h','f-ag','f-tr','f-dld'].forEach(function(id){
+  var e=document.getElementById(id); e.oninput=runFlip; e.onchange=runFlip;});
+ document.querySelectorAll('#f-seg b').forEach(function(b){b.onclick=function(){
+  document.querySelectorAll('#f-seg b').forEach(function(x){x.classList.remove('on');});
+  b.classList.add('on'); FSIDE=b.dataset.fs; runFlip();};});
+ runCost();runMort();runFlip();
+}
 
 /* ================= WEEKLY REVIEW ================= */
 var TARGET=500000, DEADLINE='2026-09-27';
