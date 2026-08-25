@@ -294,6 +294,55 @@ td.idx{text-align:center}
 <div id="pr" style="display:none"></div>
 <script>
 var KEY='desk-v1';
+
+/* ---- image store: images are far too big for localStorage ---- */
+var IDB=null;
+function idbOpen(){
+ if(IDB)return Promise.resolve(IDB);
+ return new Promise(function(res,rej){
+  var rq=indexedDB.open('deskimgs',1);
+  rq.onupgradeneeded=function(){rq.result.createObjectStore('img');};
+  rq.onsuccess=function(){IDB=rq.result;res(IDB);};
+  rq.onerror=function(){rej(rq.error);};
+ });
+}
+function idbPutAll(map){
+ var ks=Object.keys(map||{});
+ if(!ks.length)return Promise.resolve(0);
+ return idbOpen().then(function(db){return new Promise(function(res,rej){
+  var t=db.transaction('img','readwrite'), st=t.objectStore('img');
+  ks.forEach(function(k){st.put(map[k],k);});
+  t.oncomplete=function(){res(ks.length);};t.onerror=function(){rej(t.error);};
+ });}).catch(function(){return 0;});
+}
+function idbAll(){
+ return idbOpen().then(function(db){return new Promise(function(res){
+  var out={}, t=db.transaction('img','readonly'), st=t.objectStore('img');
+  var rq=st.openCursor();
+  rq.onsuccess=function(){var c=rq.result; if(!c){res(out);return;} out[c.key]=c.value; c.continue();};
+  rq.onerror=function(){res(out);};
+ });}).catch(function(){return {};});
+}
+
+/* Move any inline data-URL image out of S and into the image store, so the
+   saved state stays small enough for localStorage. The key format matches
+   the phone, so the file still restores correctly on the phone. */
+function normImgs(){
+ var moved=0;
+ BK.imgs=BK.imgs||{};
+ (BK.S.units||[]).forEach(function(u,i){
+  ['img','fp'].forEach(function(k){
+   var v=u[k];
+   if(v&&String(v).indexOf('data:')===0){
+    var key='u'+i+'_'+k;
+    BK.imgs[key]=v; u[k]=key; moved++;
+   }
+  });
+ });
+ return moved;
+}
+function imgBytes(){var n=0;for(var k in (BK.imgs||{}))n+=String(BK.imgs[k]).length;return n;}
+
 var STAGES=['To call','Contacted','Interested','Agreed','Won','Lost'];
 var DTYPES=['Ready','Off-plan','Resale','Commercial','Rent','Land'];
 var CHEQ=['1 cheque','2 cheques','3 cheques','4 cheques','6 cheques','12 cheques'];
@@ -311,7 +360,11 @@ var BK=null, TAB='deals', Q='', F='All';
 function dealFee(d){return d.ty==='Rent'?num(d.rent)*0.05:num(d.v)*num(d.r)/100;}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');
  clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on');},2200);}
-function persist(){if(!BK||BK.demo)return;try{localStorage.setItem(KEY,JSON.stringify(BK));}catch(e){}}
+function persist(){
+ if(!BK||BK.demo)return;
+ try{localStorage.setItem(KEY,JSON.stringify({v:BK.v,at:BK.at,S:BK.S}));}
+ catch(e){toast('Could not save. Your browser storage is full.');}
+}
 function S(){return BK.S;}
 function loadDemo(){
  var t=function(n){var d=new Date();d.setDate(d.getDate()+n);return iso(d);};
@@ -373,7 +426,14 @@ document.getElementById('demoout').onclick=function(){
 };
 function boot(){
  try{var raw=localStorage.getItem(KEY); if(raw)BK=JSON.parse(raw);}catch(e){}
- if(BK&&BK.S)render(); else renderEmpty();
+ if(BK&&BK.S){
+  BK.imgs=BK.imgs||{};
+  render();
+  idbAll().then(function(m){
+   var n=0; for(var k in m){if(!BK.imgs[k]){BK.imgs[k]=m[k];n++;}}
+   if(n&&TAB==='units')render();
+  });
+ } else renderEmpty();
 }
 function renderEmpty(){
  document.getElementById('bar').classList.add('hide');
@@ -406,8 +466,13 @@ function readFile(f){
   D.deals=D.deals||[];D.units=D.units||[];D.later=D.later||[];D.op=D.op||[];
   D.diary=D.diary||[];D.days=D.days||{};D.ledger=D.ledger||[];D.trash=D.trash||[];
   BK={v:o.v||30,at:o.at||new Date().toISOString(),S:D,imgs:o.imgs||{}};
+  normImgs();
   persist();document.getElementById('demoban').classList.add('hide');render();
-  toast(D.deals.length+' clients, '+D.units.length+' units, '+D.later.length+' prospects loaded');
+  var pics=0;
+  D.units.forEach(function(u,i){if(unitImgs(u,i).length)pics++;});
+  toast(D.deals.length+' clients, '+D.units.length+' units, '+D.later.length+
+   ' prospects loaded · '+pics+' units with images');
+  idbPutAll(o.imgs||{});
  };
  r.readAsText(f);
 }
