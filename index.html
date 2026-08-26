@@ -395,6 +395,15 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
  border-radius:999px;padding:12px 20px;font-size:14px;font-family:inherit}
 .vnav button:disabled{opacity:.3}
 .vnav .pos{flex:1;text-align:center;font-size:12.5px;color:var(--dim)}
+
+.rwp{display:inline-block;font-size:10px;letter-spacing:.06em;padding:3px 9px;border-radius:999px;
+ margin-left:6px;vertical-align:middle;font-weight:600}
+.rwp.sr{background:rgba(76,175,125,.16);color:var(--ok);border:1px solid rgba(76,175,125,.4)}
+.rwp.bb{background:rgba(140,133,120,.14);color:var(--dim);border:1px solid var(--line)}
+.vrow{display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+ padding:5px 12px;border-radius:999px;margin-top:10px;font-weight:600}
+.vrow.sr{background:rgba(76,175,125,.16);color:var(--ok);border:1px solid rgba(76,175,125,.45)}
+.vrow.bb{background:rgba(185,151,91,.12);color:var(--gold);border:1px solid rgba(185,151,91,.35)}
 </style>
 </head>
 <body>
@@ -2248,22 +2257,24 @@ function drawUnitSort(){
 }
 function uPrice(u){return (u.lt||'Sale')==='Rent'?num(u.rent):num(u.pr);}
 function drawUnitFilters(){
- var el=document.getElementById('ufilt'), tags=[], beds=[], coms=[];
+ var el=document.getElementById('ufilt'), tags=[], beds=[], coms=[], rws=[];
  S.units.forEach(function(u){
   if(u.tag&&tags.indexOf('Type: '+u.tag)<0)tags.push('Type: '+u.tag);
   var b='Beds: '+(u.bd?u.bd:'Studio'); if(beds.indexOf(b)<0)beds.push(b);
-  var c='Where: '+(u.com||u.p); if(u.com&&coms.indexOf(c)<0)coms.push(c);});
- el.innerHTML=['All units'].concat(tags,beds,coms).map(function(o){return '<option'+(UF===o?' selected':'')+'>'+o+'</option>';}).join('');
+  var c='Where: '+(u.com||u.p); if(u.com&&coms.indexOf(c)<0)coms.push(c);
+  if(u.rw&&rws.indexOf('Row: '+u.rw)<0)rws.push('Row: '+u.rw);});
+ el.innerHTML=['All units'].concat(tags,beds,rws,coms).map(function(o){return '<option'+(UF===o?' selected':'')+'>'+o+'</option>';}).join('');
  el.onchange=function(){UF=el.value;drawUnits();};
 }
 function unitPass(u){
  var lt=u.lt||'Sale';
  if(USEG==='For sale'&&lt!=='Sale')return false;
  if(USEG==='For rent'&&lt!=='Rent')return false;
- if(UQ){var hay=(u.p+' '+u.t+' '+(u.n||'')+' '+(u.pl||'')+' '+(u.com||'')).toLowerCase();if(hay.indexOf(UQ)<0)return false;}
+ if(UQ){var hay=(u.p+' '+u.t+' '+(u.n||'')+' '+(u.pl||'')+' '+(u.com||'')+' '+(u.rw||'')).toLowerCase();if(hay.indexOf(UQ)<0)return false;}
  if(UF==='All units'||!UF)return true;
  if(UF.indexOf('Type: ')===0)return u.tag===UF.slice(6);
  if(UF.indexOf('Beds: ')===0){var v=UF.slice(6);return v==='Studio'?!u.bd:String(u.bd)===v;}
+ if(UF.indexOf('Row: ')===0)return (u.rw||'')===UF.slice(5);
  if(UF.indexOf('Where: ')===0)return (u.com||u.p)===UF.slice(7);
  return true;
 }
@@ -2349,6 +2360,8 @@ function drawView(){
   (spec.length?'<div class="vspec">'+spec.map(function(x){
     return '<div><div class="l">'+esc(x[0])+'</div><div class="v">'+esc(String(x[1]))+'</div></div>';
    }).join('')+'</div>':'')+
+  (u.rw?'<div><span class="vrow '+rowCls(u.rw)+'">'+esc(u.rw)+
+     (u.rw==='Single row'?' &middot; nothing built behind':'')+'</span></div>':'')+
   (u.pl?'<div class="vnote"><b>Payment plan</b>'+esc(u.pl)+'</div>':'');
  var box=document.getElementById('vimgs');
  ['img','fp'].forEach(function(k){
@@ -2357,6 +2370,22 @@ function drawView(){
   }).catch(function(){});
  });
  document.querySelector('.vwrap').scrollTop=0;
+}
+
+
+/* ---- row position: single row backs onto open space, back to back onto another villa ---- */
+var ROWS=['','Single row','Back to back'];
+function rowCls(v){return v==='Single row'?'sr':(v==='Back to back'?'bb':'');}
+function rowPill(u){
+ if(!u.rw)return '';
+ return '<span class="rwp '+rowCls(u.rw)+'">'+esc(u.rw)+'</span>';
+}
+function cycleRow(i){
+ var u=S.units[i];
+ var k=ROWS.indexOf(u.rw||'');
+ u.rw=ROWS[(k+1)%ROWS.length];
+ put(S); drawUnits();
+ if(navigator.vibrate)navigator.vibrate(4);
 }
 
 function drawUnits(){
@@ -2384,12 +2413,13 @@ function drawUnits(){
      '<div class="pr">'+pmoney(u.rent)+'</div><div class="m">per year · '+esc(u.ch||'')+'</div>'
     :'<div class="pr">'+pmoney(u.pr)+'</div>'+(psf(u)?'<div class="m">'+(S.priv?'••••':psf(u).toLocaleString())+' /sqft</div>':'')+
      (up!==null?'<div class="m '+(up>=0?'up':'down')+'">'+(S.priv?'••% on OP':(up>=0?'+':'')+up+'% on OP')+'</div>':''))+'</div></div>'+
-   (u.tag?'<span class="pill">'+esc(u.tag)+'</span>':'')+
+   (u.tag?'<span class="pill">'+esc(u.tag)+'</span>':'')+rowPill(u)+
    '<div class="d" id="det-'+i+'" style="display:none">'+
    (isR?'<b style="color:var(--ink)">Annual rent:</b> '+pmoney(u.rent)+' · '+esc(u.ch||'')+'<br>':'')+
    (!isR&&u.op?'<b style="color:var(--ink)">Original price:</b> '+pmoney(u.op)+' · uplift '+pmoney(u.pr-u.op)+'<br>':'')+
    (u.h?'<b style="color:var(--ink)">Handover:</b> '+esc(pvNum(u.h))+'<br>':'')+
    (u.pl?'<b style="color:var(--ink)">Plan:</b> '+esc(pvNum(u.pl))+'<br>':'')+esc(pvNum(pvName(u.n)))+
+   '<div class="ubtns"><button class="ub" data-row="'+i+'">'+(u.rw?esc(u.rw):'Set row position')+'</button></div>'+
    '<div class="ubtns"><button class="ub gold" data-offer="'+i+'">'+(isR?'Rental offer':'Sales offer')+'</button><button class="ub" data-fit="'+i+'">Who fits this</button></div>'+
    '<div class="ubtns"><button class="ub" data-plan="'+i+'">'+(u.img?'Masterplan':'+ Masterplan')+'</button>'+(u.img?'<button class="ub" data-rmi="'+i+'" style="flex:0 0 42px;color:var(--bad)">✕</button>':'')+
    '<button class="ub" data-fp="'+i+'">'+(u.fp?'Floorplan':'+ Floorplan')+'</button>'+(u.fp?'<button class="ub" data-rmf="'+i+'" style="flex:0 0 42px;color:var(--bad)">✕</button>':'')+'</div>'+
@@ -2410,6 +2440,8 @@ function drawUnits(){
  document.querySelectorAll('[data-eu]').forEach(function(b){b.onclick=function(e){e.stopPropagation();editUnit(+b.dataset.eu);};});
  document.querySelectorAll('[data-du]').forEach(function(b){b.onclick=function(e){e.stopPropagation();
   if(confirm('Delete this unit?')){toTrash('unit',S.units[+b.dataset.du]);S.units.splice(+b.dataset.du,1);put(S);drawUnits();}};});
+ document.querySelectorAll('[data-row]').forEach(function(b){b.onclick=function(e){
+  e.stopPropagation();cycleRow(+b.dataset.row);};});
  document.querySelectorAll('[data-pick]').forEach(function(b){b.onclick=function(e){
   e.stopPropagation();
   var i=+b.dataset.pick;
@@ -2461,7 +2493,9 @@ function editUnit(i){var u=S.units[i];
  u.bd=num(prompt('Bedrooms',u.bd));u.bua=num(prompt('BUA sqft',u.bua));u.plot=num(prompt('Plot sqft',u.plot));
  u.pr=num(prompt('Asking price AED',u.pr))||u.pr;u.op=num(prompt('Original price AED',u.op||0));
  u.pl=prompt('Payment plan',u.pl)||u.pl;u.h=prompt('Handover',u.h)||u.h;
- u.tag=prompt('Tag, e.g. Resale, Off-plan, Commercial',u.tag||'')||u.tag;u.n=prompt('Notes',u.n)||u.n;
+ u.tag=prompt('Tag, e.g. Resale, Off-plan, Commercial',u.tag||'')||u.tag;
+ u.rw=prompt('Row position: type Single row, Back to back, or leave blank',u.rw||'')||u.rw;
+ u.n=prompt('Notes',u.n)||u.n;
  put(S);drawUnits();}
 document.getElementById('vclose').onclick=closeView;
 document.getElementById('vprev').onclick=function(){if(VI>0){VI--;drawView();}};
