@@ -404,6 +404,85 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
  padding:5px 12px;border-radius:999px;margin-top:10px;font-weight:600}
 .vrow.sr{background:rgba(76,175,125,.16);color:var(--ok);border:1px solid rgba(76,175,125,.45)}
 .vrow.bb{background:rgba(185,151,91,.12);color:var(--gold);border:1px solid rgba(185,151,91,.35)}
+
+/* ---- pipeline v2 ---- */
+.grp{margin:20px 0 8px;display:flex;align-items:center;gap:9px}
+.grp b{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);font-weight:600}
+.grp b.hot{color:var(--bad)}
+.grp i{flex:1;height:1px;background:var(--line)}
+.grp u{font-size:10px;color:var(--dim);text-decoration:none}
+.pc2{background:var(--card);border:1px solid var(--line);border-radius:14px;
+ padding:14px 15px 12px;margin-bottom:9px;position:relative}
+.pc2.late{border-color:rgba(212,106,94,.45)}
+.pc2.late:before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:3px;
+ background:var(--bad);border-radius:0 3px 3px 0}
+.pc2.won{border-color:rgba(76,175,125,.4)}
+.pc2 .r1{display:flex;gap:12px;align-items:flex-start}
+.pc2 .nm2{font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-.01em;flex:1;min-width:0;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc2 .fee2{font-size:15px;font-weight:700;color:var(--gold);flex:none;text-align:right}
+.pc2 .fee2 small{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+ color:var(--dim);font-weight:400;margin-top:1px}
+.pc2 .m2{font-size:12.5px;color:var(--dim);margin-top:3px;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc2 .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.pc2 .tg{font-size:10px;letter-spacing:.05em;padding:3px 9px;border-radius:999px;
+ border:1px solid var(--line);color:var(--dim)}
+.pc2 .tg.st{border-color:rgba(185,151,91,.45);color:var(--gold)}
+.pc2 .tg.due{border-color:rgba(212,106,94,.5);color:var(--bad)}
+.pc2 .tg.pay{border-color:rgba(76,175,125,.45);color:var(--ok)}
+.pc2 .na2{font-size:14px;color:var(--ink);margin-top:11px;line-height:1.4}
+.pc2 .na2 em{font-style:normal;color:var(--dim);font-size:12.5px;display:block;margin-top:2px}
+.pc2 .acts{display:flex;gap:8px;margin-top:13px}
+.pc2 .acts .go2{flex:1;background:var(--ink);color:var(--navy);border:none;border-radius:999px;
+ padding:11px;font-size:14px;font-weight:600;font-family:inherit;text-align:center;text-decoration:none}
+.pc2 .acts .go2.g{background:var(--gold)}
+.pc2 .acts .sm{background:transparent;border:1px solid var(--line);color:var(--dim);
+ border-radius:999px;padding:11px 15px;font-size:13px;font-family:inherit}
+.pc2 .more2{margin-top:9px;display:none;gap:8px;flex-wrap:wrap}
+.pc2.open .more2{display:flex}
+.pc2 .more2 button,.pc2 .more2 a{background:transparent;border:1px solid var(--line);color:var(--dim);
+ border-radius:999px;padding:8px 14px;font-size:12.5px;font-family:inherit;text-decoration:none}
+.pc2 .more2 .adv{border-color:rgba(185,151,91,.5);color:var(--gold)}
+.pc2 .more2 .wonb2{border-color:rgba(76,175,125,.5);color:var(--ok)}
+.showmore{width:100%;background:transparent;border:1px dashed var(--line);border-radius:11px;
+ color:var(--dim);padding:11px;font-size:12.5px;font-family:inherit;margin-top:4px}
+
+/* ---- call queue ---- */
+#queue{position:fixed;inset:0;background:#07141f;z-index:210;display:none;flex-direction:column}
+#queue.on{display:flex}
+.qtop{flex:none;display:flex;align-items:center;gap:12px;padding:calc(13px + env(safe-area-inset-top)) 16px 13px;
+ border-bottom:1px solid var(--line)}
+.qtop .qp{flex:1;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.qtop button{background:var(--gold);border:none;color:var(--navy);border-radius:999px;
+ padding:9px 20px;font-size:14px;font-weight:600;font-family:inherit}
+.qprog{flex:none;height:3px;background:var(--line)}
+.qprog i{display:block;height:100%;background:var(--gold);transition:width .25s}
+.qbody{flex:1;overflow-y:auto;padding:26px 20px 10px}
+.qwho{font-size:32px;font-weight:700;color:var(--ink);letter-spacing:-.02em;line-height:1.1}
+.qsub{font-size:14px;color:var(--dim);margin-top:7px;line-height:1.5}
+.qwhy{margin-top:16px;background:#0d2130;border-left:2px solid var(--gold);border-radius:0 10px 10px 0;
+ padding:13px 14px;font-size:13.5px;line-height:1.55;color:var(--ink);opacity:.93}
+.qwhy b{display:block;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);
+ margin-bottom:6px;font-weight:600}
+.qact{font-size:15px;color:var(--ink);margin-top:16px;line-height:1.4}
+.qbig{flex:none;display:flex;gap:10px;padding:12px 16px 0}
+.qbig a,.qbig button{flex:1;text-align:center;text-decoration:none;border-radius:999px;
+ padding:16px;font-size:16px;font-weight:600;font-family:inherit;border:none}
+.qbig .ca{background:var(--ink);color:var(--navy)}
+.qbig .wa{background:#1f7a54;color:#fff}
+.qout{flex:none;padding:12px 16px calc(16px + env(safe-area-inset-bottom));
+ display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qout button{background:transparent;border:1px solid var(--line);color:var(--ink);
+ border-radius:11px;padding:13px 10px;font-size:13.5px;font-family:inherit;text-align:left}
+.qout button small{display:block;font-size:10.5px;color:var(--dim);margin-top:2px}
+.qout button.g2{border-color:rgba(76,175,125,.45)}
+.qout button.r2{border-color:rgba(212,106,94,.45)}
+.qdone{text-align:center;padding:60px 24px}
+.qdone .n3{font-size:40px;font-weight:700;color:var(--gold);letter-spacing:-.02em}
+.qdone p{font-size:14.5px;color:var(--dim);line-height:1.6;margin-top:12px}
+.qstart{width:100%;background:var(--gold);color:var(--navy);border:none;border-radius:12px;
+ padding:15px;font-size:15.5px;font-weight:700;font-family:inherit;margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -470,7 +549,8 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
   </div>
   <div class="sec"><div class="seg" id="dseg"></div></div>
   <div id="d-active">
-  <div class="sec"><h2>Pipeline <b id="dcount"></b></h2>
+  <div class="sec"><button class="qstart" id="qstart">Start calling</button>
+    <h2>Pipeline <b id="dcount"></b></h2>
     <input id="dq" placeholder="Search client, unit or note">
     <div class="chips" id="dchips" style="margin-top:9px"></div>
     <select id="dfilt" class="hide"></select>
@@ -602,6 +682,14 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 </div></div>
 
 
+
+<div id="queue">
+ <div class="qtop"><div class="qp" id="qpos">Call list</div><button id="qexit">Done</button></div>
+ <div class="qprog"><i id="qbar"></i></div>
+ <div class="qbody" id="qbody"></div>
+ <div class="qbig" id="qbig"></div>
+ <div class="qout" id="qout"></div>
+</div>
 <div id="usheet"><div class="inner">
   <h3 id="us-title">Edit unit</h3>
   <div class="hint">Only the project name is required. Everything else can wait.</div>
@@ -2136,7 +2224,7 @@ function dealPass(d){
  if(DF.indexOf('Type: ')===0)return (d.ty||'')===DF.slice(6);
  return true;
 }
-var DCHIP='All';
+var DCHIP='All', SHOWALL=0;
 function drawDealChips(){
  var due=S.deals.filter(function(d){return d.s<4&&d.nd&&d.nd<=TD;}).length;
  var counts={};STAGES.forEach(function(st,j){counts[st]=S.deals.filter(function(d){return d.s===j;}).length;});
@@ -2153,41 +2241,253 @@ function chipPass(d){
  if(DCHIP==='Lost')return d.s===LOST;
  return STAGES[d.s]===DCHIP;
 }
+
+
+/* ---- action plans: one outcome creates the whole follow-up chain ---- */
+var PLANS={
+ spoke:[[3,'Follow up on what you agreed'],[10,'Check in, keep it warm']],
+ msg:  [[2,'Chase the message you left'],[7,'Try a different time of day']],
+ meet: [[1,'Confirm the meeting the day before'],[1,'Send what they asked for after']],
+ val:  [[1,'Send the valuation'],[4,'Chase the valuation'],[14,'Ask if they want it listed']],
+ maybe:[[90,'Reconnect, they said maybe']],
+ no:   [[180,'Reconnect, they said no last time']]
+};
+function applyPlan(key,who,ph,unit){
+ var steps=PLANS[key]; if(!steps)return 0;
+ S.diary=S.diary||[];
+ var made=0, off=0;
+ steps.forEach(function(st){
+  off+=st[0];
+  S.diary.push({d:autoDate(off),t:'09:00',n:who,w:unit||'',ty:st[1],ph:ph||''});
+  made++;
+ });
+ return made;
+}
+
+/* ================= CALL QUEUE ================= */
+var Q=[], QI=0, QDONE=0, QLOG=[];
+function buildQueue(){
+ var out=[];
+ S.deals.forEach(function(d,i){
+  if(d.s>=4)return;
+  if(!d.nd||d.nd>TD)return;
+  out.push({k:'deal',i:i,n:d.w,ph:d.ph,
+   sub:(d.u||'No unit yet')+' · '+STAGES[d.s]+' · '+(d.ty==='Rent'?pmoney(d.rent)+'/yr':pmoney(d.v)),
+   why:'', act:d.na||'No next step set', fee:dealFee(d),
+   late:Math.round((new Date(TD)-new Date(d.nd))/864e5)});
+ });
+ S.later.forEach(function(x,i){
+  if(x.dnc||!x.wd||x.wd>TD)return;
+  out.push({k:'later',i:i,n:x.n,ph:x.ph,
+   sub:(x.w||'')+' · '+(x.ty||'parked'),
+   why:x.n2||'', act:'Reconnect, you parked this', fee:0,
+   late:Math.round((new Date(TD)-new Date(x.wd))/864e5)});
+ });
+ out.sort(function(a,b){
+  if(!!b.fee!==!!a.fee)return b.fee-a.fee;
+  if(b.fee!==a.fee)return b.fee-a.fee;
+  return b.late-a.late;});
+ return out;
+}
+var QOUT_DEAL=[
+ ['spoke','Spoke to them',3,'Moves on 3 days','g2'],
+ ['noans','No answer',1,'Try again tomorrow',''],
+ ['msg','Left a message',2,'Chase in 2 days',''],
+ ['meet','Meeting booked',0,'Put it in the diary','g2'],
+ ['later','Not now',14,'Back in 2 weeks',''],
+ ['dead','Dead',-1,'Marks it lost','r2']
+];
+var QOUT_LATER=[
+ ['noans','No answer',1,'Try again tomorrow',''],
+ ['maybe','Maybe later',90,'Back in 3 months',''],
+ ['no','Not selling',180,'Back in 6 months',''],
+ ['val','Wants a valuation',0,'Becomes a client','g2'],
+ ['listed','Already listed',300,'Back in 10 months',''],
+ ['remove','Remove me',-1,'Never contact again','r2']
+];
+function openQueue(){
+ Q=buildQueue(); QI=0; QDONE=0; QLOG=[];
+ if(!Q.length){alert('Nothing due. Nobody to call right now.');return;}
+ document.getElementById('queue').classList.add('on');
+ document.body.style.overflow='hidden';
+ try{history.pushState({q:1},'');}catch(e){}
+ drawQueue();
+}
+function closeQueue(){
+ document.getElementById('queue').classList.remove('on');
+ document.body.style.overflow='';
+ put(S); drawDeals(); drawLater(); drawHero(); drawHead(); drawNav(); drawMoves();
+}
+function drawQueue(){
+ var body=document.getElementById('qbody'), big=document.getElementById('qbig'),
+     out=document.getElementById('qout');
+ document.getElementById('qbar').style.width=(Q.length?(QI/Q.length*100):100)+'%';
+ if(QI>=Q.length){
+  document.getElementById('qpos').textContent='Finished';
+  var conv=QLOG.filter(function(x){return x==='spoke'||x==='meet'||x==='val';}).length;
+  body.innerHTML='<div class="qdone"><div class="n3">'+QDONE+'</div>'+
+   '<p>'+(QDONE===1?'call logged':'calls logged')+
+   (conv?'<br>'+conv+' actually connected':'')+
+   '<br><br>Everything you logged is saved and dated. Nothing here needs remembering.</p></div>';
+  big.innerHTML=''; out.innerHTML='';
+  return;
+ }
+ var q=Q[QI], ph=(q.ph||'').replace(/[^\d+]/g,'');
+ document.getElementById('qpos').textContent=(QI+1)+' of '+Q.length;
+ body.innerHTML='<div class="qwho">'+esc(pvName(q.n))+'</div>'+
+  '<div class="qsub">'+esc(pvNum(q.sub))+
+   (q.late>0?'<br>'+q.late+' days past the date':(q.late===0?'<br>due today':''))+
+   (q.fee?'<br>'+pmoney(q.fee)+' to you':'')+'</div>'+
+  (q.why?'<div class="qwhy"><b>What to open with</b>'+esc(pvNum(q.why))+'</div>':'')+
+  '<div class="qact">'+esc(pvName(q.act))+'</div>';
+ big.innerHTML = ph && !S.priv
+  ? '<a class="ca" href="tel:'+ph+'">Call</a>'+
+    '<a class="wa" href="'+waFor(q)+'" target="_blank">WhatsApp</a>'
+  : '<button class="ca" id="qnonum">No number saved &middot; skip</button>';
+ var nn=document.getElementById('qnonum');
+ if(nn)nn.onclick=function(){QI++;drawQueue();};
+ var opts=(q.k==='deal')?QOUT_DEAL:QOUT_LATER;
+ out.innerHTML=opts.map(function(o){
+  return '<button class="'+o[4]+'" data-qo="'+o[0]+'">'+o[1]+'<small>'+o[3]+'</small></button>';}).join('');
+ out.querySelectorAll('[data-qo]').forEach(function(b){b.onclick=function(){
+  logQueue(q,b.dataset.qo);};});
+}
+function waFor(q){
+ var ph=(q.ph||'').replace(/[^\d]/g,'');
+ var t;
+ if(q.k==='later'){
+  t='Hi '+firstNm(q.n)+', Mustafa here from Allegiance.'+
+    (q.why?'\n\n'+String(q.why).replace(/^#\d+\s*(HOT|WARM|COLD)\s*·\s*/i,''):'')+
+    '\n\nRather than a long message, just reply with a number so I know how to help:\n\n'+
+    '1 open to selling\n2 open to renting it out\n3 not now, but keep me posted\n4 remove me from your list';
+ } else {
+  t='Hi '+firstNm(q.n)+', Mustafa here. '+(q.act||'Following up.');
+ }
+ return 'https://wa.me/'+ph+'?text='+encodeURIComponent(t);
+}
+function firstNm(n){
+ var w=String(n||'').trim().split(/\s+/)[0].replace(/[^A-Za-z'-]/g,'');
+ if(!w)return 'there';
+ return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();
+}
+function logQueue(q,key){
+ var opts=(q.k==='deal')?QOUT_DEAL:QOUT_LATER;
+ var o=opts.filter(function(x){return x[0]===key;})[0];
+ if(!o)return;
+ if(q.k==='deal'){
+  var d=S.deals[q.i];
+  if(key==='dead'){ d.s=LOST; d.lostAt=TD; d.nd=''; }
+  else if(key==='meet'){ d.nd=TD; d.na='Meeting booked, put it in the diary'; }
+  else { d.nd=autoDate(o[2]); }
+  if(key==='spoke'&&d.s<3)d.sAt=TD;
+  d.hist=d.hist||[]; d.hist.push({d:TD,a:o[1]});
+  if(key==='noans')bump('calls',1);
+  if(key==='spoke'||key==='meet'){bump('calls',1);bump('convos',1);}
+ } else {
+  var x=S.later[q.i];
+  x.att=(x.att||0)+1; x.last=key; x.lastAt=TD;
+  if(key==='remove'){ x.dnc=1; S.dnc=S.dnc||[]; S.dnc.push(x.ph); }
+  else if(key==='val'){
+   S.deals.unshift({w:x.n,ph:x.ph,u:x.w||'',v:num(x.v)||0,r:2,s:1,
+    na:'Send the valuation',nd:autoDate(1),src:'Prospecting',n:'From the call list. '+(x.n2||''),
+    ty:'Resale',ch:'1 cheque',rent:0,lbd:0,lmax:0,lcom:'',npd:'',npa:0,lost:'',hist:[],cAt:TD});
+   x.wd=autoDate(30);
+  } else { x.wd=autoDate(o[2]); }
+  bump('calls',1);
+  if(key==='val'||key==='maybe'||key==='no')bump('convos',1);
+ }
+ var made=applyPlan(key,q.n,q.ph,(q.k==='later'?(S.later[q.i]||{}).w:(S.deals[q.i]||{}).u));
+ QDONE++; QLOG.push(key); QI++;
+ put(S); drawQueue();
+ if(made){var p2=document.getElementById('qpos');
+  p2.textContent=made+' follow-up'+(made>1?'s':'')+' created';
+  setTimeout(function(){if(QI<Q.length)p2.textContent=(QI+1)+' of '+Q.length;},1400);}
+ if(navigator.vibrate)navigator.vibrate(10);
+}
+
 function drawDeals(){
  drawDealFilters();drawDealChips();
  var idx=[];S.deals.forEach(function(d,i){if(dealPass(d)&&chipPass(d)&&(DCHIP==='Lost'||d.s!==LOST))idx.push(i);});
- idx.sort(function(a,b){var A=S.deals[a],B=S.deals[b];
-  var ad=(A.s<4&&A.nd&&A.nd<=TD)?0:1, bd=(B.s<4&&B.nd&&B.nd<=TD)?0:1;
-  if(ad!==bd)return ad-bd;return dealFee(B)-dealFee(A);});
  document.getElementById('dcount').textContent=idx.length+' of '+S.deals.length;
+ (function(){var b=document.getElementById('qstart'); if(!b)return;
+  var n=buildQueue().length;
+  b.textContent=n?('Start calling · '+n+' due'):'Nothing due right now';
+  b.disabled=!n; b.style.opacity=n?1:.45;})();
  document.getElementById('dfore').innerHTML=pmoney(pipeWeighted())+'<small> likely to close</small>';
  document.getElementById('dwon').textContent='Won '+pmoney(wonTotal())+' · best case '+pmoney(pipeMax());
  document.getElementById('dgap').textContent='Gap '+pmoney(Math.max(0,TARGET-bankedTotal()-wonTotal()-ledgerTotal()));
- document.getElementById('dlist').innerHTML=idx.length?idx.map(function(i){
-  var d=S.deals[i], ph=(d.ph||'').replace(/[^\d+]/g,''), due=(d.s<4&&d.nd&&d.nd<=TD);
-  var sub=d.ty==='Rent'?(pmoney(d.rent)+'/yr · '+esc(d.ch||''))
-    :(pmoney(d.v)+' at '+d.r+'%');
-  var days=d.nd?Math.round((new Date(d.nd)-new Date(TD))/864e5):null;
-  var when=d.nd?(days<0?Math.abs(days)+'d late':(days===0?'today':(days===1?'tomorrow':'in '+days+'d'))):'';
-  return '<div class="dcard s'+d.s+(due?' due':'')+'">'+
-   '<div class="dtop"><div style="min-width:0">'+
-    '<div class="dname">'+esc(pvName(d.w))+'</div>'+
-    '<div class="dmeta">'+esc(pvNum(d.u||'No unit yet'))+' · '+sub+(d.ty?' · '+esc(d.ty):'')+'</div></div>'+
-    '<div class="dfee">'+pmoney(dealFee(d))+'<small>your fee</small></div></div>'+
-   '<div class="dstage"><div class="dbar">'+STAGES.map(function(st,j){
-     return '<s class="'+(j<=d.s?(d.s===4?'won':'on'):'')+'"></s>';}).join('')+'</div>'+
-    '<div class="dstagen">'+STAGES[d.s]+'</div></div>'+
-   (d.na?'<div class="dnext '+(due?'due':'')+'"><span>'+esc(pvName(d.na))+'</span>'+(when?'<i>'+when+'</i>':'')+'</div>':'')+
-   (d.npd?(function(){var nd=Math.round((new Date(d.npd)-new Date(TD))/864e5);
-     return '<div class="npchip'+(nd<=30?' soon':'')+'">Next developer payment '+pmoney(d.npa)+' in '+nd+' days</div>';})():'')+
-   (d.s===LOST&&d.lost?'<div class="dnext" style="border-color:rgba(212,106,94,.4)">Lost on '+esc(d.lost)+'</div>':'')+
-   (d.s===LOST?'<button class="dadv" data-bk="'+i+'" style="background:transparent;border:1px solid var(--line);color:var(--dim)">Reopen this deal</button>':'')+
-   (d.s<4?'<button class="dadv'+(d.s===3?' wonb':'')+'" data-adv="'+i+'">'+(d.s===3?'Mark as won':'Move to '+STAGES[d.s+1])+'</button>'
-        :(d.s===4?'<button class="dadv wonb" data-adv="'+i+'" disabled style="opacity:.65">Won</button>':''))+
-   '<div class="drow2">'+(ph&&!S.priv?'<a href="tel:'+ph+'">Call</a><a href="https://wa.me/'+ph.replace('+','')+'" target="_blank">WhatsApp</a>':'')+
-   '<button data-tp="'+i+'">Message</button><button data-bk="'+i+'">Back</button><button data-ed="'+i+'">Edit</button></div>'+
-   '</div>';
- }).join(''):'<div class="hint">'+(DCHIP==='All'?'Nothing matches that search.':'Nobody at '+DCHIP+' right now.')+'</div>';
+
+ function daysTo(x){return x?Math.round((new Date(x)-new Date(TD))/864e5):null;}
+ var G={late:[],now:[],soon:[],rest:[],done:[]};
+ idx.forEach(function(i){
+  var d=S.deals[i], dt=daysTo(d.nd);
+  if(d.s>=4){G.done.push(i);return;}
+  if(d.nd&&dt<0)G.late.push(i);
+  else if(d.nd&&dt===0)G.now.push(i);
+  else if(d.nd&&dt<=7)G.soon.push(i);
+  else G.rest.push(i);
+ });
+ [ 'late','now','soon','rest','done' ].forEach(function(k){
+  G[k].sort(function(a,b){
+   var A=S.deals[a],B=S.deals[b];
+   if(k==='late'){var x=daysTo(A.nd),y=daysTo(B.nd); if(x!==y)return x-y;}
+   return dealFee(B)-dealFee(A);});
+ });
+
+ function card(i){
+  var d=S.deals[i], ph=(d.ph||'').replace(/[^\d+]/g,''), dt=daysTo(d.nd);
+  var late=(d.s<4&&d.nd&&dt<0);
+  var sub=d.ty==='Rent'?(pmoney(d.rent)+'/yr'):(pmoney(d.v)+' at '+d.r+'%');
+  var when=d.nd?(dt<0?Math.abs(dt)+' days late':(dt===0?'due today':(dt===1?'tomorrow':'in '+dt+' days'))):'no date set';
+  var tags='<span class="tg st">'+STAGES[d.s]+'</span>'+
+   '<span class="tg'+(late?' due':'')+'">'+when+'</span>'+
+   (d.ty?'<span class="tg">'+esc(d.ty)+'</span>':'');
+  if(d.npd){var nd=daysTo(d.npd);
+   if(nd>=0&&nd<=90)tags+='<span class="tg pay">Pays '+pmoney(d.npa)+' in '+nd+'d</span>';}
+  var prim = ph&&!S.priv
+   ? '<a class="go2 g" href="tel:'+ph+'">Call</a>'
+   : (ph?'<button class="go2 g" disabled style="opacity:.5">Call</button>'
+        :'<button class="go2" data-ed="'+i+'">Add a number</button>');
+  return '<div class="pc2'+(late?' late':'')+(d.s===4?' won':'')+'" id="pc-'+i+'">'+
+   '<div class="r1"><div style="flex:1;min-width:0">'+
+     '<div class="nm2">'+esc(pvName(d.w))+'</div>'+
+     '<div class="m2">'+esc(pvNum(d.u||'No unit yet'))+' · '+sub+'</div></div>'+
+     '<div class="fee2">'+pmoney(dealFee(d))+'<small>your fee</small></div></div>'+
+   '<div class="tags">'+tags+'</div>'+
+   '<div class="na2">'+esc(pvName(d.na||'No next step set'))+'</div>'+
+   '<div class="acts">'+prim+
+     (ph&&!S.priv?'<a class="sm" href="https://wa.me/'+ph.replace('+','')+'" target="_blank">WhatsApp</a>':'')+
+     '<button class="sm" data-sz="'+i+'">Later</button>'+
+     '<button class="sm" data-mx="'+i+'">&#8943;</button></div>'+
+   '<div class="more2">'+
+     (d.s<4?'<button class="adv" data-adv="'+i+'">'+(d.s===3?'Mark as won':'Move to '+STAGES[d.s+1])+'</button>':'')+
+     (d.s===LOST?'<button data-bk="'+i+'">Reopen</button>':'')+
+     '<button data-tp="'+i+'">Message</button>'+
+     '<button data-ed="'+i+'">Edit</button>'+
+     (d.s>0&&d.s<4?'<button data-bk="'+i+'">Step back</button>':'')+
+   '</div></div>';
+ }
+ var H=[];
+ function sec(k,label,hot){
+  if(!G[k].length)return;
+  H.push('<div class="grp"><b class="'+(hot?'hot':'')+'">'+label+'</b><i></i><u>'+G[k].length+'</u></div>');
+  var list=G[k], cut=(k==='rest'&&!SHOWALL)?6:list.length;
+  H.push(list.slice(0,cut).map(card).join(''));
+  if(cut<list.length)H.push('<button class="showmore" id="showall">Show the other '+(list.length-cut)+'</button>');
+ }
+ sec('late','Overdue',1); sec('now','Due today'); sec('soon','This week');
+ sec('rest','Everyone else'); sec('done','Won');
+ document.getElementById('dlist').innerHTML=H.length?H.join('')
+  :'<div class="hint">'+(DCHIP==='All'?'Nothing matches that search.':'Nobody at '+DCHIP+' right now.')+'</div>';
+
+ var sa=document.getElementById('showall');
+ if(sa)sa.onclick=function(){SHOWALL=1;drawDeals();};
+ document.querySelectorAll('[data-mx]').forEach(function(b){b.onclick=function(){
+  document.getElementById('pc-'+b.dataset.mx).classList.toggle('open');};});
+ document.querySelectorAll('[data-sz]').forEach(function(b){b.onclick=function(){
+  var d=S.deals[+b.dataset.sz], n=new Date(); n.setDate(n.getDate()+3);
+  d.nd=iso(n); put(S); drawDeals(); drawHero();drawHead(); drawNav(); drawMoves();
+  if(navigator.vibrate)navigator.vibrate(8);};});
  document.querySelectorAll('[data-adv]').forEach(function(b){b.onclick=function(){
   var d=S.deals[+b.dataset.adv]; if(d.s>=4)return;
   var ns=d.s+1;
@@ -2197,7 +2497,8 @@ function drawDeals(){
   if(navigator.vibrate)navigator.vibrate(12);
   if(ns===4)setTimeout(function(){if(confirm('Nice one. Log the commission now?'))logComm();},120);};});
  document.querySelectorAll('[data-bk]').forEach(function(b){b.onclick=function(){
-  var d=S.deals[+b.dataset.bk]; if(d.s<=0)return; d.s=(d.s===LOST?2:d.s-1);put(S);drawDeals();drawHero();drawHead();drawMore();};});
+  var d=S.deals[+b.dataset.bk]; if(d.s<=0)return; d.s=(d.s===LOST?2:d.s-1);
+  put(S);drawDeals();drawHero();drawHead();drawMore();};});
  document.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(){openSheet(+b.dataset.ed);};});
  document.querySelectorAll('[data-tp]').forEach(function(b){b.onclick=function(){pickTemplate(+b.dataset.tp);};});
 }
@@ -2595,6 +2896,14 @@ document.addEventListener('keydown',function(e){
   if(dx<0&&VI<VU.length-1){VI++;drawView();}
   if(dx>0&&VI>0){VI--;drawView();}},{passive:true});})();
 document.getElementById('addunit').onclick=function(){openUnitSheet(null);};
+document.getElementById('qstart').onclick=openQueue;
+document.getElementById('qexit').onclick=closeQueue;
+window.addEventListener('popstate',function(){
+ var q=document.getElementById('queue');
+ if(q&&q.classList.contains('on'))closeQueue();});
+document.addEventListener('keydown',function(e){
+ if(!document.getElementById('queue').classList.contains('on'))return;
+ if(e.key==='Escape')closeQueue();});
 document.getElementById('us-c').onclick=closeUnitSheet;
 document.getElementById('us-s').onclick=saveUnitSheet;
 document.getElementById('us-del').onclick=function(){
