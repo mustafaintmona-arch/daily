@@ -269,10 +269,10 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 #lightbox img{max-width:100%;max-height:80vh;border-radius:12px;border:1px solid var(--line)}
 #lbcap{color:var(--gold);font-size:12.5px;margin-top:12px;text-align:center}
 .lbhint{color:var(--dim);font-size:11px;margin-top:5px}
-#sheet,#tsheet{display:none;position:fixed;inset:0;background:rgba(4,12,20,.78);z-index:80;align-items:flex-end}
-#sheet .inner,#tsheet .inner{background:var(--navy);border:1px solid var(--line);border-radius:22px 22px 0 0;
+#sheet,#tsheet,#usheet{display:none;position:fixed;inset:0;background:rgba(4,12,20,.78);z-index:80;align-items:flex-end}
+#sheet .inner,#tsheet .inner,#usheet .inner{background:var(--navy);border:1px solid var(--line);border-radius:22px 22px 0 0;
  width:100%;max-height:93vh;overflow:auto;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
-#sheet h3,#tsheet h3{font-size:17px;margin-bottom:2px}
+#sheet h3,#tsheet h3,#usheet h3{font-size:17px;margin-bottom:2px}
 .pick{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
 .pick b{flex:1;min-width:56px;text-align:center;font-size:9.5px;padding:9px 2px;border-radius:8px;
  background:var(--card2);border:1px solid var(--line);color:var(--dim);font-weight:600;text-transform:uppercase}
@@ -370,10 +370,10 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 /* viewing mode */
 #view{position:fixed;inset:0;background:#07141f;z-index:200;display:none;flex-direction:column}
 #view.on{display:flex}
-.vtop{display:flex;align-items:center;gap:12px;padding:14px 16px;flex:none}
+.vtop{display:flex;align-items:center;gap:12px;flex:none;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;position:sticky;top:0;background:#07141f;z-index:3}
 .vtop .vt{flex:1;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
-.vtop button{background:transparent;border:1px solid var(--line);color:var(--dim);
- border-radius:999px;padding:7px 14px;font-size:13px;font-family:inherit}
+.vtop button{background:var(--gold);border:1px solid var(--gold);color:var(--navy);
+ border-radius:999px;padding:9px 20px;font-size:14px;font-weight:600;font-family:inherit;flex:none}
 .vwrap{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 .vcard{padding:0 18px 22px}
 .vimg{width:100%;border-radius:14px;display:block;margin-bottom:14px;background:#0b1b28}
@@ -389,7 +389,7 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
  line-height:1.5;color:var(--ink);opacity:.9}
 .vnote b{color:var(--gold);display:block;font-size:9.5px;letter-spacing:.12em;
  text-transform:uppercase;margin-bottom:5px;font-weight:600}
-.vnav{flex:none;display:flex;align-items:center;gap:12px;padding:12px 16px 18px;
+.vnav{flex:none;display:flex;align-items:center;gap:12px;padding:12px 16px calc(18px + env(safe-area-inset-bottom));
  border-top:1px solid var(--line);background:#07141f}
 .vnav button{background:var(--card);border:1px solid var(--line);color:var(--ink);
  border-radius:999px;padding:12px 20px;font-size:14px;font-family:inherit}
@@ -601,6 +601,34 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
   <button class="addbtn" id="sdel" style="border-color:rgba(212,106,94,.5);color:#D46A5E">Delete this deal</button>
 </div></div>
 
+
+<div id="usheet"><div class="inner">
+  <h3 id="us-title">Edit unit</h3>
+  <div class="hint">Only the project name is required. Everything else can wait.</div>
+  <label>Listing</label><div class="pick" id="us-lt"></div>
+  <label>Project or unit</label><input id="us-p" placeholder="e.g. Farm Gardens 42, The Valley">
+  <div class="two"><div><label>Community</label><input id="us-com" placeholder="The Valley"></div>
+  <div><label>Type</label><input id="us-t" placeholder="5BR Standalone Villa"></div></div>
+  <div class="two"><div><label>Bedrooms</label><input id="us-bd" type="number" inputmode="numeric"></div>
+  <div><label>Tag</label><input id="us-tag" placeholder="Resale, Off-plan, Ready"></div></div>
+  <div class="two"><div><label>BUA sqft</label><input id="us-bua" type="number" inputmode="numeric"></div>
+  <div><label>Plot sqft</label><input id="us-plot" type="number" inputmode="numeric"></div></div>
+  <div id="us-sale">
+   <div class="two"><div><label>Asking price AED</label><input id="us-pr" type="number" inputmode="numeric"></div>
+   <div><label>Original price AED</label><input id="us-op" type="number" inputmode="numeric"></div></div>
+   <div class="calc" id="us-calc">Enter a price</div>
+  </div>
+  <div id="us-rentwrap" style="display:none">
+   <div class="two"><div><label>Annual rent AED</label><input id="us-rent" type="number" inputmode="numeric"></div>
+   <div><label>Cheques</label><input id="us-ch" placeholder="1 cheque"></div></div>
+  </div>
+  <label>Row position</label><div class="pick" id="us-rw"></div>
+  <div class="two"><div><label>Handover</label><input id="us-h" placeholder="Ready, or Dec 2026"></div>
+  <div><label>Payment plan</label><input id="us-pl" placeholder="100%, or 80/20"></div></div>
+  <label>Notes</label><textarea id="us-n" rows="2" placeholder="Backing onto the park, tenanted until March, whatever matters"></textarea>
+  <div class="sheetbtns"><button id="us-c">Cancel</button><button id="us-s">Save</button></div>
+  <button class="addbtn" id="us-del" style="border-color:rgba(212,106,94,.5);color:#D46A5E">Delete this unit</button>
+</div></div>
 <div id="tsheet"><div class="inner">
   <h3 id="t-title">Tool</h3><div id="t-body"></div>
   <div class="sheetbtns"><button id="tc">Close</button><button id="tcopy">Copy</button></div>
@@ -614,7 +642,8 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
   <button id="vclose">Done</button></div>
  <div class="vwrap"><div class="vcard" id="vcard"></div></div>
  <div class="vnav"><button id="vprev">Back</button>
-  <div class="pos" id="vpos"></div><button id="vnext">Next</button></div>
+  <div class="pos" id="vpos"></div><button id="vnext">Next</button>
+  <button id="vclose2" style="border-color:var(--gold);color:var(--gold)">Exit</button></div>
 </div>
 <script>
 const TARGET=500000, DEADLINE='2026-09-27';
@@ -2326,12 +2355,16 @@ function drawLists(){
 }
 /* ---- client viewing mode: nothing internal on screen ---- */
 var VU=[], VI=0;
+window.addEventListener('popstate',function(){
+ var v=document.getElementById('view');
+ if(v&&v.classList.contains('on'))closeView();});
 function openView(us,title){
  if(!us.length){alert('Tick some units first.');return;}
  VU=us; VI=0;
  document.getElementById('vtitle').textContent=title;
  document.getElementById('view').classList.add('on');
  document.body.style.overflow='hidden';
+ try{history.pushState({view:1},'');}catch(e){}
  drawView();
 }
 function closeView(){
@@ -2486,18 +2519,67 @@ document.getElementById('planfile').onchange=function(){
  };im.src=ev.target.result;};
  r.readAsDataURL(fl);self.value='';
 };
-function editUnit(i){var u=S.units[i];
- u.lt=confirm('OK for a SALE listing.\nCancel for a RENTAL listing.')?'Sale':'Rent';
- if(u.lt==='Rent'){u.rent=num(prompt('Annual rent AED',u.rent||0));u.ch=prompt('Cheques',u.ch||'2 cheques')||u.ch;}
- u.p=prompt('Project',u.p)||u.p;u.com=prompt('Community',u.com||'')||u.com;u.t=prompt('Type',u.t)||u.t;
- u.bd=num(prompt('Bedrooms',u.bd));u.bua=num(prompt('BUA sqft',u.bua));u.plot=num(prompt('Plot sqft',u.plot));
- u.pr=num(prompt('Asking price AED',u.pr))||u.pr;u.op=num(prompt('Original price AED',u.op||0));
- u.pl=prompt('Payment plan',u.pl)||u.pl;u.h=prompt('Handover',u.h)||u.h;
- u.tag=prompt('Tag, e.g. Resale, Off-plan, Commercial',u.tag||'')||u.tag;
- u.rw=prompt('Row position: type Single row, Back to back, or leave blank',u.rw||'')||u.rw;
- u.n=prompt('Notes',u.n)||u.n;
- put(S);drawUnits();}
+
+/* ================= UNIT EDIT SHEET ================= */
+var UEDIT=null, ULT='Sale', URW='';
+function uf(k){return document.getElementById('us-'+k);}
+function drawUPicks(){
+ document.getElementById('us-lt').innerHTML=['Sale','Rent'].map(function(o){
+  return '<b class="'+(ULT===o?'on':'')+'" data-ult="'+o+'">For '+o.toLowerCase()+'</b>';}).join('');
+ document.querySelectorAll('[data-ult]').forEach(function(b){b.onclick=function(){
+  ULT=b.dataset.ult; drawUPicks(); uToggle();};});
+ document.getElementById('us-rw').innerHTML=[['','Not set'],['Single row','Single row'],
+  ['Back to back','Back to back']].map(function(o){
+  return '<b class="'+(URW===o[0]?'on':'')+'" data-urw="'+o[0]+'">'+o[1]+'</b>';}).join('');
+ document.querySelectorAll('[data-urw]').forEach(function(b){b.onclick=function(){
+  URW=b.dataset.urw; drawUPicks();};});
+}
+function uToggle(){
+ document.getElementById('us-sale').style.display=ULT==='Rent'?'none':'';
+ document.getElementById('us-rentwrap').style.display=ULT==='Rent'?'':'none';
+}
+function uCalc(){
+ var pr=num(uf('pr').value), bua=num(uf('bua').value), op=num(uf('op').value), bits=[];
+ if(pr&&bua)bits.push('AED '+Math.round(pr/bua).toLocaleString()+' per sqft');
+ if(pr&&op)bits.push((pr>=op?'+':'')+Math.round((pr-op)/op*100)+'% on the original');
+ document.getElementById('us-calc').textContent=bits.length?bits.join('  ·  '):'Enter a price';
+}
+function openUnitSheet(i){
+ UEDIT=i;
+ var u=(i===null)?{lt:'Sale'}:S.units[i];
+ ULT=(u.lt||'Sale'); URW=u.rw||'';
+ document.getElementById('us-title').textContent=(i===null)?'Add a unit':'Edit unit';
+ [['p',u.p],['com',u.com],['t',u.t],['bd',u.bd],['tag',u.tag],['bua',u.bua],['plot',u.plot],
+  ['pr',u.pr],['op',u.op],['rent',u.rent],['ch',u.ch],['h',u.h],['pl',u.pl],['n',u.n]
+ ].forEach(function(x){
+  var el=uf(x[0]); if(!el)return;
+  el.value=(x[1]===0||x[1]==null)?'':x[1];
+ });
+ drawUPicks(); uToggle(); uCalc();
+ document.getElementById('us-del').style.display=(i===null)?'none':'';
+ document.getElementById('usheet').style.display='flex';
+ setTimeout(function(){uf('p').focus();},80);
+}
+function closeUnitSheet(){document.getElementById('usheet').style.display='none';UEDIT=null;}
+function saveUnitSheet(){
+ var name=String(uf('p').value||'').trim();
+ if(!name){alert('Give it a project or unit name so you can find it again.');uf('p').focus();return;}
+ var u=(UEDIT===null)?{}:S.units[UEDIT];
+ u.lt=ULT; u.rw=URW;
+ u.p=name; u.com=uf('com').value.trim(); u.t=uf('t').value.trim();
+ u.bd=num(uf('bd').value); u.tag=uf('tag').value.trim();
+ u.bua=num(uf('bua').value); u.plot=num(uf('plot').value);
+ u.pr=num(uf('pr').value); u.op=num(uf('op').value);
+ u.rent=num(uf('rent').value); u.ch=uf('ch').value.trim();
+ u.h=uf('h').value.trim(); u.pl=uf('pl').value.trim(); u.n=uf('n').value.trim();
+ if(UEDIT===null)S.units.unshift(u);
+ put(S); closeUnitSheet(); drawUnits();
+ if(navigator.vibrate)navigator.vibrate(8);
+}
+
+function editUnit(i){openUnitSheet(i);}
 document.getElementById('vclose').onclick=closeView;
+document.getElementById('vclose2').onclick=closeView;
 document.getElementById('vprev').onclick=function(){if(VI>0){VI--;drawView();}};
 document.getElementById('vnext').onclick=function(){if(VI<VU.length-1){VI++;drawView();}};
 document.addEventListener('keydown',function(e){
@@ -2512,16 +2594,18 @@ document.addEventListener('keydown',function(e){
   if(Math.abs(dx)<60||Math.abs(dy)>50)return;
   if(dx<0&&VI<VU.length-1){VI++;drawView();}
   if(dx>0&&VI>0){VI--;drawView();}},{passive:true});})();
-document.getElementById('addunit').onclick=function(){
- var p=prompt('Project');if(!p)return;
- var lt=confirm('OK for a SALE listing.\nCancel for a RENTAL listing.')?'Sale':'Rent';
- var rent=0,ch='1 cheque';
- if(lt==='Rent'){rent=num(prompt('Annual rent AED'));ch=prompt('Cheques, e.g. 2 cheques','2 cheques')||'1 cheque';}
- S.units.push({lt:lt,rent:rent,ch:ch,p:p,com:prompt('Community')||'',t:prompt('Type, e.g. 3BR townhouse')||'',bd:num(prompt('Bedrooms')),
-  bua:num(prompt('BUA sqft')),plot:num(prompt('Plot sqft')),pr:num(prompt('Asking price AED')),
-  op:num(prompt('Original price AED (optional)')),pl:prompt('Payment plan')||'',h:prompt('Handover')||'',
-  n:prompt('Notes')||'',tag:prompt('Tag, e.g. Resale')||'',img:'',link:'',fp:''});
- put(S);drawUnits();};
+document.getElementById('addunit').onclick=function(){openUnitSheet(null);};
+document.getElementById('us-c').onclick=closeUnitSheet;
+document.getElementById('us-s').onclick=saveUnitSheet;
+document.getElementById('us-del').onclick=function(){
+ if(UEDIT===null)return;
+ if(!confirm('Delete this unit?'))return;
+ toTrash('unit',S.units[UEDIT]); S.units.splice(UEDIT,1);
+ put(S); closeUnitSheet(); drawUnits();};
+['pr','op','bua'].forEach(function(k){
+ var el=document.getElementById('us-'+k); if(el)el.oninput=uCalc;});
+document.getElementById('usheet').onclick=function(e){
+ if(e.target===this)closeUnitSheet();};
 function shareUnit(i){
  var u=S.units[i], sp=[];
  if(u.bd)sp.push(u.bd+' bedroom');if(u.bua)sp.push('BUA '+u.bua.toLocaleString()+' sqft');if(u.plot)sp.push('Plot '+u.plot.toLocaleString()+' sqft');
