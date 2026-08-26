@@ -306,6 +306,95 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 #printwrap figcaption{font-size:9.5px;color:#777;margin-top:3px;text-transform:uppercase;letter-spacing:.1em}
 #printwrap .foot2{margin-top:16px;padding-top:8px;border-top:1px solid #E5E1D8;font-size:9.5px;color:#777;line-height:1.6}
 #printwrap .note2{font-size:12px;color:#333;line-height:1.6}
+
+/* ---- strada-style Today head ---- */
+.hd{padding:22px 0 4px}
+.hd .kick{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.hd .huge{font-size:44px;line-height:1.02;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
+.hd .huge small{font-size:15px;font-weight:400;color:var(--dim);letter-spacing:0}
+.hd .sub{font-size:13px;color:var(--dim)}
+.stat3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--line);
+ border-radius:12px;overflow:hidden;margin:16px 0 4px}
+.stat3 div{background:var(--card2);padding:13px 12px}
+.stat3 .n{font-size:26px;font-weight:700;color:var(--ink);line-height:1}
+.stat3 .n.warn{color:var(--bad)}
+.stat3 .n.good{color:var(--ok)}
+.stat3 .l{font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);margin-top:6px}
+.brief{display:flex;gap:11px;background:var(--card);border:1px solid var(--line);
+ border-radius:12px;padding:13px 14px;margin-top:12px}
+.brief .sp{color:var(--gold);font-size:15px;line-height:1.2;flex:none}
+.brief .bt{font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);margin-bottom:5px}
+.brief p{margin:0;font-size:13px;line-height:1.5;color:var(--ink);opacity:.92}
+.upn{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 15px 13px;margin-top:10px}
+.upn .tag{font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;
+ display:flex;justify-content:space-between;align-items:center}
+.upn .tag em{font-style:normal;color:var(--dim)}
+.upn .nm{font-size:24px;font-weight:700;color:var(--ink);letter-spacing:-.01em;line-height:1.15}
+.upn .mt{font-size:12.5px;color:var(--dim);margin-top:5px;line-height:1.45}
+.upn .act{font-size:13px;color:var(--ink);margin-top:9px;opacity:.9}
+.upn .btns{display:flex;gap:9px;margin-top:14px}
+.upn .call{flex:1;background:var(--ink);color:var(--navy);border:none;border-radius:999px;
+ padding:13px;font-size:14.5px;font-weight:600;font-family:inherit}
+.upn .call:active{opacity:.85}
+.upn .snz{background:transparent;color:var(--dim);border:1px solid var(--line);
+ border-radius:999px;padding:13px 18px;font-size:13.5px;font-family:inherit}
+.upn .dots{display:flex;gap:5px;justify-content:center;margin-top:12px}
+.upn .dots i{width:5px;height:5px;border-radius:50%;background:var(--line);display:block}
+.upn .dots i.on{background:var(--gold);width:16px;border-radius:3px}
+.schd{margin-top:6px}
+.schd .it{display:flex;gap:13px;padding:11px 2px;border-bottom:1px solid var(--line)}
+.schd .it:last-child{border-bottom:none}
+.schd .tm2{font-size:12px;color:var(--gold);width:52px;flex:none;font-weight:600;padding-top:1px}
+.schd .b1{font-size:14px;color:var(--ink)}
+.schd .b2{font-size:11.5px;color:var(--dim);margin-top:2px}
+.morewrap{margin-top:18px}
+.moretog{width:100%;background:transparent;border:1px solid var(--line);border-radius:10px;
+ color:var(--dim);padding:11px;font-size:12.5px;font-family:inherit;letter-spacing:.04em}
+
+/* ---- shortlists + client viewing mode ---- */
+.selbar{position:sticky;top:0;z-index:20;display:flex;gap:8px;align-items:center;
+ background:var(--card);border:1px solid var(--gold);border-radius:11px;padding:9px 11px;margin-bottom:9px}
+.selbar .cnt{font-size:13px;color:var(--ink);flex:1}
+.selbar .cnt b{color:var(--gold)}
+.selbar button{background:transparent;border:1px solid var(--line);color:var(--dim);
+ border-radius:999px;padding:7px 13px;font-size:12.5px;font-family:inherit}
+.selbar button.go{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:600}
+.upick{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line);flex:none;
+ display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent;margin-right:10px}
+.upick.on{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.slists{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;margin-bottom:9px}
+.slists b{flex:none;background:var(--card2);border:1px solid var(--line);border-radius:999px;
+ padding:7px 13px;font-size:12.5px;color:var(--dim);font-weight:500;white-space:nowrap}
+.slists b.on{border-color:var(--gold);color:var(--gold)}
+.slists b i{font-style:normal;opacity:.5;margin-left:6px}
+/* viewing mode */
+#view{position:fixed;inset:0;background:#07141f;z-index:200;display:none;flex-direction:column}
+#view.on{display:flex}
+.vtop{display:flex;align-items:center;gap:12px;padding:14px 16px;flex:none}
+.vtop .vt{flex:1;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.vtop button{background:transparent;border:1px solid var(--line);color:var(--dim);
+ border-radius:999px;padding:7px 14px;font-size:13px;font-family:inherit}
+.vwrap{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.vcard{padding:0 18px 22px}
+.vimg{width:100%;border-radius:14px;display:block;margin-bottom:14px;background:#0b1b28}
+.vname{font-size:27px;font-weight:700;color:var(--ink);letter-spacing:-.01em;line-height:1.12}
+.vtype{font-size:14px;color:var(--dim);margin-top:5px}
+.vprice{font-size:32px;font-weight:700;color:var(--gold);margin:16px 0 2px;letter-spacing:-.01em}
+.vpsub{font-size:12.5px;color:var(--dim)}
+.vspec{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px}
+.vspec div{background:#0d2130;border-radius:10px;padding:11px 13px}
+.vspec .l{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.vspec .v{font-size:16px;color:var(--ink);margin-top:3px}
+.vnote{margin-top:16px;background:#0d2130;border-radius:10px;padding:13px;font-size:13.5px;
+ line-height:1.5;color:var(--ink);opacity:.9}
+.vnote b{color:var(--gold);display:block;font-size:9.5px;letter-spacing:.12em;
+ text-transform:uppercase;margin-bottom:5px;font-weight:600}
+.vnav{flex:none;display:flex;align-items:center;gap:12px;padding:12px 16px 18px;
+ border-top:1px solid var(--line);background:#07141f}
+.vnav button{background:var(--card);border:1px solid var(--line);color:var(--ink);
+ border-radius:999px;padding:12px 20px;font-size:14px;font-family:inherit}
+.vnav button:disabled{opacity:.3}
+.vnav .pos{flex:1;text-align:center;font-size:12.5px;color:var(--dim)}
 </style>
 </head>
 <body>
@@ -316,14 +405,24 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 <div class="pgtitle"><span id="pgtitle">Today</span><button id="find" title="Search everything" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button><button id="eye" title="Hide names and numbers"><svg id="eyesvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><span id="eyet">Private</span></button></div>
 
 <div id="p-today">
+  <div class="hd">
+    <div class="kick" id="hdkick">Today</div>
+    <div class="huge" id="hdbig">0 to call</div>
+    <div class="sub" id="hdsub">Need attention today</div>
+    <div class="stat3" id="stat3"></div>
+  </div>
+  <div class="sec" style="padding-top:0"><div class="brief" id="brief"></div></div>
+  <div class="sec"><div class="nag hide" id="nag"></div></div>
+  <div class="sec" style="padding-top:0"><div class="upn" id="upn"></div></div>
+  <div class="sec"><h2>In the diary today <b id="upnb2"></b></h2><div class="card"><div class="schd" id="schd"></div></div></div>
   <div class="sec">
     <div class="big" id="banked">AED 0<small> / 500,000</small></div>
     <div class="bar"><s id="bmax"></s><u id="bpipe"></u><i id="bprog"></i></div>
     <div class="meta"><span id="daysleft"></span><span id="need"></span></div>
     <div class="legend"><span class="l1">Banked</span><span class="l2">Likely</span><span class="l3">Best case</span></div>
   </div>
-  <div class="sec"><div class="nag hide" id="nag"></div></div>
-  <div class="sec"><h2>Today's money moves <b id="mmn"></b></h2>
+  <div class="morewrap"><button class="moretog" id="moretog">Show the full list of money moves</button></div>
+  <div class="sec hide" id="movesec"><h2>Today's money moves <b id="mmn"></b></h2>
     <div id="moves"></div>
     <div class="focus hide" id="focus"></div></div>
   <div class="sec"><h2>Money map</h2><div class="card" id="mmap"></div></div>
@@ -390,6 +489,8 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
     <input id="uq" placeholder="Search project, community or note">
     <select id="ufilt" style="margin-top:8px"></select>
     <div class="chips" id="usort" style="margin-top:9px"></div>
+    <div class="slists" id="slists" style="margin-top:9px"></div>
+    <div class="selbar hide" id="selbar"></div>
     <div class="card" style="margin-top:9px" id="ulist"></div>
     <button class="addbtn" id="addunit">+ Add a unit</button></div>
 </div>
@@ -498,6 +599,14 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 
 <div id="printwrap"></div>
 
+
+<div id="view">
+ <div class="vtop"><div class="vt" id="vtitle">Viewing</div>
+  <button id="vclose">Done</button></div>
+ <div class="vwrap"><div class="vcard" id="vcard"></div></div>
+ <div class="vnav"><button id="vprev">Back</button>
+  <div class="pos" id="vpos"></div><button id="vnext">Next</button></div>
+</div>
 <script>
 const TARGET=500000, DEADLINE='2026-09-27';
 const NUMS=[['calls','Calls',40],['convos','Conversations',10],['meets','Meetings / viewings',2],['opps','New opportunities',2],['agreed','Deals agreed',0]];
@@ -790,7 +899,7 @@ function drawEye(){var b=document.getElementById('eye');
  document.getElementById('eyesvg').innerHTML=S.priv?EYE_SHUT:EYE_OPEN;
  document.getElementById('eyet').textContent=S.priv?'Hidden':'Private';}
 document.getElementById('eye').onclick=function(){
- S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawEarn();invalidate();};
+ S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawHead();drawEarn();invalidate();};
 
 
 
@@ -952,7 +1061,7 @@ function openTrash(){
   if(t.k==='unit')S.units.push(t.o);
   if(t.k==='later')S.later.push(t.o);
   if(t.k==='op')S.op.push(t.o);
-  put(S);invalidate();drawDeals();drawLater();drawHero();drawDealSeg();
+  put(S);invalidate();drawDeals();drawLater();drawHero();drawHead();drawDealSeg();
   TS.style.display='none';alert('Restored.');};});
 }
 
@@ -1510,7 +1619,7 @@ function laterOutcome(i,k){
   S.deals.push({ty:'Resale',w:x.n,ph:x.ph||'',u:x.w||'',v:num(x.v)||0,r:2,s:1,
    na:'Send the valuation',nd:TD,src:'Prospecting call',ref:'',n:x.n2||'',ch:'1 cheque',rent:0});
   S.later.splice(i,1);
-  put(S);drawLater();drawDeals();drawHero();drawDealSeg();
+  put(S);drawLater();drawDeals();drawHero();drawHead();drawDealSeg();
   alert('Moved into your pipeline');
   return;
  }
@@ -1760,6 +1869,9 @@ function bump(k,d){
  document.getElementById('q-callv').textContent=day.calls+' today';
  document.getElementById('q-convov').textContent=day.convos+' today';
  S.days[TD]=day;put(S);
+ var s3=document.getElementById('stat3');
+ if(s3&&s3.children[2])s3.children[2].innerHTML='<div class="n'+(day.calls>=40?' good':'')+'">'+
+  day.calls+'</div><div class="l">Calls today</div>';
 }
 document.getElementById('q-call').onclick=function(){bump('calls',1);};
 document.getElementById('q-convo').onclick=function(){bump('convos',1);};
@@ -1802,7 +1914,7 @@ function drawLedger(){
    '<button class="x" data-lgx="'+i+'" style="background:none;border:0;color:var(--dim);font-size:16px">×</button></div></div>';}).join('')+
   (L.length>12?'<div class="hint" style="padding-top:9px">Showing the last 12 of '+L.length+'.</div>':'');
  document.querySelectorAll('[data-lgx]').forEach(function(b){b.onclick=function(){
-  if(confirm('Remove this entry?')){S.ledger.splice(+b.dataset.lgx,1);put(S);drawEarn();drawHero();}};});
+  if(confirm('Remove this entry?')){S.ledger.splice(+b.dataset.lgx,1);put(S);drawEarn();drawHero();drawHead();}};});
 }
 document.getElementById('logcomm').onclick=function(){logComm();};
 function logComm(){
@@ -1826,7 +1938,7 @@ function logComm(){
   if(!a){alert('How much?');return;}
   S.ledger.push({amt:a,d:document.getElementById('c-d').value||TD,
    w:document.getElementById('c-w').value.trim(),n:document.getElementById('c-n').value.trim()});
-  put(S);drawEarn();drawHero();drawMap();TS.style.display='none';};
+  put(S);drawEarn();drawHero();drawHead();drawMap();TS.style.display='none';};
 }
 function drawEarn(){
  drawLedger();
@@ -1853,6 +1965,112 @@ function drawEarn(){
  document.getElementById('ernall').textContent=pmoney(all);
  document.getElementById('ernsub').textContent=best?('Best month '+new Date(bestK+'-01').toLocaleDateString('en-GB',{month:'long',year:'numeric'})+' · '+(S.priv?'AED •••••':money(best))):'Log commission below when a deal banks';
 }
+
+/* ================= TODAY HEAD (strada layout) ================= */
+var UPI=0;
+function snoozeKey(){return TD;}
+function isSnoozed(m){
+ var sn=(S.snooze||{})[m.k+':'+m.i];
+ return sn && sn>=TD;
+}
+function liveMoves(){
+ return buildMoves().filter(function(m){return !isSnoozed(m);});
+}
+function todayStats(){
+ var M=liveMoves(), over=0, risk=0;
+ M.forEach(function(m){
+  if(m.k==='deal'){
+   var d=S.deals[m.i];
+   if(d.nd&&d.nd<TD)over++; else if(!d.nd)risk++;
+  } else {
+   var x=S.later[m.i];
+   if(x.wd&&x.wd<TD)over++; else risk++;
+  }
+ });
+ return {n:M.length,over:over,risk:risk,calls:(day.calls||0),moves:M};
+}
+function drawHead(){
+ var st=todayStats();
+ document.getElementById('hdkick').textContent=new Date().toLocaleDateString('en-GB',
+  {weekday:'long',day:'numeric',month:'long'});
+ document.getElementById('hdbig').textContent=st.n===0?'All clear':
+  (st.n+' '+(st.n===1?'move':'moves'));
+ document.getElementById('hdsub').textContent=st.n===0?
+  'Nothing overdue and nothing parked.':'Need attention today';
+ document.getElementById('stat3').innerHTML=
+  '<div><div class="n'+(st.over?' warn':'')+'">'+st.over+'</div><div class="l">Overdue</div></div>'+
+  '<div><div class="n">'+st.risk+'</div><div class="l">No date set</div></div>'+
+  '<div><div class="n'+(st.calls>=40?' good':'')+'">'+st.calls+'</div><div class="l">Calls today</div></div>';
+ drawBrief(st); drawUp(st); drawSchd();
+}
+function drawBrief(st){
+ var b=[], banked=bankedTotal()+wonTotal()+ledgerTotal();
+ var left=Math.max(0,Math.ceil((new Date(DEADLINE)-Date.now())/864e5));
+ var wks=Math.max(1,Math.ceil(left/7));
+ if(st.over) b.push(st.over+' '+(st.over===1?'client is':'clients are')+' past their next-action date.');
+ else if(st.n) b.push(st.n+' '+(st.n===1?'move'
+   :'moves')+' waiting, none overdue yet.');
+ else b.push('Nothing is overdue and nothing is parked.');
+ if(st.risk) b.push(st.risk+' '+(st.risk===1?'has':'have')+' no next step set at all.');
+ var ev=evOf(TD).length;
+ if(ev) b.push(ev+' in the diary today.');
+ b.push(pmoney(Math.max(0,TARGET-banked)/wks)+' a week for the next '+wks+' weeks to hit target.');
+ document.getElementById('brief').innerHTML=
+  '<div class="sp">&#10022;</div><div><div class="bt">Daily briefing</div><p>'+esc(b.join(' '))+'</p></div>';
+}
+function drawUp(st){
+ var el=document.getElementById('upn'), M=st.moves;
+ if(!M.length){
+  el.innerHTML='<div class="tag">Up next</div><div class="nm">Nothing waiting</div>'+
+   '<div class="mt">Set next-action dates on your deals and this fills itself.</div>';
+  return;}
+ if(UPI>=M.length)UPI=0;
+ var m=M[UPI], ph=(m.ph||'').replace(/[^\d+]/g,'');
+ var extra=m.why&&m.why.length?m.why.join(' · '):'';
+ el.innerHTML='<div class="tag"><span>Up next</span><em>'+(UPI+1)+' of '+M.length+'</em></div>'+
+  '<div class="nm">'+esc(pvName(m.t))+'</div>'+
+  '<div class="mt">'+esc(pvNum(m.sub))+(extra?'<br>'+esc(extra):'')+'</div>'+
+  '<div class="act">'+esc(pvName(m.act))+'</div>'+
+  '<div class="btns">'+
+   (ph?'<button class="call" id="upcall">Call now</button>':'<button class="call" id="upopen">Open</button>')+
+   '<button class="snz" id="upsnz">Snooze</button></div>'+
+  (M.length>1?'<div class="dots" id="updots">'+M.slice(0,6).map(function(_,j){
+    return '<i class="'+(j===UPI?'on':'')+'"></i>';}).join('')+'</div>':'');
+ var dd=document.getElementById('updots');
+ if(dd)dd.onclick=function(){UPI=(UPI+1)%M.length;drawUp(todayStats());};
+ var cb=document.getElementById('upcall');
+ if(cb)cb.onclick=function(){
+  bump('calls',1);
+  location.href='tel:'+ph;
+ };
+ var ob=document.getElementById('upopen');
+ if(ob)ob.onclick=function(){openMove(m);};
+ document.getElementById('upsnz').onclick=function(){snoozeMove(m);};
+}
+function openMove(m){
+ if(m.k==='deal')openSheet(m.i); else laterEdit(m.i);
+}
+function snoozeMove(m){
+ S.snooze=S.snooze||{};
+ var d=new Date(); d.setDate(d.getDate()+1);
+ var nx=iso(d);
+ S.snooze[m.k+':'+m.i]=nx;
+ if(m.k==='deal'&&S.deals[m.i]){ if(!S.deals[m.i].nd||S.deals[m.i].nd<nx)S.deals[m.i].nd=nx; }
+ if(m.k==='later'&&S.later[m.i]){ S.later[m.i].wd=nx; }
+ put(S); UPI=0; drawHead(); drawMoves(); drawNav();
+ if(navigator.vibrate)navigator.vibrate(8);
+}
+function drawSchd(){
+ var L=evOf(TD), el=document.getElementById('schd');
+ document.getElementById('upnb2').textContent=L.length?L.length+' today':'';
+ if(!L.length){el.innerHTML='<div class="hint">Nothing in the diary today.</div>';return;}
+ el.innerHTML=L.map(function(e){
+  return '<div class="it"><div class="tm2">'+esc(t12(e.t).replace('\n',' '))+'</div>'+
+   '<div><div class="b1">'+esc(pvName(e.n))+'</div>'+
+   '<div class="b2">'+esc(pvName(e.w||''))+(e.w&&e.ty?' · ':'')+esc(e.ty||'')+'</div></div></div>';
+ }).join('');
+}
+
 function drawHero(){
  var banked=bankedTotal()+wonTotal()+ledgerTotal(), w=pipeWeighted(), m=pipeMax();
  var p1=Math.min(100,banked/TARGET*100), p2=Math.min(Math.max(0,100-p1),w/TARGET*100), p3=Math.min(Math.max(0,100-p1-p2),m/TARGET*100);
@@ -1937,11 +2155,11 @@ function drawDeals(){
   var ns=d.s+1;
   if(ns<4&&CADENCE[ns]!==undefined)d.nd=autoDate(CADENCE[ns]);
   if(ns===4){d.nd='';}
-  d.s=ns;d.sAt=TD;put(S);drawDeals();drawHero();drawMore();drawNav();drawMoves();drawMap();
+  d.s=ns;d.sAt=TD;put(S);drawDeals();drawHero();drawHead();drawMore();drawNav();drawMoves();drawMap();
   if(navigator.vibrate)navigator.vibrate(12);
   if(ns===4)setTimeout(function(){if(confirm('Nice one. Log the commission now?'))logComm();},120);};});
  document.querySelectorAll('[data-bk]').forEach(function(b){b.onclick=function(){
-  var d=S.deals[+b.dataset.bk]; if(d.s<=0)return; d.s=(d.s===LOST?2:d.s-1);put(S);drawDeals();drawHero();drawMore();};});
+  var d=S.deals[+b.dataset.bk]; if(d.s<=0)return; d.s=(d.s===LOST?2:d.s-1);put(S);drawDeals();drawHero();drawHead();drawMore();};});
  document.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(){openSheet(+b.dataset.ed);};});
  document.querySelectorAll('[data-tp]').forEach(function(b){b.onclick=function(){pickTemplate(+b.dataset.tp);};});
 }
@@ -1999,7 +2217,7 @@ function openSheet(i){
 f('v').oninput=calcFee;f('r').oninput=calcFee;f('rent').oninput=calcFee;f('ty').onchange=toggleRent;
 document.getElementById('adddeal').onclick=function(){openSheet(null);};
 document.getElementById('sc').onclick=function(){document.getElementById('sheet').style.display='none';};
-document.getElementById('sdel').onclick=function(){if(EDIT!==null&&confirm('Delete this deal?')){toTrash('deal',S.deals[EDIT]);S.deals.splice(EDIT,1);put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawMore();}};
+document.getElementById('sdel').onclick=function(){if(EDIT!==null&&confirm('Delete this deal?')){toTrash('deal',S.deals[EDIT]);S.deals.splice(EDIT,1);put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawMore();}};
 document.getElementById('sv').onclick=function(){
  var w=f('w').value.trim(); if(!w){alert('Client name is needed');return;}
  var o={w:w,ph:f('ph').value.trim(),u:f('u').value.trim(),v:num(f('v').value),r:num(f('r').value)||2,
@@ -2010,7 +2228,7 @@ document.getElementById('sv').onclick=function(){
   lost:(PICK===LOST?f('lost').value:''),
   hist:(EDIT!==null&&S.deals[EDIT].hist)?S.deals[EDIT].hist:[]};
  if(EDIT===null)S.deals.push(o);else S.deals[EDIT]=o;
- put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawMore();
+ put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawMore();
 };
 
 function psf(u){return u.bua&&u.pr?Math.round(u.pr/u.bua):0;}
@@ -2049,6 +2267,98 @@ function unitPass(u){
  if(UF.indexOf('Where: ')===0)return (u.com||u.p)===UF.slice(7);
  return true;
 }
+
+/* ================= SHORTLISTS + CLIENT VIEWING ================= */
+var PICKED={}, ACTLIST='';
+function pickCount(){return Object.keys(PICKED).length;}
+function pickedUnits(){
+ return Object.keys(PICKED).map(Number).sort(function(a,b){return a-b;})
+  .map(function(i){return S.units[i];}).filter(Boolean);
+}
+function drawSelBar(){
+ var el=document.getElementById('selbar'), n=pickCount();
+ if(!n){el.classList.add('hide');el.innerHTML='';return;}
+ el.classList.remove('hide');
+ el.innerHTML='<div class="cnt"><b>'+n+'</b> selected</div>'+
+  '<button id="selclr">Clear</button>'+
+  '<button id="selsave">Save list</button>'+
+  '<button class="go" id="selshow">Show client</button>';
+ document.getElementById('selclr').onclick=function(){PICKED={};ACTLIST='';drawUnits();};
+ document.getElementById('selsave').onclick=saveList;
+ document.getElementById('selshow').onclick=function(){openView(pickedUnits(),ACTLIST||'Selected units');};
+}
+function saveList(){
+ var nm=prompt('Name this list. Use the client name so you find it again.',ACTLIST||'');
+ if(nm===null)return;
+ nm=String(nm).trim(); if(!nm)return;
+ S.lists=S.lists||{};
+ S.lists[nm]=Object.keys(PICKED).map(Number);
+ ACTLIST=nm; put(S); drawUnits();
+ if(navigator.vibrate)navigator.vibrate(8);
+}
+function drawLists(){
+ var el=document.getElementById('slists'), L=S.lists||{}, ks=Object.keys(L);
+ if(!ks.length){el.innerHTML='';return;}
+ el.innerHTML=ks.map(function(k){
+  return '<b class="'+(ACTLIST===k?'on':'')+'" data-sl="'+esc(k)+'">'+esc(k)+
+   '<i>'+(L[k]||[]).length+'</i></b>';}).join('')+
+  (ACTLIST?'<b data-sldel="'+esc(ACTLIST)+'" style="color:var(--bad)">Delete</b>':'');
+ el.querySelectorAll('[data-sl]').forEach(function(b){b.onclick=function(){
+  var k=b.dataset.sl;
+  if(ACTLIST===k){ACTLIST='';PICKED={};}
+  else{ACTLIST=k;PICKED={};(S.lists[k]||[]).forEach(function(i){if(S.units[i])PICKED[i]=1;});}
+  drawUnits();};});
+ var d=el.querySelector('[data-sldel]');
+ if(d)d.onclick=function(){
+  if(!confirm('Delete the list "'+ACTLIST+'"? The units stay in your inventory.'))return;
+  delete S.lists[ACTLIST];ACTLIST='';PICKED={};put(S);drawUnits();};
+}
+/* ---- client viewing mode: nothing internal on screen ---- */
+var VU=[], VI=0;
+function openView(us,title){
+ if(!us.length){alert('Tick some units first.');return;}
+ VU=us; VI=0;
+ document.getElementById('vtitle').textContent=title;
+ document.getElementById('view').classList.add('on');
+ document.body.style.overflow='hidden';
+ drawView();
+}
+function closeView(){
+ document.getElementById('view').classList.remove('on');
+ document.body.style.overflow='';
+}
+function drawView(){
+ var u=VU[VI], isR=(u.lt||'Sale')==='Rent';
+ document.getElementById('vpos').textContent=(VI+1)+' of '+VU.length;
+ document.getElementById('vprev').disabled=VI===0;
+ document.getElementById('vnext').disabled=VI>=VU.length-1;
+ var el=document.getElementById('vcard');
+ var spec=[];
+ if(num(u.bd))spec.push(['Bedrooms',num(u.bd)]);
+ if(num(u.bua))spec.push(['Built-up area',num(u.bua).toLocaleString()+' sqft']);
+ if(num(u.plot))spec.push(['Plot',num(u.plot).toLocaleString()+' sqft']);
+ if(u.h)spec.push(['Handover',u.h]);
+ var price=isR?num(u.rent):num(u.pr);
+ el.innerHTML=
+  '<div id="vimgs"></div>'+
+  '<div class="vname">'+esc(u.p||'Unit')+'</div>'+
+  '<div class="vtype">'+esc(u.t||'')+'</div>'+
+  (price?'<div class="vprice">'+money(price)+'</div>'+
+    '<div class="vpsub">'+(isR?'per year · '+esc(u.ch||''):
+      (psf(u)?'AED '+psf(u).toLocaleString()+' per sqft':''))+'</div>':'')+
+  (spec.length?'<div class="vspec">'+spec.map(function(x){
+    return '<div><div class="l">'+esc(x[0])+'</div><div class="v">'+esc(String(x[1]))+'</div></div>';
+   }).join('')+'</div>':'')+
+  (u.pl?'<div class="vnote"><b>Payment plan</b>'+esc(u.pl)+'</div>':'');
+ var box=document.getElementById('vimgs');
+ ['img','fp'].forEach(function(k){
+  loadImg(u,S.units.indexOf(u),k).then(function(src){
+   if(src){var im=new Image();im.className='vimg';im.src=src;box.appendChild(im);}
+  }).catch(function(){});
+ });
+ document.querySelector('.vwrap').scrollTop=0;
+}
+
 function drawUnits(){
  drawUnitSeg();drawUnitFilters();drawUnitSort();
  var list=[];S.units.forEach(function(u,i){if(unitPass(u))list.push([u,i]);});
@@ -2067,7 +2377,9 @@ function drawUnits(){
   var u=x[0], i=x[1], sp=[];
   if(u.bd)sp.push(pvNum(u.bd+' bed')); if(u.bua)sp.push(pvNum('BUA '+u.bua.toLocaleString())); if(u.plot)sp.push(pvNum('plot '+u.plot.toLocaleString()));
   var up=u.op?Math.round((u.pr-u.op)/u.op*100):null, isR=(u.lt||'Sale')==='Rent';
-  return '<div class="unit"><div class="h uhead" data-i="'+i+'"><div><div class="p">'+esc(pvNum(u.p))+'</div><div class="m">'+esc(pvNum(u.t))+(sp.length?' · '+sp.join(' · '):'')+'</div></div>'+
+  return '<div class="unit"><div class="h uhead" data-i="'+i+'">'+
+   '<div class="upick'+(PICKED[i]?' on':'')+'" data-pick="'+i+'">&#10003;</div>'+
+   '<div><div class="p">'+esc(pvNum(u.p))+'</div><div class="m">'+esc(pvNum(u.t))+(sp.length?' · '+sp.join(' · '):'')+'</div></div>'+
    '<div style="text-align:right">'+(isR?
      '<div class="pr">'+pmoney(u.rent)+'</div><div class="m">per year · '+esc(u.ch||'')+'</div>'
     :'<div class="pr">'+pmoney(u.pr)+'</div>'+(psf(u)?'<div class="m">'+(S.priv?'••••':psf(u).toLocaleString())+' /sqft</div>':'')+
@@ -2098,6 +2410,14 @@ function drawUnits(){
  document.querySelectorAll('[data-eu]').forEach(function(b){b.onclick=function(e){e.stopPropagation();editUnit(+b.dataset.eu);};});
  document.querySelectorAll('[data-du]').forEach(function(b){b.onclick=function(e){e.stopPropagation();
   if(confirm('Delete this unit?')){toTrash('unit',S.units[+b.dataset.du]);S.units.splice(+b.dataset.du,1);put(S);drawUnits();}};});
+ document.querySelectorAll('[data-pick]').forEach(function(b){b.onclick=function(e){
+  e.stopPropagation();
+  var i=+b.dataset.pick;
+  if(PICKED[i])delete PICKED[i]; else PICKED[i]=1;
+  b.classList.toggle('on');
+  drawSelBar();
+  if(navigator.vibrate)navigator.vibrate(4);};});
+ drawLists(); drawSelBar();
 }
 function openImg(i,kind){
  var u=S.units[i];
@@ -2143,6 +2463,21 @@ function editUnit(i){var u=S.units[i];
  u.pl=prompt('Payment plan',u.pl)||u.pl;u.h=prompt('Handover',u.h)||u.h;
  u.tag=prompt('Tag, e.g. Resale, Off-plan, Commercial',u.tag||'')||u.tag;u.n=prompt('Notes',u.n)||u.n;
  put(S);drawUnits();}
+document.getElementById('vclose').onclick=closeView;
+document.getElementById('vprev').onclick=function(){if(VI>0){VI--;drawView();}};
+document.getElementById('vnext').onclick=function(){if(VI<VU.length-1){VI++;drawView();}};
+document.addEventListener('keydown',function(e){
+ if(!document.getElementById('view').classList.contains('on'))return;
+ if(e.key==='Escape')closeView();
+ if(e.key==='ArrowRight'&&VI<VU.length-1){VI++;drawView();}
+ if(e.key==='ArrowLeft'&&VI>0){VI--;drawView();}});
+(function(){var sx=0,sy=0;var v=document.getElementById('view');
+ v.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+ v.addEventListener('touchend',function(e){
+  var dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+  if(Math.abs(dx)<60||Math.abs(dy)>50)return;
+  if(dx<0&&VI<VU.length-1){VI++;drawView();}
+  if(dx>0&&VI>0){VI--;drawView();}},{passive:true});})();
 document.getElementById('addunit').onclick=function(){
  var p=prompt('Project');if(!p)return;
  var lt=confirm('OK for a SALE listing.\nCancel for a RENTAL listing.')?'Sale':'Rent';
@@ -2353,7 +2688,7 @@ document.getElementById('t-import').onclick=function(){
   arr.forEach(function(o){var key=String(o.w||'').trim().toLowerCase(); if(have[key])return;
    S.deals.push({w:o.w||'',ph:o.ph||'',u:o.u||'',v:num(o.v),r:num(o.r)||2,s:num(o.s),na:o.na||'',nd:o.nd||'',
     src:o.src||'Referral',n:o.n||'',ty:o.ty||'Ready',ch:o.ch||'1 cheque',rent:num(o.rent),ref:o.ref||''});added++;});
-  put(S);drawDeals();drawHero();drawMore();alert(added+' clients added.');TS.style.display='none';
+  put(S);drawDeals();drawHero();drawHead();drawMore();alert(added+' clients added.');TS.style.display='none';
  }catch(e){alert('That did not look like a valid client list.');}};};
 function allImgKeys(){var ks=[];S.units.forEach(function(u){['img','fp'].forEach(function(k){
  if(u[k]&&u[k].indexOf('data:')!==0)ks.push(u[k]);});});return ks;}
@@ -2531,13 +2866,18 @@ document.getElementById('save').onclick=function(){
  day.moved=document.getElementById('moved').value;
  day.comm=num(document.getElementById('comm').value);
  day.fix=document.getElementById('fix').value;
- S.days[TD]=day;put(S);drawHero();drawEarn();drawMap();drawStreak();drawMore();
+ S.days[TD]=day;put(S);drawHero();drawHead();drawEarn();drawMap();drawStreak();drawMore();
  var b=document.getElementById('save');b.textContent='Saved ✓';setTimeout(function(){b.textContent='Save today';},1400);
 };
 document.getElementById('dq').oninput=function(e){DQ=e.target.value.trim().toLowerCase();drawDeals();};
 document.getElementById('uq').oninput=function(e){UQ=e.target.value.trim().toLowerCase();drawUnits();};
 document.getElementById('cq').oninput=function(e){CQ=e.target.value.trim().toLowerCase();drawComps();};
-drawStockSeg();drawNav();drawNums();drawTogs();drawScore();drawStreak();drawHero();drawEarn();drawDeals();drawDealSeg();drawLater();drawUpNext();drawMoves();drawMap();drawNag();drawNet();drawEye();DREW={};
+(function(){var t=document.getElementById('moretog');
+ if(t)t.onclick=function(){var m=document.getElementById('movesec');
+  var on=m.classList.toggle('hide');
+  t.textContent=on?'Show the full list of money moves':'Hide the full list';
+  if(!on)drawMoves();};})();
+drawStockSeg();drawNav();drawNums();drawTogs();drawScore();drawStreak();drawHero();drawHead();drawEarn();drawDeals();drawDealSeg();drawLater();drawUpNext();drawMoves();drawMap();drawNag();drawNet();drawEye();DREW={};
 </script>
 </body>
 </html>
