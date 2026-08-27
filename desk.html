@@ -1078,6 +1078,120 @@ function makeOffer(){
 }
 
 
+
+/* ================= REBUILD HOOKS FROM A CSV ================= */
+function csvRows(txt){
+ var lines=String(txt).replace(/\r/g,'').split('\n').filter(function(l){return l.trim();});
+ if(!lines.length)return [];
+ function split(l){var out=[],cur='',q=false;
+  for(var i=0;i<l.length;i++){var c=l[i];
+   if(c==='"'){q=!q;continue;}
+   if(c===','&&!q){out.push(cur);cur='';continue;}
+   cur+=c;}
+  out.push(cur);return out;}
+ var head=split(lines[0]).map(function(h){return h.trim().toLowerCase();});
+ return lines.slice(1).map(function(l){var c=split(l),o={};
+  head.forEach(function(h,i){o[h]=(c[i]||'').trim();});return o;});
+}
+function pickCol(o,names){for(var i=0;i<names.length;i++){if(o[names[i]]!==undefined&&o[names[i]]!=='')return o[names[i]];}return '';}
+function looksLikeMap(rows){
+ if(!rows.length)return false;
+ var h=Object.keys(rows[0]);
+ return h.some(function(k){return /^unit|villa/.test(k);}) &&
+        h.some(function(k){return /^beds/.test(k);}) &&
+        !h.some(function(k){return /price/.test(k);});
+}
+function parseUnitMap(rows){
+ var m={};
+ rows.forEach(function(o){
+  var u=num(String(pickCol(o,['unit','villa number','unit no'])).replace(/\D/g,''));
+  var bd=num(pickCol(o,['beds','beds_masterplan','bedrooms']));
+  if(!u||!bd)return;
+  m[u]={bd:bd,cl:pickCol(o,['cluster'])||'',bk:pickCol(o,['backs_onto'])||''};});
+ return m;
+}
+function parseTxns(rows){
+ var out=[];
+ rows.forEach(function(o){
+  var flag=pickCol(o,['flag']);
+  if(flag&&/outlier/i.test(flag))return;
+  var u=num(String(pickCol(o,['unit','unit no','unit_no'])).replace(/\D/g,''));
+  var d=pickCol(o,['date','sale date']);
+  var pr=num(String(pickCol(o,['price_aed','price (aed)','price'])).replace(/[^0-9.]/g,''));
+  var bd=num(pickCol(o,['beds_masterplan','beds','bedrooms']));
+  var bua=num(String(pickCol(o,['bua_sqft','bua (sqft)','bua'])).replace(/[^0-9.]/g,''));
+  var psf=num(String(pickCol(o,['aed_per_sqft_bua','aed/sqft','psf'])).replace(/[^0-9.]/g,''));
+  if(!u||!d||!pr||!bd)return;
+  if(!psf&&bua)psf=Math.round(pr/bua);
+  out.push({u:u,d:d.slice(0,10),pr:pr,bd:bd,bua:bua,psf:psf,cl:pickCol(o,['cluster'])});});
+ return out;
+}
+function monShort(d){var dt=new Date(d); if(isNaN(dt))return d;
+ return dt.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}).replace(' ','-');}
+function ddiffD(a,b){return Math.round((new Date(b)-new Date(a))/864e5);}
+function rebuildHooks(txns){
+ if(!txns.length)return {n:0,msg:'No usable rows in that file.'};
+ var byUnit={};
+ txns.forEach(function(t){if(!byUnit[t.u]||t.d>byUnit[t.u].d)byUnit[t.u]=t;});
+ var UM=S().umap||{}, made=0, skipped=0, noMap=0, noComp=0;
+ S().later.forEach(function(x){
+  if(x.dnc)return;
+  var m=String(x.w||'').match(/(\d+)\s*(?:·|$)/);
+  var un=m?num(m[1]):0;
+  if(!un){skipped++;return;}
+  var me=byUnit[un], beds=0, cl='', bk='';
+  if(UM[un]){beds=UM[un].bd;cl=UM[un].cl||'';bk=UM[un].bk||'';}
+  if(!beds&&me){beds=me.bd;cl=me.cl;}
+  if(!beds){noMap++;return;}
+  var pool=txns.filter(function(t){return t.bd===beds&&t.u!==un;});
+  if(!pool.length){noComp++;return;}
+  var near=cl?pool.filter(function(t){return t.cl===cl;}):[];
+  var use=near.length?near:pool;
+  var best=use.slice().sort(function(a,b){return b.d.localeCompare(a.d);})[0];
+  var top=use.slice().sort(function(a,b){return b.pr-a.pr;})[0];
+  var where=near.length?'same loop':'nearby';
+  var rank=String(x.n2||'').match(/^#(\d+)\s*(HOT|WARM|COLD)/);
+  var tag=rank?('#'+rank[1]+' '+rank[2]+' · '):'';
+  x.n2=tag+'Their unit '+un+': '+beds+'BR'+(bk?', backs onto '+bk:'')+'. Unit '+best.u+
+   ' ('+where+', also '+beds+'BR) sold '+monShort(best.d)+' for '+money(best.pr)+
+   (best.psf?' at AED '+best.psf.toLocaleString()+'/sqft':'')+
+   '. Best '+beds+'BR nearby '+money(top.pr)+' (unit '+top.u+', '+monShort(top.d)+').';
+  var bua=(me&&me.bua)?me.bua:0;
+  if(!bua){var bs=pool.filter(function(t){return t.bua;}).map(function(t){return t.bua;}).sort(function(a,b){return a-b;});
+   if(bs.length)bua=bs[Math.floor(bs.length/2)];}
+  if(bua){
+   var l12=pool.filter(function(t){return ddiffD(t.d,TD)<=400&&t.psf;}).map(function(t){return t.psf;}).sort(function(a,b){return a-b;});
+   if(l12.length)x.v=Math.round(bua*l12[Math.floor(l12.length/2)]/10000)*10000;}
+  made++;});
+ persist();
+ return {n:made,noMap:noMap,
+  msg:made+' hook'+(made===1?'':'s')+' rebuilt from '+txns.length+' transactions'+
+   (skipped?', '+skipped+' had no unit number':'')+
+   (noMap?', '+noMap+' need the unit map loaded first':'')+
+   (noComp?', '+noComp+' had no same-bed comp':'')};
+}
+function handleHookFile(f){
+ var out=document.getElementById('hk-out');
+ var r=new FileReader();
+ r.onload=function(ev){
+  var rows=csvRows(ev.target.result);
+  if(looksLikeMap(rows)){
+   var mp=parseUnitMap(rows);
+   S().umap=Object.assign(S().umap||{},mp); persist();
+   out.innerHTML='<div class="trow big"><div class="l">Unit map saved<b>'+
+    Object.keys(mp).length+' units with a bed count and a loop. Now load the sales export.</b></div>'+
+    '<div class="v">OK</div></div>';
+   return;}
+  var res=rebuildHooks(parseTxns(rows));
+  var sample=(S().later.filter(function(x){return x.n2;})[0]||{}).n2||'';
+  out.innerHTML='<div class="trow big"><div class="l">'+esc(res.msg)+'</div><div class="v"></div></div>'+
+   (res.n?'<div class="trow"><div class="l"><b>'+esc(sample)+'</b></div></div>':'')+
+   (res.noMap?'<div class="warnline">Load Farm_Gardens_unit_map.csv first, then this file again.</div>':'');
+  if(TAB==='call')drawCall();
+ };
+ r.readAsText(f);
+}
+
 /* ================= CALCULATORS ================= */
 var FEES={trustLo:4000,trustHi:4200,adminReady:580,adminOff:40,deed:250,map:250,mortReg:290,mortPct:0.0025};
 var LTVS=[['Resident, first home, under 5M',80],['Resident, first home, over 5M',70],
@@ -1220,7 +1334,14 @@ function drawTools(){
  '<div class="t2"><div><label>Agency %</label><input id="f-ag" type="number" step="0.5" value="2"></div>'+
  '<div><label>Trustee AED</label><input id="f-tr" type="number" value="4200"></div></div>'+
  '<label>DLD on the resale</label><select id="f-dld"><option value="1">Charged 4%</option><option value="0">Waived</option></select>'+
- '<div class="tout" id="f-out"></div></div></div>';
+ '<div class="tout" id="f-out"></div></div>'+
+
+ '<div class="tool"><h4>Rebuild hooks from data</h4>'+
+ '<div class="sub">Load the unit map first, then the sales export. Every prospect gets a sale of the '+
+ 'same bed count, preferring their own loop. Outlier rows in the file are ignored.</div>'+
+ '<label>Transaction or unit-map CSV</label><input type="file" id="hk-f" accept=".csv,text/csv">'+
+ '<div class="tout" id="hk-out"></div></div>'+
+ '</div>';
  document.getElementById('main').innerHTML=h;
  document.getElementById('hint').textContent='Same formulas as your phone, so the numbers match.';
  ['c-pr','c-off','c-dldw','c-ag','c-noc','c-ln','c-bk','c-val','c-bua','c-sc'].forEach(function(id){
@@ -1232,6 +1353,8 @@ function drawTools(){
  document.querySelectorAll('#f-seg b').forEach(function(b){b.onclick=function(){
   document.querySelectorAll('#f-seg b').forEach(function(x){x.classList.remove('on');});
   b.classList.add('on'); FSIDE=b.dataset.fs; runFlip();};});
+ var hf=document.getElementById('hk-f');
+ if(hf)hf.onchange=function(){ if(this.files[0])handleHookFile(this.files[0]); };
  runCost();runMort();runFlip();
 }
 
