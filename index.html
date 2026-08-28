@@ -569,6 +569,23 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 .dft.ok{background:rgba(76,175,125,.16);color:var(--ok);border:1px solid rgba(76,175,125,.4)}
 .dft.warn{background:rgba(185,151,91,.14);color:var(--gold);border:1px solid rgba(185,151,91,.4)}
 .dft.bad{background:rgba(212,106,94,.14);color:var(--bad);border:1px solid rgba(212,106,94,.45)}
+
+/* ---- viewing mode: list then detail ---- */
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:4px 0 20px}
+.vcard2{background:#0d2130;border:1px solid rgba(255,255,255,.07);border-radius:13px;overflow:hidden;
+ -webkit-tap-highlight-color:transparent}
+.vcard2:active{transform:scale(.985)}
+.vthumb{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#09161f}
+.vthumb.none{display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:11px}
+.vc2b{padding:10px 11px 12px}
+.vc2b .t{font-size:13.5px;color:var(--ink);font-weight:600;line-height:1.25}
+.vc2b .m{font-size:11px;color:var(--dim);margin-top:3px}
+.vc2b .p{font-size:15px;color:var(--gold);font-weight:700;margin-top:6px}
+.vc2b .rw2{display:inline-block;font-size:9px;padding:2px 7px;border-radius:999px;margin-top:6px;
+ border:1px solid rgba(76,175,125,.45);color:var(--ok)}
+.vback{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:999px;
+ padding:9px 16px;font-size:14px;font-family:inherit;flex:none}
+.vcount{font-size:11px;color:var(--dim);text-align:center;padding:2px 0 10px}
 </style>
 </head>
 <body>
@@ -829,7 +846,8 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 
 
 <div id="view">
- <div class="vtop"><div class="vt" id="vtitle">Viewing</div>
+ <div class="vtop"><button class="vback hide" id="vback">All</button>
+  <div class="vt" id="vtitle">Viewing</div>
   <button id="vclose">Done</button></div>
  <div class="vwrap"><div class="vcard" id="vcard"></div></div>
  <div class="vnav"><button id="vprev">Back</button>
@@ -3338,15 +3356,52 @@ function drawLists(){
 var VU=[], VI=0;
 window.addEventListener('popstate',function(){
  var v=document.getElementById('view');
- if(v&&v.classList.contains('on'))closeView();});
+ if(!v||!v.classList.contains('on'))return;
+ if(VMODE==='one'&&VU.length>1){VMODE='list';drawViewList();try{history.pushState({view:1},'');}catch(e){}return;}
+ closeView();});
+var VMODE='list', VTITLE='';
 function openView(us,title){
  if(!us.length){alert('Tick some units first.');return;}
- VU=us; VI=0;
- document.getElementById('vtitle').textContent=title;
+ VU=us; VI=0; VTITLE=title||'Selected units';
+ VMODE = us.length===1 ? 'one' : 'list';
  document.getElementById('view').classList.add('on');
  document.body.style.overflow='hidden';
  try{history.pushState({view:1},'');}catch(e){}
- drawView();
+ renderView();
+}
+function renderView(){
+ if(VMODE==='list')drawViewList(); else drawView();
+}
+function drawViewList(){
+ document.getElementById('vtitle').textContent=VTITLE;
+ document.getElementById('vback').classList.add('hide');
+ document.getElementById('vpos').textContent=VU.length+' properties';
+ document.getElementById('vprev').classList.add('hide');
+ document.getElementById('vnext').classList.add('hide');
+ var el=document.getElementById('vcard');
+ el.innerHTML='<div class="vcount">Tap one to see it in full</div><div class="vgrid">'+
+  VU.map(function(u,j){
+   var isR=(u.lt||'Sale')==='Rent', price=isR?num(u.rent):num(u.pr);
+   var sp=[]; if(num(u.bd))sp.push(num(u.bd)+' bed');
+   if(num(u.bua))sp.push(num(u.bua).toLocaleString()+' sqft');
+   return '<div class="vcard2" data-vi="'+j+'">'+
+    '<div class="vthumb none" id="vt-'+j+'">photo</div>'+
+    '<div class="vc2b"><div class="t">'+esc(u.p||'Unit')+'</div>'+
+    '<div class="m">'+esc(sp.join(' · '))+'</div>'+
+    (price?'<div class="p">'+money(price)+(isR?'<span style="font-size:10px;color:var(--dim)"> /yr</span>':'')+'</div>':'')+
+    (u.rw==='Single row'?'<span class="rw2">Single row</span>':'')+
+    '</div></div>';}).join('')+'</div>';
+ VU.forEach(function(u,j){
+  loadImg(u,S.units.indexOf(u),'img').then(function(src){
+   if(!src)return;
+   var box=document.getElementById('vt-'+j); if(!box)return;
+   var im=new Image(); im.className='vthumb'; im.src=src;
+   box.parentNode.replaceChild(im,box);
+  }).catch(function(){});});
+ el.querySelectorAll('[data-vi]').forEach(function(c){c.onclick=function(){
+  VI=+c.dataset.vi; VMODE='one'; drawView();
+  if(navigator.vibrate)navigator.vibrate(5);};});
+ document.querySelector('.vwrap').scrollTop=0;
 }
 function closeView(){
  document.getElementById('view').classList.remove('on');
@@ -3354,6 +3409,10 @@ function closeView(){
 }
 function drawView(){
  var u=VU[VI], isR=(u.lt||'Sale')==='Rent';
+ document.getElementById('vtitle').textContent=VTITLE;
+ document.getElementById('vback').classList.toggle('hide',VU.length<2);
+ document.getElementById('vprev').classList.remove('hide');
+ document.getElementById('vnext').classList.remove('hide');
  document.getElementById('vpos').textContent=(VI+1)+' of '+VU.length;
  document.getElementById('vprev').disabled=VI===0;
  document.getElementById('vnext').disabled=VI>=VU.length-1;
@@ -3559,6 +3618,7 @@ function saveUnitSheet(){
 }
 
 function editUnit(i){openUnitSheet(i);}
+document.getElementById('vback').onclick=function(){VMODE='list';drawViewList();};
 document.getElementById('vclose').onclick=closeView;
 document.getElementById('vclose2').onclick=closeView;
 document.getElementById('vprev').onclick=function(){if(VI>0){VI--;drawView();}};
@@ -3571,6 +3631,7 @@ document.addEventListener('keydown',function(e){
 (function(){var sx=0,sy=0;var v=document.getElementById('view');
  v.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
  v.addEventListener('touchend',function(e){
+  if(VMODE!=='one')return;
   var dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
   if(Math.abs(dx)<60||Math.abs(dy)>50)return;
   if(dx<0&&VI<VU.length-1){VI++;drawView();}
