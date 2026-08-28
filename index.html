@@ -649,6 +649,43 @@ nav b{transition:color .15s}
 nav b.on i{transform:translateY(-1px)}
 /* nothing should touch the edges of the phone */
 #p-today,#p-deals,#p-stock,#p-diary,#p-more{padding-bottom:26px}
+
+/* ---- daylight theme: readable outdoors, same brand ---- */
+body.lite{
+ --navy:#F6F4EF;      /* page */
+ --card:#FFFFFF;
+ --card2:#FBF9F4;
+ --ink:#14202B;       /* text */
+ --dim:#6A6558;
+ --line:#E2DCD0;
+ --gold:#8A6A2F;      /* darker gold so it passes contrast on white */
+ --ok:#1E7A50;
+ --bad:#B03A2E;
+ --edge:rgba(20,32,43,.10);
+ --edge2:rgba(20,32,43,.16);
+ --lift:0 1px 0 rgba(255,255,255,.7), 0 6px 18px rgba(20,32,43,.09);
+}
+body.lite .card,body.lite .unit,body.lite .deal,body.lite .pc2{background:var(--card)}
+body.lite nav{background:rgba(246,244,239,.94);border-top:1px solid var(--line)}
+body.lite .go2,body.lite .call,body.lite .qbig .ca{background:#14202B;color:#fff}
+body.lite .qbig .wa{background:#1f7a54;color:#fff}
+body.lite .qstart,body.lite .btnfull,body.lite .nobar button,body.lite .qtop button,
+body.lite .vtop button{background:var(--gold);color:#fff}
+body.lite .stat3{background:var(--line)}
+body.lite .stat3 div{background:var(--card)}
+body.lite #view{background:#FBF9F4}
+body.lite .vcard2{background:#fff;border-color:var(--line)}
+body.lite .vspec div,body.lite .vnote{background:#F2EFE7}
+body.lite .vthumb,body.lite .vimg{background:#EDE9E0}
+body.lite .qwhy,body.lite .brief{background:#F2EFE7}
+body.lite .lightbox{background:rgba(246,244,239,.97)}
+body.lite .galcell{background:#fff}
+body.lite .upn{border-color:rgba(138,106,47,.35)}
+body.lite #queue{background:#FBF9F4}
+body.lite .cg .cd.out{color:#B9B2A4}
+.sunbtn{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:999px;
+ padding:7px 12px;font-size:12px;font-family:inherit;flex:none}
+.sunbtn.on{border-color:var(--gold);color:var(--gold)}
 </style>
 </head>
 <body>
@@ -656,7 +693,7 @@ nav b.on i{transform:translateY(-1px)}
 <div class="hdr"><h1>Daily</h1><div class="dt" id="dt"></div></div>
 <div id="offpill" class="pill2 hide">Offline · your data is safe</div>
 <div id="upd" class="pill2 upd hide">New version ready · <b>Reload</b></div>
-<div class="pgtitle"><span id="pgtitle">Today</span><button id="find" title="Search everything" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button><button id="eye" title="Hide names and numbers"><svg id="eyesvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><span id="eyet">Private</span></button></div>
+<div class="pgtitle"><span id="pgtitle">Today</span><button id="find" title="Search everything" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button><button class="sunbtn" id="sunb" title="Switch between night and daylight">Night</button><button id="eye" title="Hide names and numbers"><svg id="eyesvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><span id="eyet">Private</span></button></div>
 
 <div id="p-today">
   <div class="hd">
@@ -1249,6 +1286,18 @@ function pvNum(x){var t=String(x==null?'':x);
 const EYE_OPEN='<path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/>';
 const EYE_SHUT='<path d="M2 4l20 16"/><path d="M6.9 7.3C3.9 9 1.5 12 1.5 12S5 19 12 19c2 0 3.7-.6 5.1-1.4"/><path d="M20 15.4c1.6-1.6 2.5-3.4 2.5-3.4S19 5 12 5c-.9 0-1.8.1-2.6.4"/><path d="M9.6 10.2a3.2 3.2 0 0 0 4.3 4.4"/>';
 function invalidate(){DREW={};pageDraw(PAGE);}
+
+/* ---- theme ---- */
+function applyTheme(){
+ var lite=!!S.lite;
+ document.body.classList.toggle('lite',lite);
+ var m=document.querySelector('meta[name=theme-color]');
+ if(m)m.setAttribute('content',lite?'#F6F4EF':'#0B1F33');
+ var b=document.getElementById('sunb');
+ if(b){b.classList.toggle('on',lite);b.textContent=lite?'Daylight':'Night';}
+}
+function toggleTheme(){S.lite=S.lite?0:1;put(S);applyTheme();}
+
 function drawEye(){var b=document.getElementById('eye');
  b.classList.toggle('on',!!S.priv);
  document.getElementById('eyesvg').innerHTML=S.priv?EYE_SHUT:EYE_OPEN;
@@ -3524,6 +3573,9 @@ function openView(us,title){
  VMODE = us.length===1 ? 'one' : 'list';
  document.getElementById('view').classList.add('on');
  document.body.style.overflow='hidden';
+ /* a client screen is looked at in daylight, so force the light theme while it is open */
+ VWASLITE=!!S.lite;
+ if(!S.lite)document.body.classList.add('lite');
  try{history.pushState({view:1},'');}catch(e){}
  renderView();
 }
@@ -3561,9 +3613,11 @@ function drawViewList(){
   if(navigator.vibrate)navigator.vibrate(5);};});
  document.querySelector('.vwrap').scrollTop=0;
 }
+var VWASLITE=false;
 function closeView(){
  document.getElementById('view').classList.remove('on');
  document.body.style.overflow='';
+ if(!VWASLITE)document.body.classList.remove('lite');
 }
 function drawView(){
  var u=VU[VI], isR=(u.lt||'Sale')==='Rent';
@@ -3992,6 +4046,8 @@ document.getElementById('addunit').onclick=function(){openUnitSheet(null);};
 })();
 document.getElementById('t-undo').onclick=openSnapshots;
 document.getElementById('t-hooks').onclick=openHookTool;
+document.getElementById('sunb').onclick=toggleTheme;
+applyTheme();
 document.getElementById('qstart').onclick=openQueue;
 document.getElementById('qexit').onclick=closeQueue;
 window.addEventListener('popstate',function(){
