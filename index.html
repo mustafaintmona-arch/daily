@@ -601,6 +601,12 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
   <div class="sec"><h2>When the money lands</h2><div class="card" id="cash"></div>
     <div class="hint" style="margin-top:8px">Commission is dated from the stage a deal is at, not from when you hope it closes. Off-plan resales take longest.</div></div>
   <div class="sec hide" id="nophone" style="padding-top:0"></div>
+  <div class="sec hide" id="promsec"><h2>You promised <b id="promn"></b></h2>
+    <div class="card" id="prom"></div>
+    <div class="hint" style="margin-top:8px">Things you said you would do. Turns red after 3 days. This is your reputation.</div></div>
+  <div class="sec hide" id="waitsec"><h2>Waiting on them <b id="waitn"></b></h2>
+    <div class="card" id="wait"></div>
+    <div class="hint" style="margin-top:8px">The ball is in their court. After a week, it is back in yours whether you like it or not. Tap the arrows to move anyone between the two lists.</div></div>
   <div class="sec hide" id="stucksec"><h2>Sitting too long <b id="stuckn"></b></h2>
     <div class="card" id="stuck"></div>
     <div class="hint" style="margin-top:8px">At this stage far longer than your own average. Usually means an unanswered objection.</div></div>
@@ -1119,7 +1125,7 @@ function drawEye(){var b=document.getElementById('eye');
  document.getElementById('eyesvg').innerHTML=S.priv?EYE_SHUT:EYE_OPEN;
  document.getElementById('eyet').textContent=S.priv?'Hidden':'Private';}
 document.getElementById('eye').onclick=function(){
- S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawEarn();invalidate();};
+ S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawEarn();invalidate();};
 
 
 
@@ -1283,7 +1289,7 @@ function openTrash(){
   if(t.k==='unit')S.units.push(t.o);
   if(t.k==='later')S.later.push(t.o);
   if(t.k==='op')S.op.push(t.o);
-  put(S);invalidate();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawDealSeg();
+  put(S);invalidate();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawDealSeg();
   TS.style.display='none';alert('Restored.');};});
 }
 
@@ -1858,7 +1864,7 @@ function laterOutcome(i,k){
   S.deals.push({ty:'Resale',w:x.n,ph:x.ph||'',u:x.w||'',v:num(x.v)||0,r:2,s:1,
    na:'Send the valuation',nd:TD,src:'Prospecting call',ref:'',n:x.n2||'',ch:'1 cheque',rent:0});
   S.later.splice(i,1);
-  put(S);drawLater();drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawDealSeg();
+  put(S);drawLater();drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawDealSeg();
   alert('Moved into your pipeline');
   return;
  }
@@ -2363,7 +2369,7 @@ function drawLedger(){
    '<button class="x" data-lgx="'+i+'" style="background:none;border:0;color:var(--dim);font-size:16px">×</button></div></div>';}).join('')+
   (L.length>12?'<div class="hint" style="padding-top:9px">Showing the last 12 of '+L.length+'.</div>':'');
  document.querySelectorAll('[data-lgx]').forEach(function(b){b.onclick=function(){
-  if(confirm('Remove this entry?')){S.ledger.splice(+b.dataset.lgx,1);put(S);drawEarn();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();}};});
+  if(confirm('Remove this entry?')){S.ledger.splice(+b.dataset.lgx,1);put(S);drawEarn();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();}};});
 }
 document.getElementById('logcomm').onclick=function(){logComm();};
 
@@ -2422,7 +2428,7 @@ function logComm(){
   if(!a){alert('How much?');return;}
   S.ledger.push({amt:a,d:document.getElementById('c-d').value||TD,
    w:document.getElementById('c-w').value.trim(),n:document.getElementById('c-n').value.trim()});
-  put(S);drawEarn();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawMap();TS.style.display='none';};
+  put(S);drawEarn();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawMap();TS.style.display='none';};
 }
 function drawEarn(){
  drawLedger();
@@ -3050,6 +3056,7 @@ function logQueue(q,key){
   /* a viewing or a meeting means they are engaged, not just contacted */
   if((key==='viewed'||key==='met')&&d.s<2){ d.s=2; d.sAt=TD; }
   d.hist=d.hist||[]; d.hist.push({d:TD,a:o[1]});
+  d.dir=(key==='noans'||key==='msg'||key==='later')?'them':'me';
   if(key==='noans')bump('calls',1);
   if(key==='spoke'||key==='meet'){bump('calls',1);bump('convos',1);}
   if(key==='viewed'||key==='met'){bump('meets',1);bump('convos',1);}
@@ -3156,19 +3163,19 @@ function drawDeals(){
   document.getElementById('pc-'+b.dataset.mx).classList.toggle('open');};});
  document.querySelectorAll('[data-sz]').forEach(function(b){b.onclick=function(){
   var d=S.deals[+b.dataset.sz], n=new Date(); n.setDate(n.getDate()+3);
-  d.nd=iso(n); put(S); drawDeals(); drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck(); drawNav(); drawMoves();
+  d.nd=iso(n); put(S); drawDeals(); drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit(); drawNav(); drawMoves();
   if(navigator.vibrate)navigator.vibrate(8);};});
  document.querySelectorAll('[data-adv]').forEach(function(b){b.onclick=function(){
   var d=S.deals[+b.dataset.adv]; if(d.s>=4)return;
   var ns=d.s+1;
   if(ns<4&&CADENCE[ns]!==undefined)d.nd=autoDate(CADENCE[ns]);
   if(ns===4){d.nd='';}
-  d.s=ns;d.sAt=TD;put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawMore();drawNav();drawMoves();drawMap();
+  d.s=ns;d.sAt=TD;put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawMore();drawNav();drawMoves();drawMap();
   if(navigator.vibrate)navigator.vibrate(12);
   if(ns===4)setTimeout(function(){if(confirm('Nice one. Log the commission now?'))logComm();},120);};});
  document.querySelectorAll('[data-bk]').forEach(function(b){b.onclick=function(){
   var d=S.deals[+b.dataset.bk]; if(d.s<=0)return; d.s=(d.s===LOST?2:d.s-1);
-  put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawMore();};});
+  put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawMore();};});
  document.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(){openSheet(+b.dataset.ed);};});
  document.querySelectorAll('[data-tp]').forEach(function(b){b.onclick=function(){pickTemplate(+b.dataset.tp);};});
 }
@@ -3226,7 +3233,7 @@ function openSheet(i){
 f('v').oninput=calcFee;f('r').oninput=calcFee;f('rent').oninput=calcFee;f('ty').onchange=toggleRent;
 document.getElementById('adddeal').onclick=function(){openSheet(null);};
 document.getElementById('sc').onclick=function(){document.getElementById('sheet').style.display='none';};
-document.getElementById('sdel').onclick=function(){if(EDIT!==null&&confirm('Delete this deal?')){toTrash('deal',S.deals[EDIT]);S.deals.splice(EDIT,1);put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawMore();}};
+document.getElementById('sdel').onclick=function(){if(EDIT!==null&&confirm('Delete this deal?')){toTrash('deal',S.deals[EDIT]);S.deals.splice(EDIT,1);put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawMore();}};
 document.getElementById('sv').onclick=function(){
  var w=f('w').value.trim(); if(!w){alert('Client name is needed');return;}
  var o={w:w,ph:f('ph').value.trim(),u:f('u').value.trim(),v:num(f('v').value),r:num(f('r').value)||2,
@@ -3237,7 +3244,7 @@ document.getElementById('sv').onclick=function(){
   lost:(PICK===LOST?f('lost').value:''),
   hist:(EDIT!==null&&S.deals[EDIT].hist)?S.deals[EDIT].hist:[]};
  if(EDIT===null)S.deals.push(o);else S.deals[EDIT]=o;
- put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawMore();
+ put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawMore();
 };
 
 function psf(u){return u.bua&&u.pr?Math.round(u.pr/u.bua):0;}
@@ -3800,7 +3807,7 @@ document.getElementById('t-import').onclick=function(){
   arr.forEach(function(o){var key=String(o.w||'').trim().toLowerCase(); if(have[key])return;
    S.deals.push({w:o.w||'',ph:o.ph||'',u:o.u||'',v:num(o.v),r:num(o.r)||2,s:num(o.s),na:o.na||'',nd:o.nd||'',
     src:o.src||'Referral',n:o.n||'',ty:o.ty||'Ready',ch:o.ch||'1 cheque',rent:num(o.rent),ref:o.ref||''});added++;});
-  put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawMore();alert(added+' clients added.');TS.style.display='none';
+  put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawMore();alert(added+' clients added.');TS.style.display='none';
  }catch(e){alert('That did not look like a valid client list.');}};};
 function allImgKeys(){var ks=[];S.units.forEach(function(u){['img','fp'].forEach(function(k){
  if(u[k]&&u[k].indexOf('data:')!==0)ks.push(u[k]);});});return ks;}
@@ -3828,6 +3835,71 @@ document.getElementById('t-backup').onclick=function(){
   };
  }).catch(function(){document.getElementById('bkst').textContent='Could not build the backup.';});
 };
+
+
+/* ================= PROMISES vs WAITING ON ================= */
+/* Two very different lists. One is your reputation, the other is your patience. */
+function ballDir(d){
+ if(d.dir==='me'||d.dir==='them')return d.dir;
+ var na=String(d.na||'').toLowerCase();
+ /* a next action is usually your job. only pure chasing sits with them. */
+ if(/\b(chase|follow up|following up|remind|nudge|wait|waiting|await|hear back|get a yes|any news|did they|has he|has she)\b/.test(na))return 'them';
+ if(na)return 'me';
+ var last=(d.hist||[]).filter(function(h){return h.a;}).slice(-1)[0];
+ var a=last?String(last.a).toLowerCase():'';
+ if(/no answer|left a message|not now|maybe|not selling/.test(a))return 'them';
+ return 'me';
+}
+function commitments(){
+ var mine=[], theirs=[];
+ S.deals.forEach(function(d,i){
+  if(d.s>=4||!d.na)return;
+  var since=d.sAt||d.nd||TD;
+  var age=ddiff(since,TD);
+  var o={i:i,d:d,age:age,fee:dealFee(d)};
+  if(ballDir(d)==='me')mine.push(o); else theirs.push(o);});
+ mine.sort(function(a,b){return b.age-a.age||b.fee-a.fee;});
+ theirs.sort(function(a,b){return b.age-a.age||b.fee-a.fee;});
+ return {mine:mine,theirs:theirs};
+}
+function commRow(x,mine){
+ var ph=(x.d.ph||'').replace(/[^\d+]/g,'');
+ var late=mine?x.age>3:x.age>7;
+ return '<div class="qi"><div class="qib"><b>'+esc(pvName(x.d.w))+'</b>'+
+  '<span style="color:'+(late?'var(--bad)':'var(--dim)')+'">'+esc(pvName(x.d.na))+
+  (x.age>0?' · '+x.age+' days':'')+'</span></div>'+
+  '<div class="qif">'+pmoney(x.fee)+'</div>'+
+  (ph&&!S.priv?'<a class="qic" href="tel:'+ph+'">Call</a>'
+             :'<button class="qic" data-cm="'+x.i+'">Open</button>')+
+  '<button class="qic" data-flip="'+x.i+'" title="Move to the other list">&#8646;</button></div>';
+}
+function drawCommit(){
+ var C=commitments();
+ var s1=document.getElementById('promsec'), s2=document.getElementById('waitsec');
+ if(!s1)return;
+ if(!C.mine.length){s1.classList.add('hide');}
+ else{
+  s1.classList.remove('hide');
+  var overdue=C.mine.filter(function(x){return x.age>3;}).length;
+  document.getElementById('promn').textContent=C.mine.length+(overdue?' · '+overdue+' overdue':'');
+  document.getElementById('prom').innerHTML=C.mine.slice(0,6).map(function(x){return commRow(x,1);}).join('')+
+   (C.mine.length>6?'<div class="hint" style="margin-top:8px">and '+(C.mine.length-6)+' more</div>':'');
+ }
+ if(!C.theirs.length){s2.classList.add('hide');}
+ else{
+  s2.classList.remove('hide');
+  var cold=C.theirs.filter(function(x){return x.age>7;}).length;
+  document.getElementById('waitn').textContent=C.theirs.length+(cold?' · '+cold+' gone cold':'');
+  document.getElementById('wait').innerHTML=C.theirs.slice(0,6).map(function(x){return commRow(x,0);}).join('')+
+   (C.theirs.length>6?'<div class="hint" style="margin-top:8px">and '+(C.theirs.length-6)+' more</div>':'');
+ }
+ document.querySelectorAll('[data-cm]').forEach(function(b){b.onclick=function(){openSheet(+b.dataset.cm);};});
+ document.querySelectorAll('[data-flip]').forEach(function(b){b.onclick=function(){
+  var d=S.deals[+b.dataset.flip];
+  d.dir=(ballDir(d)==='me')?'them':'me';
+  put(S);drawCommit();
+  if(navigator.vibrate)navigator.vibrate(6);};});
+}
 
 /* ================= SAFE RESTORE ================= */
 /* A restore replaces everything. It must never do that without showing you
@@ -4124,7 +4196,7 @@ document.getElementById('cq').oninput=function(e){CQ=e.target.value.trim().toLow
   var on=m.classList.toggle('hide');
   t.textContent=on?'Show the full list of money moves':'Hide the full list';
   if(!on)drawMoves();};})();
-drawStockSeg();drawNav();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawEarn();drawDeals();drawDealSeg();drawLater();drawUpNext();drawMoves();drawMap();drawNag();drawNet();drawEye();DREW={};
+drawStockSeg();drawNav();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawEarn();drawDeals();drawDealSeg();drawLater();drawUpNext();drawMoves();drawMap();drawNag();drawNet();drawEye();DREW={};
 </script>
 </body>
 </html>
