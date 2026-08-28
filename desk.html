@@ -465,9 +465,12 @@ function readFile(f){
   if(!D||(!D.deals&&!D.units)){toast('That is not a Daily backup');return;}
   D.deals=D.deals||[];D.units=D.units||[];D.later=D.later||[];D.op=D.op||[];
   D.diary=D.diary||[];D.days=D.days||{};D.ledger=D.ledger||[];D.trash=D.trash||[];
+  if(!confirmLoad(D,f.name))return;
+  var rep=repairData(D);
   BK={v:o.v||30,at:o.at||new Date().toISOString(),S:D,imgs:o.imgs||{}};
   normImgs();
-  persist();document.getElementById('demoban').classList.add('hide');render();
+  persist();
+  if(rep)setTimeout(function(){toast(rep+' damaged record'+(rep===1?'':'s')+' repaired on load');},900);document.getElementById('demoban').classList.add('hide');render();
   var pics=0;
   D.units.forEach(function(u,i){if(unitImgs(u,i).length)pics++;});
   toast(D.deals.length+' clients, '+D.units.length+' units, '+D.later.length+
@@ -1079,6 +1082,96 @@ function makeOffer(){
 
 
 
+
+
+/* ---- the signals the phone gained, so the Desk tells the same truth ---- */
+function digitsOf(p){return String(p||'').replace(/\D/g,'');}
+function deskHouseholds(){
+ var g={};
+ S().deals.forEach(function(d,i){
+  var h=String(d.hh||'').trim(); if(!h)return;
+  (g[h]=g[h]||[]).push({i:i,d:d});});
+ return g;
+}
+function deskSuppressed(){
+ var out={},g=deskHouseholds();
+ Object.keys(g).forEach(function(h){
+  var live=g[h].filter(function(x){return num(x.d.s)<4;});
+  if(!live.length)return;
+  var lead=live.slice().sort(function(a,b){
+   return dealFee(b.d)*(PROB[num(b.d.s)]||0)-dealFee(a.d)*(PROB[num(a.d.s)]||0);})[0];
+  live.forEach(function(x){if(x.i!==lead.i)out[x.i]=h;});});
+ return out;
+}
+function deskDupes(){
+ var m={},out=[];
+ S().later.forEach(function(x,i){ if(x.dnc)return;
+  var k=digitsOf(x.ph); if(k.length<9)return; (m[k]=m[k]||[]).push(x.n+' ['+String(x.w||'').split('·')[0].trim()+']');});
+ S().deals.forEach(function(d){
+  var k=digitsOf(d.ph); if(k.length<9)return; (m[k]=m[k]||[]).push(d.w);});
+ Object.keys(m).forEach(function(k){if(m[k].length>1)out.push({ph:k,who:m[k]});});
+ return out;
+}
+function deskNoPhone(){
+ return S().deals.filter(function(d){return num(d.s)<4&&!(d.ph||'').trim();})
+  .sort(function(a,b){return dealFee(b)-dealFee(a);});
+}
+function deskUnbanked(){
+ return S().deals.filter(function(d){
+  if(num(d.s)!==4||!dealFee(d))return false;
+  return !(S().ledger||[]).some(function(l){
+   return String(l.w||'').toLowerCase()===String(d.w||'').toLowerCase();});});
+}
+
+/* ================= DATA REPAIR + SAFE LOAD ================= */
+function repairData(D){
+ var fixed=0;
+ (D.later||[]).forEach(function(x){
+  if(x.att!==undefined&&!Array.isArray(x.att)){
+   var n=Number(x.att)||0,a=[];
+   for(var i=0;i<n;i++)a.push({d:x.lastAt||x.wd||'',ch:'call',out:x.last||'call'});
+   x.att=a; fixed++;}
+  if(x.att===undefined)x.att=[];});
+ (D.deals||[]).forEach(function(d){
+  if(d.hist!==undefined&&!Array.isArray(d.hist)){d.hist=[];fixed++;}
+  if(d.s!==undefined&&(d.s<0||d.s>5)){d.s=0;fixed++;}});
+ return fixed;
+}
+function loadDiff(D){
+ function idx(a,k){var m={};(a||[]).forEach(function(x){m[String(x[k]||'').toLowerCase()]=x;});return m;}
+ if(!BK||!BK.S)return null;
+ var C=BK.S;
+ var od=idx(C.deals,'w'), nd=idx(D.deals,'w');
+ var ou=idx(C.units,'p'), nu=idx(D.units,'p');
+ var ol=idx(C.later,'n'), nl=idx(D.later,'n');
+ function gone(o,n){return Object.keys(o).filter(function(k){return !n[k];}).length;}
+ function added(o,n){return Object.keys(n).filter(function(k){return !o[k];}).length;}
+ return {dealsLost:gone(od,nd),dealsNew:added(od,nd),
+  unitsLost:gone(ou,nu),unitsNew:added(ou,nu),
+  laterLost:gone(ol,nl),laterNew:added(ol,nl),
+  diaryHere:(C.diary||[]).length,diaryIn:(D.diary||[]).length,
+  dncHere:(C.dnc||[]).length,dncIn:(D.dnc||[]).length,
+  here:{d:(C.deals||[]).length,u:(C.units||[]).length,l:(C.later||[]).length},
+  incoming:{d:(D.deals||[]).length,u:(D.units||[]).length,l:(D.later||[]).length}};
+}
+function confirmLoad(D,name){
+ var c=loadDiff(D);
+ if(!c)return true;   /* nothing loaded yet, nothing to lose */
+ var warn=[];
+ if(c.dealsLost)warn.push(c.dealsLost+' clients currently loaded are not in that file');
+ if(c.unitsLost)warn.push(c.unitsLost+' units would disappear');
+ if(c.laterLost)warn.push(c.laterLost+' prospects would disappear');
+ if(c.diaryIn<c.diaryHere)warn.push((c.diaryHere-c.diaryIn)+' follow-ups would be lost');
+ if(c.dncIn<c.dncHere)warn.push((c.dncHere-c.dncIn)+' blocked numbers would be unblocked');
+ var msg=name+'\n\n'+
+  'Clients   '+c.here.d+'  ->  '+c.incoming.d+'\n'+
+  'Units     '+c.here.u+'  ->  '+c.incoming.u+'\n'+
+  'Prospects '+c.here.l+'  ->  '+c.incoming.l+'\n';
+ if(warn.length)msg+='\nYOU WOULD LOSE\n' + warn.map(function(w){return '• '+w;}).join('\n')+'\n\nLoad anyway?';
+ else msg+='\nNothing currently loaded would be lost. Load it?';
+ return confirm(msg);
+}
+
 /* ================= REBUILD HOOKS FROM A CSV ================= */
 function csvRows(txt){
  var lines=String(txt).replace(/\r/g,'').split('\n').filter(function(l){return l.trim();});
@@ -1384,8 +1477,9 @@ function drawReview(){
  var lost=D.filter(function(d){return num(d.s)===5;});
  var wonV=won.reduce(function(a,d){return a+dealFee(d);},0);
  var near=D.filter(function(d){return num(d.s)===3;}).reduce(function(a,d){return a+dealFee(d);},0);
- var weighted=active.reduce(function(a,d){return a+dealFee(d)*(PROB[num(d.s)]||0);},0);
- var best=active.reduce(function(a,d){return a+dealFee(d);},0);
+ var sup=deskSuppressed();
+ var weighted=D.reduce(function(a,d,i){return (num(d.s)<4&&!sup[i])?a+dealFee(d)*(PROB[num(d.s)]||0):a;},0);
+ var best=D.reduce(function(a,d,i){return (num(d.s)<4&&!sup[i])?a+dealFee(d):a;},0);
  var banked=(S().ledger||[]).reduce(function(a,e){return a+num(e.amt);},0);
  Object.keys(S().days||{}).forEach(function(k){banked+=num((S().days[k]||{}).comm);});
  var gap=Math.max(0,TARGET-banked-wonV);
@@ -1507,6 +1601,15 @@ function drawReview(){
   '<b>'+nofit.length+'</b> of your '+U.length+' units have nobody in the book who fits them at a decent score. '+
   (nofit.length?'Either they are the wrong stock, or your client criteria are not filled in.':'')+'</div>';
 
+ var np=deskNoPhone(), dz=deskDupes(), ub=deskUnbanked(), hh=Object.keys(deskHouseholds()).length;
+ var flags=[];
+ if(np.length)flags.push('<b>'+np.length+' clients have no phone number</b> — '+money(np.reduce(function(a,d){return a+dealFee(d);},0))+' of fees you cannot dial. Top: '+np.slice(0,3).map(function(d){return esc(d.w);}).join(', ')+'.');
+ if(dz.length)flags.push('<b>'+dz.length+' phone number'+(dz.length===1?'':'s')+' appear on more than one record</b> — '+dz.slice(0,2).map(function(g){return esc(g.who.join(' / '));}).join('; ')+'. Message them once, not once per unit.');
+ if(ub.length)flags.push('<b>'+ub.length+' won deal'+(ub.length===1?'':'s')+' with no commission logged</b> — '+money(ub.reduce(function(a,d){return a+dealFee(d);},0))+'. Banked reads low until you log it.');
+ if(Object.keys(sup).length)flags.push('<b>'+Object.keys(sup).length+' record'+(Object.keys(sup).length===1?'':'s')+' suppressed as the same household</b> across '+hh+' household'+(hh===1?'':'s')+', so the pipeline above is not double counting.');
+ if(flags.length)
+  h+='<h4>Worth fixing</h4><div class="need" style="margin-top:8px">'+
+   flags.map(function(f){return '<div style="margin-bottom:9px">'+f+'</div>';}).join('')+'</div>';
  h+='<h4>Your call</h4><div class="cols">'+
   ['Who could realistically transact in the next 30 days?',
    'Where is the bottleneck?',

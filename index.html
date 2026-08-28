@@ -1863,6 +1863,12 @@ function lRow(x,i,ready){
  return '<div class="deal'+(ready?' ldue':'')+'"><div class="top"><div>'+
   '<div class="who">'+esc(pvName(x.n))+'</div>'+
   '<div class="sub">'+esc(pvNum(x.w||''))+(x.w&&x.ty?' · ':'')+esc(x.ty||'')+'</div>'+
+  (function(){
+   var sib=sameNumber(x.ph).filter(function(r){return !(r.k==='later'&&r.i===i);});
+   if(!sib.length)return '';
+   var what=sib.map(function(r){return String(r.x.w||r.x.u||'').split('·')[0].trim();}).filter(Boolean);
+   return '<div class="sub" style="color:var(--bad)">Also owns '+esc(pvNum(what.join(', ')))+
+    ' · one message for all of them</div>';})()+
   (as?'<div class="sub">'+esc(as)+'</div>':'')+
   '</div>'+
   '<div class="fee" style="font-size:12px;'+(ready?'':'color:var(--dim)')+'">'+esc(lWhen(x))+'</div></div>'+
@@ -1936,7 +1942,13 @@ function laterMsgSheet(i){
 function drawLater(){
  drawFunnel();
  var ready=[],wait=[];
- S.later.forEach(function(x,i){ if(x.dnc)return; (x.wd&&x.wd<=TD?ready:wait).push([x,i]); });
+ /* one row per person. someone with three villas is one call, not three. */
+ var seenR={}, seenW={};
+ S.later.forEach(function(x,i){
+  if(x.dnc)return;
+  var due=(x.wd&&x.wd<=TD), k=digitsOf(x.ph), bag=due?seenR:seenW;
+  if(k.length>=9){ if(bag[k])return; bag[k]=1; }
+  (due?ready:wait).push([x,i]); });
  wait.sort(function(a,b){return (a[0].wd||'9999').localeCompare(b[0].wd||'9999');});
  var f=document.getElementById('lfilt'), cur=f.value||'All types';
  var ts=['All types'].concat(LTYPES.filter(function(t){return S.later.some(function(x){return x.ty===t&&!x.dnc;});}));
