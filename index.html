@@ -890,6 +890,24 @@ const put=d=>{_wp=d; if(_wt)return; _wt=setTimeout(function(){_wt=null;flushPut(
 window.addEventListener('pagehide',flushPut);
 document.addEventListener('visibilitychange',function(){if(document.hidden)flushPut();});
 let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
+/* repair anything an older version wrote in the wrong shape */
+function repairData(){
+ var fixed=0;
+ (S.later||[]).forEach(function(x){
+  if(x.att!==undefined&&!Array.isArray(x.att)){
+   var n=Number(x.att)||0, a=[];
+   for(var i=0;i<n;i++)a.push({d:x.lastAt||x.wd||'',ch:'call',out:x.last||'call'});
+   x.att=a; fixed++;}
+  if(x.att===undefined)x.att=[];
+ });
+ (S.deals||[]).forEach(function(d){
+  if(d.hist!==undefined&&!Array.isArray(d.hist)){d.hist=[];fixed++;}
+  if(d.s!==undefined&&(d.s<0||d.s>5)){d.s=0;fixed++;}
+ });
+ if(fixed)put(S);
+ return fixed;
+}
+repairData();
 const SEED_DEALS=[
 {ty:'Resale',w:'Ashwini + Ashish',ph:'',u:'Emaar distress 3BR',v:4700000,r:2,s:2,na:'Book the call with Ashish',nd:'',src:'Repeat client',ref:'',n:'One wallet with the Sobha deal. Pick one.',ch:'1 cheque',rent:0},
 {ty:'Off-plan',w:'Dr Ashish',ph:'',u:'Sobha 4BR corner',v:5831000,r:2,s:1,na:'Get a yes, no or not now',nd:'',src:'Repeat client',ref:'Ashwini',n:'4% DLD waived, 80% deferred to 2030.',ch:'1 cheque',rent:0},
@@ -3097,7 +3115,10 @@ function logQueue(q,key){
   if(key==='viewed'||key==='met'){bump('meets',1);bump('convos',1);}
  } else {
   var x=S.later[q.i];
-  x.att=(x.att||0)+1; x.last=key; x.lastAt=TD;
+  /* att is the attempt log the funnel reads, it must stay an array */
+  if(!Array.isArray(x.att))x.att=[];
+  x.att.push({d:TD,ch:'call',out:key});
+  x.last=key; x.lastAt=TD;
   if(key==='remove'){ x.dnc=1; S.dnc=S.dnc||[]; S.dnc.push(x.ph); }
   else if(key==='val'){
    S.deals.unshift({w:x.n,ph:x.ph,u:x.w||'',v:num(x.v)||0,r:2,s:1,
@@ -4273,6 +4294,7 @@ function doRestore(o,st){
     .then(function(){
      S=D; if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[];
      if(!S.op)S.op=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
+     repairData();
      try{
       put(S);flushPut();
      }catch(e){
