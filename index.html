@@ -586,6 +586,69 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 .vback{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:999px;
  padding:9px 16px;font-size:14px;font-family:inherit;flex:none}
 .vcount{font-size:11px;color:var(--dim);text-align:center;padding:2px 0 10px}
+
+.stp{display:inline-block;font-size:10px;letter-spacing:.06em;padding:3px 9px;border-radius:999px;
+ margin-left:6px;font-weight:600}
+.stp.sold{background:rgba(76,175,125,.18);color:var(--ok);border:1px solid rgba(76,175,125,.45)}
+.stp.resv{background:rgba(185,151,91,.16);color:var(--gold);border:1px solid rgba(185,151,91,.45)}
+.stp.wdrn{background:rgba(140,133,120,.14);color:var(--dim);border:1px solid var(--line)}
+.dom{display:inline-block;font-size:10px;padding:3px 9px;border-radius:999px;margin-left:6px;
+ border:1px solid var(--line);color:var(--dim)}
+.dom.warn{border-color:rgba(185,151,91,.45);color:var(--gold)}
+.dom.bad{border-color:rgba(212,106,94,.5);color:var(--bad)}
+.unit.gone{opacity:.5}
+
+.galgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+.galcell{position:relative;background:var(--card2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.galimg{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;cursor:zoom-in}
+.gph{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);padding:6px 8px}
+.galx{position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:50%;
+ background:rgba(4,12,20,.75);border:1px solid var(--line);color:var(--bad);font-size:16px;line-height:1}
+
+/* ================= v2 POLISH ================= */
+:root{
+ --r:14px;             /* one corner radius everywhere */
+ --pad:15px;
+ --edge:rgba(255,255,255,.07);
+ --edge2:rgba(255,255,255,.11);
+ --lift:0 1px 0 rgba(255,255,255,.04), 0 8px 24px rgba(0,0,0,.28);
+}
+body{-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+/* one type scale instead of thirty sizes */
+h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:600}
+h2 b{color:var(--gold);font-weight:600;letter-spacing:.04em;text-transform:none;font-size:11.5px}
+.card,.unit,.deal,.pc2,.upn,.brief,.cal,.tool{border-radius:var(--r);border-color:var(--edge)}
+.card,.unit,.deal,.pc2{box-shadow:var(--lift)}
+.sec{padding-top:20px}
+.sec h2{margin-bottom:9px}
+/* cards breathe */
+.card{padding:var(--pad)}
+.pc2{padding:15px 16px 13px}
+.upn{padding:16px 16px 14px;border-color:rgba(185,151,91,.28)}
+/* rows sit on hairlines, not boxes */
+.row,.qi,.trow,.agi,.ev{border-color:var(--edge)}
+/* the one number that matters */
+.hd .huge{font-size:46px;letter-spacing:-.028em;line-height:1}
+.big{letter-spacing:-.02em}
+.stat3{border-radius:var(--r);gap:1px;background:var(--edge)}
+.stat3 .n{font-size:27px;letter-spacing:-.02em}
+/* buttons feel like one family */
+.go2,.call,.qbig .ca,.qstart,.btnfull,.nobar button,.qtop button,.vtop button{
+ letter-spacing:.005em}
+.sm,.snz,.qic,.ub,.addbtn,.moretog,.vback{transition:border-color .15s,color .15s,background .15s}
+.sm:active,.qic:active,.ub:active,.addbtn:active{border-color:var(--gold);color:var(--gold)}
+/* pills, one look */
+.pill,.tg,.rwp,.dft,.stp,.dom,.vrow,.rw2{font-weight:600;letter-spacing:.04em}
+.tg,.dom{padding:3px 9px}
+/* motion: content arrives, it does not jump */
+.fade{animation:fade .22s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card,.pc2,.unit{animation:fade .18s ease}
+/* nav sits quieter */
+nav b{transition:color .15s}
+nav b.on i{transform:translateY(-1px)}
+/* nothing should touch the edges of the phone */
+#p-today,#p-deals,#p-stock,#p-diary,#p-more{padding-bottom:26px}
 </style>
 </head>
 <body>
@@ -701,6 +764,9 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
     <div class="card" id="oplist"></div>
     <button class="addbtn" id="addop">+ Add an off-plan project</button>
     <div class="hint" style="margin-top:9px">Enter the plan once. The app dates every payment, works out the cash you actually need before handover, and builds the client one pager.</div></div>
+</div>
+<div id="s-stats" class="hide">
+  <div class="sec"><h2>Stock analytics</h2><div id="slist"></div></div>
 </div>
 <div id="s-comps" class="hide">
   <div class="sec"><h2>Market benchmarks <b id="cupd"></b></h2>
@@ -833,6 +899,7 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
    <div class="two"><div><label>Annual rent AED</label><input id="us-rent" type="number" inputmode="numeric"></div>
    <div><label>Cheques</label><input id="us-ch" placeholder="1 cheque"></div></div>
   </div>
+  <label>Status</label><div class="pick" id="us-st"></div>
   <label>Row position</label><div class="pick" id="us-rw"></div>
   <div class="two"><div><label>Handover</label><input id="us-h" placeholder="Ready, or Dec 2026"></div>
   <div><label>Payment plan</label><input id="us-pl" placeholder="100%, or 80/20"></div></div>
@@ -870,7 +937,7 @@ const DTYPES=['Ready','Off-plan','Resale','Commercial','Rent','Land'];
 const CHEQ=['1 cheque','2 cheques','3 cheques','4 cheques','6 cheques','12 cheques'];
 const SRCS=['Referral','Repeat client','Portal lead','Walk in','Prospecting call','Social','Other'];
 const PAGES=[['today','Today','◧'],['deals','Deals','◆'],['stock','Stock','▣'],['diary','Diary','▤'],['more','More','≡']];
-const STOCKSEG=[['units','Inventory'],['comps','Comps']];
+const STOCKSEG=[['units','Inventory'],['stats','Analytics'],['comps','Comps']];
 const CADENCE={0:2,1:3,2:2,3:2};
 const TEMPLATES=[
 ['Neighbour sold','{name}, quick one about your {unit}.\n\nA villa a few doors from you just traded. Prices in the community are well up since launch, but the last few quarters have flattened.\n\nYour neighbours are taking profit. The window is still open, it is just not widening anymore.\n\nWant me to send what your unit would fetch today? No obligation.'],
@@ -1167,7 +1234,7 @@ document.getElementById('nav').addEventListener('click',function(e){
  var b=e.target.closest('b[data-p]'); if(b)goPage(b.dataset.p);});
 document.getElementById('sseg').addEventListener('click',function(e){
  var b=e.target.closest('b[data-ss]'); if(!b)return;
- SSEG=b.dataset.ss; drawStockSeg(); window.scrollTo(0,0);});
+ SSEG=b.dataset.ss; drawStockSeg(); if(SSEG==='stats')drawStock(); window.scrollTo(0,0);});
 
 
 
@@ -1682,6 +1749,7 @@ function mortgage(){
 
 /* ================= MATCHMAKER ================= */
 function matchScore(d,u){
+ if(typeof uLive==='function'&&!uLive(u))return 0;
  var isR=(u.lt||'Sale')==='Rent', price=isR?num(u.rent):num(u.pr);
  var sc=0, why=[];
  var bud=num(d.lmax)||num(d.v);
@@ -2206,7 +2274,7 @@ let PAGE='today';
 var SSEG='units', DREW={};
 function pageDraw(k){
  if(DREW[k])return; DREW[k]=1;
- if(k==='stock'){drawUnits();drawOp();drawComps();}
+ if(k==='stock'){drawUnits();drawOp();drawComps();drawStock();}
  if(k==='diary'){drawDiary();}
  if(k==='more'){drawMore();}
 }
@@ -3375,7 +3443,7 @@ function drawUnitFilters(){
   var b='Beds: '+(u.bd?u.bd:'Studio'); if(beds.indexOf(b)<0)beds.push(b);
   var c='Where: '+(u.com||u.p); if(u.com&&coms.indexOf(c)<0)coms.push(c);
   if(u.rw&&rws.indexOf('Row: '+u.rw)<0)rws.push('Row: '+u.rw);});
- el.innerHTML=['All units'].concat(tags,beds,rws,coms).map(function(o){return '<option'+(UF===o?' selected':'')+'>'+o+'</option>';}).join('');
+ el.innerHTML=['All units','Live only','Sold'].concat(tags,beds,rws,coms).map(function(o){return '<option'+(UF===o?' selected':'')+'>'+o+'</option>';}).join('');
  el.onchange=function(){UF=el.value;drawUnits();};
 }
 function unitPass(u){
@@ -3384,6 +3452,8 @@ function unitPass(u){
  if(USEG==='For rent'&&lt!=='Rent')return false;
  if(UQ){var hay=(u.p+' '+u.t+' '+(u.n||'')+' '+(u.pl||'')+' '+(u.com||'')+' '+(u.rw||'')).toLowerCase();if(hay.indexOf(UQ)<0)return false;}
  if(UF==='All units'||!UF)return true;
+ if(UF==='Live only')return uLive(u);
+ if(UF==='Sold')return uStat(u)==='Sold';
  if(UF.indexOf('Type: ')===0)return u.tag===UF.slice(6);
  if(UF.indexOf('Beds: ')===0){var v=UF.slice(6);return v==='Studio'?!u.bd:String(u.bd)===v;}
  if(UF.indexOf('Row: ')===0)return (u.rw||'')===UF.slice(5);
@@ -3444,8 +3514,12 @@ window.addEventListener('popstate',function(){
  if(VMODE==='one'&&VU.length>1){VMODE='list';drawViewList();try{history.pushState({view:1},'');}catch(e){}return;}
  closeView();});
 var VMODE='list', VTITLE='';
+function toastLike(m){try{alert(m);}catch(e){}}
 function openView(us,title){
- if(!us.length){alert('Tick some units first.');return;}
+ var gone=us.filter(function(u){return !uLive(u);}).length;
+ us=us.filter(function(u){return uLive(u);});
+ if(!us.length){alert('Nothing to show. Those units are sold or withdrawn.');return;}
+ if(gone)setTimeout(function(){toastLike(gone+' sold or withdrawn unit'+(gone===1?'':'s')+' left out');},250);
  VU=us; VI=0; VTITLE=title||'Selected units';
  VMODE = us.length===1 ? 'one' : 'list';
  document.getElementById('view').classList.add('on');
@@ -3521,9 +3595,15 @@ function drawView(){
      (u.rw==='Single row'?' &middot; nothing built behind':'')+'</span></div>':'')+
   (u.pl?'<div class="vnote"><b>Payment plan</b>'+esc(u.pl)+'</div>':'');
  var box=document.getElementById('vimgs');
- ['img','fp'].forEach(function(k){
-  loadImg(u,S.units.indexOf(u),k).then(function(src){
-   if(src){var im=new Image();im.className='vimg';im.src=src;box.appendChild(im);}
+ allPics(u).forEach(function(pic){
+  loadImgKey(pic.v).then(function(src){
+   if(!src)return;
+   var im=new Image(); im.className='vimg'; im.src=src;
+   im.onclick=function(){
+    document.getElementById('lbimg').src=src;
+    document.getElementById('lbcap').textContent=(u.p||'')+' · '+pic.label;
+    document.getElementById('lightbox').style.display='flex';};
+   box.appendChild(im);
   }).catch(function(){});
  });
  document.querySelector('.vwrap').scrollTop=0;
@@ -3545,6 +3625,106 @@ function cycleRow(i){
  if(navigator.vibrate)navigator.vibrate(4);
 }
 
+
+/* ================= UNIT STATUS + DAYS ON MARKET ================= */
+var USTAT=['Available','Reserved','Sold','Withdrawn'];
+function uStat(u){return USTAT.indexOf(u.st)>=0?u.st:'Available';}
+function uLive(u){var t=uStat(u);return t==='Available'||t==='Reserved';}
+function uAdded(u){
+ if(u.addedAt)return u.addedAt;
+ /* older units have no date, so treat them as first seen when the app got them */
+ return S.bkAt?String(S.bkAt).slice(0,10):TD;
+}
+function daysOn(u){return ddiff(uAdded(u),TD);}
+function statPill(u){
+ var t=uStat(u);
+ if(t==='Available')return '';
+ var c=t==='Sold'?'sold':(t==='Reserved'?'resv':'wdrn');
+ return '<span class="stp '+c+'">'+t+'</span>';
+}
+function domPill(u){
+ if(!uLive(u))return '';
+ var d=daysOn(u);
+ if(d<30)return '';
+ var c=d>=90?'bad':(d>=60?'warn':'ok');
+ return '<span class="dom '+c+'">'+d+' days</span>';
+}
+
+
+/* ================= STOCK ANALYTICS ================= */
+function stockStats(){
+ var live=S.units.filter(uLive);
+ var sold=S.units.filter(function(u){return uStat(u)==='Sold';});
+ var doms=live.map(daysOn).sort(function(a,b){return a-b;});
+ var med=doms.length?doms[Math.floor(doms.length/2)]:0;
+ var stale=live.filter(function(u){return daysOn(u)>=60;})
+  .sort(function(a,b){return daysOn(b)-daysOn(a);});
+ var over=[], under=[], nodata=0;
+ live.forEach(function(u){
+  var d=unitDrift(u);
+  if(!d){nodata++;return;}
+  if(d.pct>=8)over.push({u:u,d:d});
+  else if(d.pct<=-5)under.push({u:u,d:d});
+ });
+ over.sort(function(a,b){return b.d.pct-a.d.pct;});
+ var nofit=live.filter(function(u){
+  return !S.deals.some(function(dd){return dd.s<4&&matchScore(dd,u)&&matchScore(dd,u).sc>=45;});});
+ var noPic=live.filter(function(u){return !picCount(u);});
+ var noPrice=live.filter(function(u){return !num(u.pr)&&!num(u.rent);});
+ var value=live.reduce(function(a,u){return a+(num(u.pr)||num(u.rent)*10);},0);
+ var byCom={};
+ live.forEach(function(u){var c=(u.com||String(u.p||'').split(',')[0]||'Other').trim();
+  byCom[c]=(byCom[c]||0)+1;});
+ return {live:live,sold:sold,med:med,stale:stale,over:over,under:under,nodata:nodata,
+  nofit:nofit,noPic:noPic,noPrice:noPrice,value:value,byCom:byCom};
+}
+function drawStock(){
+ var el=document.getElementById('slist'); if(!el)return;
+ var T=stockStats();
+ if(!S.units.length){el.innerHTML='<div class="hint">No units yet.</div>';return;}
+ function row(l,v,t,big){return '<div class="row'+(big?' big2':'')+'"><div><div class="lab">'+esc(l)+'</div>'+
+  (t?'<div class="tgt">'+esc(t)+'</div>':'')+'</div><div class="v2">'+v+'</div></div>';}
+ var h='<div class="card">'+
+  row('Live stock',T.live.length,T.sold.length?T.sold.length+' sold, '+
+   (S.units.length-T.live.length-T.sold.length)+' withdrawn':'',1)+
+  row('Combined asking',pmoney(T.value),'sale prices, rentals counted at ten years')+
+  row('Median days on market',T.med+' days',T.med>=60?'that is slow, most of your stock is ageing':'healthy')+
+  '</div>';
+ if(T.stale.length)
+  h+='<h2 style="margin-top:18px">Ageing stock <b>'+T.stale.length+'</b></h2><div class="card">'+
+   T.stale.slice(0,6).map(function(u){
+    var d=unitDrift(u);
+    return row(pvNum(u.p),daysOn(u)+' days',
+     (d?(d.pct>=0?'+':'')+d.pct.toFixed(0)+'% vs market · ':'')+pmoney(num(u.pr)||num(u.rent)));
+   }).join('')+'</div>'+
+   '<div class="hint" style="margin-top:7px">Sixty days without a sale is usually price, not marketing.</div>';
+ if(T.over.length)
+  h+='<h2 style="margin-top:18px">Priced above the market <b>'+T.over.length+'</b></h2><div class="card">'+
+   T.over.slice(0,6).map(function(o){
+    return row(pvNum(o.u.p),'+'+o.d.pct.toFixed(0)+'%',
+     (S.priv?'•••':o.d.mine.toLocaleString())+'/sqft against '+(S.priv?'•••':o.d.med.toLocaleString())+
+     ' from '+o.d.n+' sales');}).join('')+'</div>';
+ if(T.under.length)
+  h+='<h2 style="margin-top:18px">Priced under the market <b>'+T.under.length+'</b></h2><div class="card">'+
+   T.under.slice(0,4).map(function(o){
+    return row(pvNum(o.u.p),o.d.pct.toFixed(0)+'%','these should move fastest');}).join('')+'</div>';
+ var gaps=[];
+ if(T.nofit.length)gaps.push(T.nofit.length+' units nobody in your book fits');
+ if(T.noPic.length)gaps.push(T.noPic.length+' units with no photo');
+ if(T.noPrice.length)gaps.push(T.noPrice.length+' units with no price');
+ if(T.nodata)gaps.push(T.nodata+' units with no market comparison, load a sales CSV in Rebuild hooks');
+ if(gaps.length)
+  h+='<h2 style="margin-top:18px">Gaps</h2><div class="card">'+
+   gaps.map(function(g){return '<div class="tgt" style="margin-bottom:5px">&bull; '+esc(g)+'</div>';}).join('')+'</div>';
+ var coms=Object.keys(T.byCom).sort(function(a,b){return T.byCom[b]-T.byCom[a];});
+ if(coms.length>1)
+  h+='<h2 style="margin-top:18px">Where your stock is</h2><div class="card">'+
+   coms.map(function(c){return row(c,T.byCom[c],Math.round(T.byCom[c]/T.live.length*100)+'% of live stock');}).join('')+
+   '</div>'+
+   '<div class="hint" style="margin-top:7px">If most of your stock is in one place, most of your buyers have to want that place.</div>';
+ el.innerHTML=h;
+}
+
 function drawUnits(){
  drawUnitSeg();drawUnitFilters();drawUnitSort();
  var list=[];S.units.forEach(function(u,i){if(unitPass(u))list.push([u,i]);});
@@ -3563,14 +3743,14 @@ function drawUnits(){
   var u=x[0], i=x[1], sp=[];
   if(u.bd)sp.push(pvNum(u.bd+' bed')); if(u.bua)sp.push(pvNum('BUA '+u.bua.toLocaleString())); if(u.plot)sp.push(pvNum('plot '+u.plot.toLocaleString()));
   var up=u.op?Math.round((u.pr-u.op)/u.op*100):null, isR=(u.lt||'Sale')==='Rent';
-  return '<div class="unit"><div class="h uhead" data-i="'+i+'">'+
+  return '<div class="unit'+(uLive(u)?'':' gone')+'"><div class="h uhead" data-i="'+i+'">'+
    '<div class="upick'+(PICKED[i]?' on':'')+'" data-pick="'+i+'">&#10003;</div>'+
    '<div><div class="p">'+esc(pvNum(u.p))+'</div><div class="m">'+esc(pvNum(u.t))+(sp.length?' · '+sp.join(' · '):'')+'</div></div>'+
    '<div style="text-align:right">'+(isR?
      '<div class="pr">'+pmoney(u.rent)+'</div><div class="m">per year · '+esc(u.ch||'')+'</div>'
     :'<div class="pr">'+pmoney(u.pr)+'</div>'+(psf(u)?'<div class="m">'+(S.priv?'••••':psf(u).toLocaleString())+' /sqft</div>':'')+
      (up!==null?'<div class="m '+(up>=0?'up':'down')+'">'+(S.priv?'••% on OP':(up>=0?'+':'')+up+'% on OP')+'</div>':''))+'</div></div>'+
-   (u.tag?'<span class="pill">'+esc(u.tag)+'</span>':'')+rowPill(u)+driftPill(u)+
+   (u.tag?'<span class="pill">'+esc(u.tag)+'</span>':'')+statPill(u)+domPill(u)+rowPill(u)+driftPill(u)+
    '<div class="d" id="det-'+i+'" style="display:none">'+
    (isR?'<b style="color:var(--ink)">Annual rent:</b> '+pmoney(u.rent)+' · '+esc(u.ch||'')+'<br>':'')+
    (!isR&&u.op?'<b style="color:var(--ink)">Original price:</b> '+pmoney(u.op)+' · uplift '+pmoney(u.pr-u.op)+'<br>':'')+
@@ -3578,6 +3758,7 @@ function drawUnits(){
    (u.pl?'<b style="color:var(--ink)">Plan:</b> '+esc(pvNum(u.pl))+'<br>':'')+esc(pvNum(pvName(u.n)))+
    '<div class="ubtns"><button class="ub" data-row="'+i+'">'+(u.rw?esc(u.rw):'Set row position')+'</button></div>'+
    '<div class="ubtns"><button class="ub gold" data-offer="'+i+'">'+(isR?'Rental offer':'Sales offer')+'</button><button class="ub" data-fit="'+i+'">Who fits this</button></div>'+
+   '<div class="ubtns"><button class="ub" data-gal="'+i+'">Photos ('+picCount(u)+')</button></div>'+
    '<div class="ubtns"><button class="ub" data-plan="'+i+'">'+(u.img?'Masterplan':'+ Masterplan')+'</button>'+(u.img?'<button class="ub" data-rmi="'+i+'" style="flex:0 0 42px;color:var(--bad)">✕</button>':'')+
    '<button class="ub" data-fp="'+i+'">'+(u.fp?'Floorplan':'+ Floorplan')+'</button>'+(u.fp?'<button class="ub" data-rmf="'+i+'" style="flex:0 0 42px;color:var(--bad)">✕</button>':'')+'</div>'+
    '<div class="ubtns"><a class="ub" href="'+mapLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Map</a><a class="ub" href="'+pfLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Listings</a><button class="ub" data-op="'+i+'">'+(u.op?'Edit OP':'+ OP')+'</button></div>'+
@@ -3586,6 +3767,7 @@ function drawUnits(){
  document.querySelectorAll('.uhead').forEach(function(h){h.onclick=function(){var d=document.getElementById('det-'+h.dataset.i);d.style.display=d.style.display==='none'?'block':'none';};});
  document.querySelectorAll('[data-offer]').forEach(function(b){b.onclick=function(e){e.stopPropagation();salesOffer(+b.dataset.offer);};});
  document.querySelectorAll('[data-fit]').forEach(function(b){b.onclick=function(e){e.stopPropagation();whoFits(+b.dataset.fit);};});
+ document.querySelectorAll('[data-gal]').forEach(function(b){b.onclick=function(e){e.stopPropagation();openGallery(+b.dataset.gal);};});
  document.querySelectorAll('[data-plan]').forEach(function(b){b.onclick=function(e){e.stopPropagation();openImg(+b.dataset.plan,'img');};});
  document.querySelectorAll('[data-fp]').forEach(function(b){b.onclick=function(e){e.stopPropagation();openImg(+b.dataset.fp,'fp');};});
  document.querySelectorAll('[data-op]').forEach(function(b){b.onclick=function(e){e.stopPropagation();
@@ -3632,10 +3814,16 @@ document.getElementById('planfile').onchange=function(){
   var max=1200, sc=Math.min(1,max/Math.max(im.width,im.height));
   var c=document.createElement('canvas');c.width=im.width*sc;c.height=im.height*sc;
   c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-  var data=c.toDataURL('image/jpeg',.62), key=imgKey(i,kind);
+  var data=c.toDataURL('image/jpeg',.62);
+  var key=(kind==='gal')?('g'+i+'_'+Date.now().toString(36)):imgKey(i,kind);
   idbSet(key,data).then(function(){
-   S.units[i][kind]=key; put(S); drawUnits();
-   alert((kind==='fp'?'Floorplan':'Masterplan')+' saved.');
+   if(kind==='gal'){
+    var u=S.units[i];
+    if(!u.img)u.img=key; else {u.gal=galOf(u); u.gal.push(key);}
+   } else S.units[i][kind]=key;
+   put(S); drawUnits();
+   if(kind==='gal')openGallery(i);
+   else alert((kind==='fp'?'Floorplan':'Masterplan')+' saved.');
   }).catch(function(){
    try{S.units[i][kind]=data;put(S);drawUnits();alert('Saved.');}
    catch(e2){alert('Could not save the image. Try a smaller photo.');}
@@ -3644,14 +3832,76 @@ document.getElementById('planfile').onchange=function(){
  r.readAsDataURL(fl);self.value='';
 };
 
+
+/* ================= PHOTO GALLERY ================= */
+/* u.gal is a list of image keys. u.img stays as the cover so nothing older breaks. */
+function galOf(u){return Array.isArray(u.gal)?u.gal:[];}
+function allPics(u,i){
+ var out=[];
+ if(u.img)out.push({k:'img',v:u.img,label:'Cover'});
+ galOf(u).forEach(function(key,j){out.push({k:'gal'+j,v:key,label:'Photo '+(j+2)});});
+ if(u.fp)out.push({k:'fp',v:u.fp,label:'Floorplan'});
+ return out;
+}
+function picCount(u){return allPics(u).length;}
+function addPhoto(i){
+ var pf=document.getElementById('planfile');
+ pf.dataset.i=i; pf.dataset.kind='gal'; pf.click();
+}
+function openGallery(i){
+ var u=S.units[i], pics=allPics(u,i);
+ if(!pics.length){addPhoto(i);return;}
+ var h='<div class="hint">'+esc(u.p||'Unit')+' · '+pics.length+' image'+(pics.length===1?'':'s')+
+  '. The first photo is what a client sees first.</div><div class="galgrid" id="galg"></div>'+
+  '<button class="btnfull" id="galadd" style="margin-top:12px">Add a photo</button>';
+ openTool('Photos',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ var g=document.getElementById('galg');
+ pics.forEach(function(pic,j){
+  var cell=document.createElement('div');
+  cell.className='galcell';
+  cell.innerHTML='<div class="gph">'+esc(pic.label)+'</div>';
+  g.appendChild(cell);
+  loadImgKey(pic.v).then(function(src){
+   if(!src)return;
+   var im=new Image(); im.src=src; im.className='galimg';
+   cell.insertBefore(im,cell.firstChild);
+   im.onclick=function(){
+    document.getElementById('lbimg').src=src;
+    document.getElementById('lbcap').textContent=(u.p||'')+' · '+pic.label;
+    document.getElementById('lightbox').style.display='flex';};
+  });
+  var x=document.createElement('button');
+  x.className='galx'; x.innerHTML='&times;';
+  x.onclick=function(){
+   if(!confirm('Remove this image?'))return;
+   if(pic.k==='img'){ u.img=''; }
+   else if(pic.k==='fp'){ u.fp=''; }
+   else { var idx=+pic.k.slice(3); var a=galOf(u); a.splice(idx,1); u.gal=a; }
+   put(S); drawUnits(); openGallery(i);
+  };
+  cell.appendChild(x);
+ });
+ document.getElementById('galadd').onclick=function(){addPhoto(i);};
+}
+function loadImgKey(v){
+ if(!v)return Promise.resolve('');
+ if(String(v).indexOf('data:')===0)return Promise.resolve(v);
+ return idbGet(v);
+}
+
 /* ================= UNIT EDIT SHEET ================= */
-var UEDIT=null, ULT='Sale', URW='';
+var UEDIT=null, ULT='Sale', URW='', UST='Available';
 function uf(k){return document.getElementById('us-'+k);}
 function drawUPicks(){
  document.getElementById('us-lt').innerHTML=['Sale','Rent'].map(function(o){
   return '<b class="'+(ULT===o?'on':'')+'" data-ult="'+o+'">For '+o.toLowerCase()+'</b>';}).join('');
  document.querySelectorAll('[data-ult]').forEach(function(b){b.onclick=function(){
   ULT=b.dataset.ult; drawUPicks(); uToggle();};});
+ document.getElementById('us-st').innerHTML=USTAT.map(function(o){
+  return '<b class="'+(UST===o?'on':'')+'" data-ust="'+o+'">'+o+'</b>';}).join('');
+ document.querySelectorAll('[data-ust]').forEach(function(b){b.onclick=function(){
+  UST=b.dataset.ust; drawUPicks();};});
  document.getElementById('us-rw').innerHTML=[['','Not set'],['Single row','Single row'],
   ['Back to back','Back to back']].map(function(o){
   return '<b class="'+(URW===o[0]?'on':'')+'" data-urw="'+o[0]+'">'+o[1]+'</b>';}).join('');
@@ -3671,7 +3921,7 @@ function uCalc(){
 function openUnitSheet(i){
  UEDIT=i;
  var u=(i===null)?{lt:'Sale'}:S.units[i];
- ULT=(u.lt||'Sale'); URW=u.rw||'';
+ ULT=(u.lt||'Sale'); URW=u.rw||''; UST=uStat(u);
  document.getElementById('us-title').textContent=(i===null)?'Add a unit':'Edit unit';
  [['p',u.p],['com',u.com],['t',u.t],['bd',u.bd],['tag',u.tag],['bua',u.bua],['plot',u.plot],
   ['pr',u.pr],['op',u.op],['rent',u.rent],['ch',u.ch],['h',u.h],['pl',u.pl],['n',u.n]
@@ -3689,7 +3939,8 @@ function saveUnitSheet(){
  var name=String(uf('p').value||'').trim();
  if(!name){alert('Give it a project or unit name so you can find it again.');uf('p').focus();return;}
  var u=(UEDIT===null)?{}:S.units[UEDIT];
- u.lt=ULT; u.rw=URW;
+ u.lt=ULT; u.rw=URW; u.st=UST;
+ if(!u.addedAt)u.addedAt=TD;
  u.p=name; u.com=uf('com').value.trim(); u.t=uf('t').value.trim();
  u.bd=num(uf('bd').value); u.tag=uf('tag').value.trim();
  u.bua=num(uf('bua').value); u.plot=num(uf('plot').value);
@@ -3957,8 +4208,10 @@ document.getElementById('t-import').onclick=function(){
     src:o.src||'Referral',n:o.n||'',ty:o.ty||'Ready',ch:o.ch||'1 cheque',rent:num(o.rent),ref:o.ref||''});added++;});
   put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawMore();alert(added+' clients added.');TS.style.display='none';
  }catch(e){alert('That did not look like a valid client list.');}};};
-function allImgKeys(){var ks=[];S.units.forEach(function(u){['img','fp'].forEach(function(k){
- if(u[k]&&u[k].indexOf('data:')!==0)ks.push(u[k]);});});return ks;}
+function allImgKeys(){var ks=[];S.units.forEach(function(u){
+ ['img','fp'].forEach(function(k){ if(u[k]&&u[k].indexOf('data:')!==0)ks.push(u[k]); });
+ (Array.isArray(u.gal)?u.gal:[]).forEach(function(g){ if(g&&String(g).indexOf('data:')!==0)ks.push(g); });
+});return ks;}
 function buildBackup(){ flushPut(); takeSnapshot('when you backed up'); S.bkAt=new Date().toISOString(); put(S); setTimeout(drawNag,50);
  var ks=allImgKeys();
  return Promise.all(ks.map(function(k){return idbGet(k).then(function(v){return [k,v];});}))
