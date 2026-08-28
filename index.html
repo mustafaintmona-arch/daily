@@ -718,6 +718,7 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
       <button class="tool" id="t-cal"><span>↗</span>Follow-ups to calendar</button>
       <button class="tool" id="t-backup"><span>⇪</span>Backup data</button>
       <button class="tool" id="t-restore"><span>⇩</span>Restore data</button>
+      <button class="tool" id="t-undo"><span>↺</span>Undo a restore</button>
     </div></div>
   <div class="sec"><h2>What is killing your deals</h2><div class="card" id="objbox"></div></div>
   <div class="sec"><h2>Storage</h2><div class="card" id="storebox"></div></div>
@@ -3583,6 +3584,7 @@ document.getElementById('addunit').onclick=function(){openUnitSheet(null);};
   },160);
   if(navigator.vibrate)navigator.vibrate(4);},{passive:true});
 })();
+document.getElementById('t-undo').onclick=openSnapshots;
 document.getElementById('t-hooks').onclick=openHookTool;
 document.getElementById('qstart').onclick=openQueue;
 document.getElementById('qexit').onclick=closeQueue;
@@ -3802,7 +3804,7 @@ document.getElementById('t-import').onclick=function(){
  }catch(e){alert('That did not look like a valid client list.');}};};
 function allImgKeys(){var ks=[];S.units.forEach(function(u){['img','fp'].forEach(function(k){
  if(u[k]&&u[k].indexOf('data:')!==0)ks.push(u[k]);});});return ks;}
-function buildBackup(){ flushPut(); S.bkAt=new Date().toISOString(); put(S); setTimeout(drawNag,50);
+function buildBackup(){ flushPut(); takeSnapshot('when you backed up'); S.bkAt=new Date().toISOString(); put(S); setTimeout(drawNag,50);
  var ks=allImgKeys();
  return Promise.all(ks.map(function(k){return idbGet(k).then(function(v){return [k,v];});}))
   .then(function(pairs){var imgs={};pairs.forEach(function(p){if(p[1])imgs[p[0]]=p[1];});
@@ -3826,6 +3828,122 @@ document.getElementById('t-backup').onclick=function(){
   };
  }).catch(function(){document.getElementById('bkst').textContent='Could not build the backup.';});
 };
+
+/* ================= SAFE RESTORE ================= */
+/* A restore replaces everything. It must never do that without showing you
+   what it will overwrite, and without leaving you a way back. */
+var SNAPKEY='daily-snapshots';
+function snapList(){
+ try{return JSON.parse(localStorage.getItem(SNAPKEY)||'[]');}catch(e){return [];}
+}
+function takeSnapshot(why){
+ /* the snapshot holds data only, images stay in their own store */
+ var lean=JSON.parse(JSON.stringify(S));
+ (lean.units||[]).forEach(function(u){
+  ['img','fp'].forEach(function(k){
+   if(u[k]&&String(u[k]).indexOf('data:')===0)u[k]='';});});
+ var snap={at:new Date().toISOString(),why:why||'before a restore',
+  n:{deals:(S.deals||[]).length,units:(S.units||[]).length,
+     later:(S.later||[]).length,diary:(S.diary||[]).length},
+  S:lean};
+ var L=snapList(); L.unshift(snap); L=L.slice(0,5);
+ try{localStorage.setItem(SNAPKEY,JSON.stringify(L));return true;}
+ catch(e){
+  /* trim until it fits */
+  while(L.length>1){L.pop();
+   try{localStorage.setItem(SNAPKEY,JSON.stringify(L));return true;}catch(e2){}}
+  return false;}
+}
+function diffCounts(nu){
+ function idx(a,k){var m={};(a||[]).forEach(function(x){m[String(x[k]||'').toLowerCase()]=x;});return m;}
+ var od=idx(S.deals,'w'), nd=idx(nu.deals,'w');
+ var ou=idx(S.units,'p'), nun=idx(nu.units,'p');
+ var ol=idx(S.later,'n'), nl=idx(nu.later,'n');
+ function gone(o,n){return Object.keys(o).filter(function(k){return !n[k];}).length;}
+ function added(o,n){return Object.keys(n).filter(function(k){return !o[k];}).length;}
+ var changed=0, newer=0;
+ Object.keys(od).forEach(function(k){
+  if(!nd[k])return;
+  var a=od[k], b=nd[k];
+  if(a.nd!==b.nd||a.s!==b.s||a.na!==b.na||a.ph!==b.ph)changed++;
+  if((a.sAt||'')>(b.sAt||''))newer++;});
+ return {
+  dealsLost:gone(od,nd), dealsNew:added(od,nd), dealsChanged:changed, dealsNewer:newer,
+  unitsLost:gone(ou,nun), unitsNew:added(ou,nun),
+  laterLost:gone(ol,nl), laterNew:added(ol,nl),
+  diaryHere:(S.diary||[]).length, diaryIn:(nu.diary||[]).length,
+  dncHere:(S.dnc||[]).length, dncIn:(nu.dnc||[]).length};
+}
+function restorePreview(o,fname){
+ var D=o.S||o;
+ var c=diffCounts(D);
+ var warn=[];
+ if(c.dealsLost)warn.push(c.dealsLost+' client'+(c.dealsLost===1?'':'s')+' on this phone are NOT in that file and would be removed');
+ if(c.unitsLost)warn.push(c.unitsLost+' unit'+(c.unitsLost===1?'':'s')+' would be removed');
+ if(c.laterLost)warn.push(c.laterLost+' prospect'+(c.laterLost===1?'':'s')+' would be removed');
+ if(c.dealsNewer)warn.push(c.dealsNewer+' client'+(c.dealsNewer===1?'':'s')+' were updated on this phone MORE RECENTLY than in that file');
+ if(c.diaryIn<c.diaryHere)warn.push((c.diaryHere-c.diaryIn)+' follow-ups would be lost');
+ if(c.dncIn<c.dncHere)warn.push((c.dncHere-c.dncIn)+' do-not-contact numbers would be unblocked');
+ var h='<div class="hint">'+esc(fname||'That file')+'</div>'+
+  '<div class="card" style="margin-top:10px">'+
+  rprow('Clients', (S.deals||[]).length, (D.deals||[]).length)+
+  rprow('Units', (S.units||[]).length, (D.units||[]).length)+
+  rprow('Prospects', (S.later||[]).length, (D.later||[]).length)+
+  rprow('Diary entries', (S.diary||[]).length, (D.diary||[]).length)+
+  rprow('Blocked numbers', (S.dnc||[]).length, (D.dnc||[]).length)+
+  '</div>';
+ if(c.dealsNew||c.unitsNew||c.laterNew)
+  h+='<div class="hint" style="margin-top:9px;color:var(--ok)">Brings in '+
+   [c.dealsNew?c.dealsNew+' new clients':'',c.unitsNew?c.unitsNew+' new units':'',
+    c.laterNew?c.laterNew+' new prospects':''].filter(Boolean).join(', ')+'.</div>';
+ if(warn.length)
+  h+='<div class="card" style="margin-top:10px;border-color:rgba(212,106,94,.5)">'+
+   '<div class="lab" style="color:var(--bad);font-weight:600;margin-bottom:6px">You would lose</div>'+
+   warn.map(function(w){return '<div class="tgt" style="margin-bottom:4px">&bull; '+esc(w)+'</div>';}).join('')+
+   '</div>';
+ else h+='<div class="hint" style="margin-top:9px;color:var(--ok)">Nothing on this phone would be lost.</div>';
+ h+='<div class="hint" style="margin-top:10px">A snapshot of what is here now will be saved first, '+
+    'so you can undo this from More &rarr; Undo a restore.</div>'+
+    '<button class="btnfull" id="rsgo" style="margin-top:12px'+(warn.length?';background:var(--bad)':'')+'">'+
+    (warn.length?'Restore anyway':'Restore')+'</button>'+
+    '<button class="addbtn" id="rscancel" style="margin-top:8px">Cancel</button>';
+ return h;
+}
+function rprow(l,a,b){
+ var d=b-a, col=d<0?'var(--bad)':(d>0?'var(--ok)':'var(--dim)');
+ return '<div class="row"><div><div class="lab">'+l+'</div>'+
+  '<div class="tgt">now '+a+'</div></div>'+
+  '<div class="v2" style="color:'+col+'">'+b+(d?' ('+(d>0?'+':'')+d+')':'')+'</div></div>';
+}
+function openSnapshots(){
+ var L=snapList();
+ var h=L.length?('<div class="hint">Your last '+L.length+' snapshot'+(L.length===1?'':'s')+
+   '. Restoring one brings back clients, units, prospects and diary. Photos are untouched.</div>'+
+   '<div class="card" style="margin-top:10px">'+L.map(function(sn,j){
+    var d=new Date(sn.at);
+    return '<div class="qi"><div class="qib"><b>'+d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+
+     ' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+'</b>'+
+     '<span>'+sn.n.deals+' clients, '+sn.n.units+' units, '+sn.n.later+' prospects &middot; '+esc(sn.why)+'</span></div>'+
+     '<button class="qic" data-sn="'+j+'">Undo to here</button></div>';}).join('')+'</div>')
+  :'<div class="hint">No snapshots yet. One is taken automatically every time you restore.</div>';
+ openTool('Undo a restore',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.querySelectorAll('[data-sn]').forEach(function(b){b.onclick=function(){
+  var sn=snapList()[+b.dataset.sn];
+  if(!sn)return;
+  if(!confirm('Go back to '+sn.n.deals+' clients and '+sn.n.units+' units as they were then?'))return;
+  takeSnapshot('before undoing');
+  var keep={};
+  (S.units||[]).forEach(function(u,i){keep[i]={img:u.img,fp:u.fp};});
+  S=sn.S;
+  (S.units||[]).forEach(function(u,i){
+   if(keep[i]&&!u.img&&keep[i].img)u.img=keep[i].img;
+   if(keep[i]&&!u.fp&&keep[i].fp)u.fp=keep[i].fp;});
+  put(S);flushPut();
+  alert('Restored to that snapshot. Reloading.');
+  location.reload();};});
+}
+
 document.getElementById('t-restore').onclick=function(){
  openTool('Restore','<div class="hint">Choose a backup file. This replaces everything currently in the app, so take a fresh backup first if you are not sure.</div><input type="file" id="rsfile" accept="application/json,.json" style="margin-top:14px"><div class="hint" id="rsst" style="margin-top:10px"></div>','');
  document.getElementById('tcopy').textContent='Close';
@@ -3837,7 +3955,22 @@ document.getElementById('t-restore').onclick=function(){
    var o; try{o=JSON.parse(ev.target.result);}catch(e){st.textContent='That file is not a valid backup.';return;}
    var D=o.S||o;
    if(!D||(!D.days&&!D.deals&&!D.units)){st.textContent='That file is not a Daily backup.';return;}
-   if(!confirm('Replace everything in the app with this backup?'))return;
+   /* show what it will cost before doing anything */
+   st.innerHTML=restorePreview(o,f.name);
+   document.getElementById('rscancel').onclick=function(){
+    document.getElementById('tsheet').style.display='none';};
+   document.getElementById('rsgo').onclick=function(){ doRestore(o,st); };
+  };
+  r.onerror=function(){st.textContent='Could not read that file.';};
+  r.readAsText(f);
+ };
+};
+function doRestore(o,st){
+   var D=o.S||o;
+   st.textContent='Saving a snapshot first...';
+   if(!takeSnapshot('before a restore')){
+    if(!confirm('Could not save a snapshot, so this cannot be undone. Continue anyway?'))return;
+   }
    var imgs=o.imgs||{};
    /* Any image sitting inline inside the data itself has to come out before we save,
       or it blows the phone storage limit and the whole restore is lost. */
@@ -3860,13 +3993,10 @@ document.getElementById('t-restore').onclick=function(){
       alert('Could not save. Nothing has been changed, your old data is still here. Send the file to be slimmed down.');
       return;
      }
-     alert('Restored '+(S.deals||[]).length+' clients and '+(S.units||[]).length+' units. Reloading.');
+     alert('Restored '+(S.deals||[]).length+' clients and '+(S.units||[]).length+
+      ' units. If that was wrong, More then Undo a restore. Reloading.');
      location.reload();});
-  };
-  r.onerror=function(){st.textContent='Could not read that file.';};
-  r.readAsText(f);
- };
-};
+}
 
 function salesOffer(i){
  var u=S.units[i];
