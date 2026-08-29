@@ -686,6 +686,29 @@ body.lite .cg .cd.out{color:#B9B2A4}
 .sunbtn{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:999px;
  padding:7px 12px;font-size:12px;font-family:inherit;flex:none}
 .sunbtn.on{border-color:var(--gold);color:var(--gold)}
+
+/* ---- quick capture ---- */
+#qcbtn{position:fixed;right:16px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:55;
+ width:54px;height:54px;border-radius:50%;background:var(--gold);color:var(--navy);border:none;
+ font-size:28px;line-height:1;box-shadow:0 8px 22px rgba(0,0,0,.35);font-family:inherit}
+#qcbtn:active{transform:scale(.94)}
+body.lite #qcbtn{color:#fff}
+#qcsheet{display:none;position:fixed;inset:0;background:rgba(4,12,20,.8);z-index:120;align-items:flex-end}
+#qcsheet.on{display:flex}
+#qcsheet .inner{background:var(--navy);border:1px solid var(--line);border-radius:22px 22px 0 0;
+ width:100%;padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
+body.lite #qcsheet .inner{background:var(--card)}
+#qcsheet h3{margin:0 0 3px;font-size:17px}
+#qcsheet .sub2{font-size:12.5px;color:var(--dim);margin-bottom:14px}
+#qcsheet input{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:11px;
+ color:var(--ink);padding:14px;font-size:17px;font-family:inherit;margin-bottom:10px}
+#qcsheet input:focus{outline:none;border-color:var(--gold)}
+.qcsrc{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 14px}
+.qcsrc b{border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-size:12.5px;
+ color:var(--dim);font-weight:500}
+.qcsrc b.on{border-color:var(--gold);color:var(--gold)}
+.qcrecent{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.qcrecent div{font-size:12.5px;color:var(--dim);padding:4px 0}
 </style>
 </head>
 <body>
@@ -916,6 +939,19 @@ body.lite .cg .cd.out{color:#B9B2A4}
  <div class="qbig" id="qbig"></div>
  <div class="qout" id="qout"></div>
 </div>
+
+<button id="qcbtn" title="Add someone fast">+</button>
+<div id="qcsheet"><div class="inner">
+  <h3>Quick add</h3>
+  <div class="sub2">Name and number is enough. Fill the rest in later.</div>
+  <input id="qc-n" placeholder="Name" autocomplete="off">
+  <input id="qc-p" type="tel" inputmode="tel" placeholder="+971 50 000 0000">
+  <div class="qcsrc" id="qc-src"></div>
+  <input id="qc-w" placeholder="What they asked about (optional)">
+  <button class="btnfull" id="qc-save">Save and add another</button>
+  <button class="addbtn" id="qc-done" style="margin-top:8px">Done</button>
+  <div class="qcrecent hide" id="qc-recent"></div>
+</div></div>
 <div id="usheet"><div class="inner">
   <h3 id="us-title">Edit unit</h3>
   <div class="hint">Only the project name is required. Everything else can wait.</div>
@@ -3944,6 +3980,73 @@ function loadImgKey(v){
  return idbGet(v);
 }
 
+
+/* ================= QUICK CAPTURE ================= */
+/* A reply arrives while you are driving. Two fields, three seconds, tidy it later. */
+var QCSRC='Campaign', QCADDED=[];
+var QCSRCS=['Campaign','Referral','Portal lead','Walk-in','Repeat client'];
+function tidyPhone(v){
+ v=String(v||'').trim();
+ if(!v)return '';
+ var d=v.replace(/\D/g,'');
+ if(d.length<7)return v;
+ if(v.indexOf('+')===0)return v;
+ if(d.indexOf('00')===0)return '+'+d.slice(2);
+ if(d.indexOf('0')===0)return '+971 '+d.slice(1);
+ if(d.indexOf('971')===0)return '+'+d;
+ return '+'+d;
+}
+function drawQcSrc(){
+ document.getElementById('qc-src').innerHTML=QCSRCS.map(function(o){
+  return '<b class="'+(QCSRC===o?'on':'')+'" data-qcs="'+o+'">'+o+'</b>';}).join('');
+ document.querySelectorAll('[data-qcs]').forEach(function(b){b.onclick=function(){
+  QCSRC=b.dataset.qcs; drawQcSrc();};});
+}
+function openQc(){
+ QCADDED=[];
+ document.getElementById('qc-n').value='';
+ document.getElementById('qc-p').value='';
+ document.getElementById('qc-w').value='';
+ document.getElementById('qc-recent').classList.add('hide');
+ document.getElementById('qc-recent').innerHTML='';
+ drawQcSrc();
+ document.getElementById('qcsheet').classList.add('on');
+ setTimeout(function(){document.getElementById('qc-n').focus();},90);
+}
+function closeQc(){
+ document.getElementById('qcsheet').classList.remove('on');
+ if(QCADDED.length){drawDeals();drawHead();drawHero();drawNav();drawMoves();}
+}
+function qcSave(){
+ var n=String(document.getElementById('qc-n').value||'').trim();
+ var ph=tidyPhone(document.getElementById('qc-p').value);
+ var w=String(document.getElementById('qc-w').value||'').trim();
+ if(!n&&!ph){alert('A name or a number, either will do.');return;}
+ if(!n)n=ph;
+ var dup=S.deals.filter(function(d){
+  return (ph&&digitsOf(d.ph)&&digitsOf(d.ph)===digitsOf(ph))
+      || String(d.w||'').toLowerCase()===n.toLowerCase();})[0];
+ if(dup){
+  if(!confirm(dup.w+' is already in your book. Add anyway?'))return;
+ }
+ S.deals.unshift({w:n,ph:ph,u:w,v:0,r:2,s:0,ty:'Ready',ch:'1 cheque',rent:0,
+  na:'Call and qualify',nd:TD,src:QCSRC,ref:'',
+  n:'Added from quick capture'+(QCSRC?' · '+QCSRC:'')+'.',
+  lbd:0,lmax:0,lcom:'',npd:'',npa:0,lost:'',hist:[{d:TD,a:'Came in'}],
+  cAt:TD,sAt:TD,dir:'me'});
+ put(S);
+ QCADDED.unshift(n);
+ var r=document.getElementById('qc-recent');
+ r.classList.remove('hide');
+ r.innerHTML='<div style="color:var(--ok)">Added '+QCADDED.length+' just now</div>'+
+  QCADDED.slice(0,6).map(function(x){return '<div>'+esc(x)+'</div>';}).join('');
+ document.getElementById('qc-n').value='';
+ document.getElementById('qc-p').value='';
+ document.getElementById('qc-w').value='';
+ document.getElementById('qc-n').focus();
+ if(navigator.vibrate)navigator.vibrate(8);
+}
+
 /* ================= UNIT EDIT SHEET ================= */
 var UEDIT=null, ULT='Sale', URW='', UST='Available';
 function uf(k){return document.getElementById('us-'+k);}
@@ -4046,6 +4149,11 @@ document.getElementById('addunit').onclick=function(){openUnitSheet(null);};
 })();
 document.getElementById('t-undo').onclick=openSnapshots;
 document.getElementById('t-hooks').onclick=openHookTool;
+document.getElementById('qcbtn').onclick=openQc;
+document.getElementById('qc-done').onclick=closeQc;
+document.getElementById('qc-save').onclick=qcSave;
+document.getElementById('qcsheet').onclick=function(e){if(e.target===this)closeQc();};
+document.getElementById('qc-p').onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();qcSave();}};
 document.getElementById('sunb').onclick=toggleTheme;
 applyTheme();
 document.getElementById('qstart').onclick=openQueue;
