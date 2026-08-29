@@ -962,6 +962,7 @@ body.lite #qcsheet .inner{background:var(--card)}
 
 <div class="nav" id="nav"></div>
 <input type="file" id="planfile" accept="image/*" style="display:none">
+<input type="file" id="docfile" accept="image/*" style="display:none">
 <div id="lightbox" onclick="this.style.display='none'"><img id="lbimg"><div id="lbcap"></div><div class="lbhint">Tap anywhere to close</div></div>
 
 <div id="sheet"><div class="inner">
@@ -1000,6 +1001,7 @@ body.lite #qcsheet .inner{background:var(--card)}
   <label>Household</label><input id="f-hh" placeholder="Leave blank, or a shared name like Kale family">
   <div class="hint" style="margin-top:-2px">Give two people the same household name and the app stops counting them twice.</div>
   <label>Notes</label><textarea id="f-n" rows="2"></textarea>
+  <button class="addbtn" id="sdocs" style="margin-top:4px">Documents</button>
   <div class="sheetbtns"><button id="sc">Cancel</button><button id="sv">Save</button></div>
   <button class="addbtn" id="sdel" style="border-color:rgba(212,106,94,.5);color:#D46A5E">Delete this deal</button>
 </div></div>
@@ -1353,15 +1355,19 @@ function searchAll(q){
   r.push({k:'Deal',t:d.w,s:d.u+' · '+STAGES[d.s],go:'deals'});});
  S.units.forEach(function(u,i){if(hit(u.p)||hit(u.t)||hit(u.n)||hit(u.com)||hit(u.tag))
   r.push({k:'Unit',t:u.p,s:u.t+' · '+money((u.lt||'Sale')==='Rent'?u.rent:u.pr),go:'stock',seg:'units'});});
- S.op.forEach(function(o){if(hit(o.n)||hit(o.dev)||hit(o.t)||hit(o.note))
-  r.push({k:'Off-plan',t:o.n,s:o.dev+' · handover '+o.h,go:'stock',seg:'offplan'});});
+ (S.proj||[]).forEach(function(o){if(hit(o.n)||hit(o.dev)||hit(o.loc)||hit(o.th)||hit(o.note))
+  r.push({k:'Project',t:o.n,s:[o.dev,o.loc].filter(Boolean).join(' · '),go:'stock',seg:'proj'});});
+ (S.camp||[]).forEach(function(c){if(hit(c.n)||hit(c.what))
+  r.push({k:'Campaign',t:c.n,s:num(c.sent)+' sent · '+c.d,go:'stock',seg:'camp'});});
+ (S.kd||[]).forEach(function(x){if(hit(x.w)||hit(x.t)||hit(x.n))
+  r.push({k:'Key date',t:x.w||x.t,s:x.t+' · '+x.d,go:'more'});});
  S.later.forEach(function(x){if(!x.dnc&&(hit(x.n)||hit(x.w)||hit(x.n2)||hit(x.ty)))
   r.push({k:'Later',t:x.n,s:x.ty+' · '+lWhen(x),go:'deals',dseg:'Later'});});
  S.diary.forEach(function(e){if(hit(e.n)||hit(e.w))
   r.push({k:'Diary',t:e.n,s:(e.w||'')+' · '+new Date(e.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'}),go:'diary',day:e.d});});
  return r.slice(0,25);}
 document.getElementById('find').onclick=function(){
- openTool('Search','<input id="fx-q" placeholder="Client, unit, community, note" autocomplete="off"><div class="card" id="fx-r" style="margin-top:12px"><div class="hint">Type at least two letters. It looks through deals, units, off-plan, your later list and the diary.</div></div>','');
+ openTool('Search','<input id="fx-q" placeholder="Client, unit, community, note" autocomplete="off"><div class="card" id="fx-r" style="margin-top:12px"><div class="hint">Type at least two letters. It looks through clients, units, projects, campaigns, key dates, prospects and the diary.</div></div>','');
  document.getElementById('tcopy').textContent='Close';
  var q=document.getElementById('fx-q'); setTimeout(function(){q.focus();},120);
  q.oninput=function(){
@@ -3559,6 +3565,11 @@ function openSheet(i){
   S.deals[i].hist.push({d:TD,a:a||0,o:o||0});
   put(S);f('ask').value='';f('off').value='';drawLadder(S.deals[i]);};
  drawStagePick(d.s||0);toggleRent();
+ var sd=document.getElementById('sdocs');
+ sd.textContent='Documents'+(i!==null&&docCount(S.deals[i])?' ('+docCount(S.deals[i])+')':'');
+ sd.onclick=function(){
+  if(i===null){alert('Save the client first, then attach documents.');return;}
+  openDocs('deal',i);};
  document.getElementById('sdel').style.display=i===null?'none':'block';
  document.getElementById('sheet').style.display='flex';
 }
@@ -3971,6 +3982,24 @@ function removeImg(i,kind){
  if(u[kind].indexOf('data:')!==0)idbDel(u[kind]);
  u[kind]='';put(S);drawUnits();
 }
+document.getElementById('docfile').onchange=function(){
+ var fl=this.files[0], kind=this.dataset.kind, idx=+this.dataset.idx, self=this; if(!fl)return;
+ var r=new FileReader();
+ r.onload=function(ev){var im=new Image();im.onload=function(){
+  var max=1500, sc=Math.min(1,max/Math.max(im.width,im.height));
+  var c=document.createElement('canvas');c.width=im.width*sc;c.height=im.height*sc;
+  c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+  var data=c.toDataURL('image/jpeg',.7);
+  var key='doc_'+kind+idx+'_'+Date.now().toString(36);
+  idbSet(key,data).then(function(){
+   var o=docTarget(kind,idx); if(!o)return;
+   var lab=prompt('Name it. Tenancy contract, cheque, passport?','Document');
+   o.docs=docsOf(o); o.docs.push({k:key,label:(lab||'Document').trim(),at:TD});
+   put(S); openDocs(kind,idx); drawDeals(); drawKdAll();
+  }).catch(function(){alert('Could not save that. Try a smaller photo.');});
+ };im.src=ev.target.result;};
+ r.readAsDataURL(fl);self.value='';
+};
 document.getElementById('planfile').onchange=function(){
  var fl=this.files[0], i=+this.dataset.i, kind=this.dataset.kind, self=this; if(!fl)return;
  var r=new FileReader();
@@ -4058,6 +4087,55 @@ function loadImgKey(v){
 
 
 
+
+/* ================= DOCUMENTS ================= */
+/* A photo of the contract, the cheque, the passport page. Kept with the record. */
+function docsOf(o){return Array.isArray(o.docs)?o.docs:[];}
+function docAdd(kind,idx){
+ var pf=document.getElementById('docfile');
+ pf.dataset.kind=kind; pf.dataset.idx=idx; pf.click();
+}
+function docTarget(kind,idx){
+ if(kind==='deal')return S.deals[idx];
+ if(kind==='kd')return keydates()[idx];
+ return null;
+}
+function openDocs(kind,idx){
+ var o=docTarget(kind,idx); if(!o)return;
+ var title=o.w||o.n||o.t||'Documents';
+ var D=docsOf(o);
+ var h='<div class="hint">Photograph a contract, a cheque, a passport page, an Ejari. '+
+  'It stays on this phone and travels in your backup.</div>'+
+  (D.length?'<div class="galgrid" id="dcg"></div>':'<div class="hint" style="margin-top:10px">Nothing attached yet.</div>')+
+  '<button class="btnfull" id="dcadd" style="margin-top:12px">Add a document</button>';
+ openTool(pvName(title),h,'');
+ document.getElementById('tcopy').textContent='Close';
+ var g=document.getElementById('dcg');
+ if(g)D.forEach(function(dc,j){
+  var cell=document.createElement('div');
+  cell.className='galcell';
+  cell.innerHTML='<div class="gph">'+esc(dc.label||('Document '+(j+1)))+'</div>';
+  g.appendChild(cell);
+  loadImgKey(dc.k).then(function(src){
+   if(!src)return;
+   var im=new Image(); im.src=src; im.className='galimg';
+   cell.insertBefore(im,cell.firstChild);
+   im.onclick=function(){
+    document.getElementById('lbimg').src=src;
+    document.getElementById('lbcap').textContent=(dc.label||'Document');
+    document.getElementById('lightbox').style.display='flex';};});
+  var x=document.createElement('button');
+  x.className='galx'; x.innerHTML='&times;';
+  x.onclick=function(){
+   if(!confirm('Remove this document?'))return;
+   var a=docsOf(o); a.splice(j,1); o.docs=a; put(S);
+   openDocs(kind,idx);};
+  cell.appendChild(x);
+ });
+ document.getElementById('dcadd').onclick=function(){docAdd(kind,idx);};
+}
+function docCount(o){return docsOf(o).length;}
+
 /* ================= KEY DATES ================= */
 /* Anything with a date and a consequence. You lost a renewal once by finding out late. */
 var KDTYPES=['Tenancy ends','Developer payment','Licence','Emirates ID','Passport','Visa','Handover','Other'];
@@ -4120,6 +4198,8 @@ function openKd(i){
   '<label>Note</label><input id="kd-n" value="'+esc(k.n||'')+'" placeholder="Rent 170,000, landlord is AbdulGafoor">'+
   '</div>'+
   '<button class="btnfull" id="kd-save" style="margin-top:14px">Save</button>'+
+  ((i===null||i<0)?'':'<button class="addbtn" id="kd-docs" style="margin-top:8px">Documents'+
+    (docCount(keydates()[i]||{})?' ('+docCount(keydates()[i])+')':'')+'</button>')+
   ((i===null||i<0)?'':'<button class="addbtn" id="kd-del" style="margin-top:8px;border-color:rgba(212,106,94,.5);color:#D46A5E">Delete</button>');
  openTool((i===null||i<0)?'Add a key date':'Edit',h,'');
  document.getElementById('tcopy').textContent='Close';
@@ -4139,6 +4219,8 @@ function openKd(i){
   put(S); document.getElementById('tsheet').style.display='none';
   drawKdToday(); drawKdAll();
  };
+ var kdd=document.getElementById('kd-docs');
+ if(kdd)kdd.onclick=function(){openDocs('kd',i);};
  var del=document.getElementById('kd-del');
  if(del)del.onclick=function(){
   if(!confirm('Delete this date?'))return;
@@ -4788,10 +4870,15 @@ document.getElementById('t-import').onclick=function(){
     src:o.src||'Referral',n:o.n||'',ty:o.ty||'Ready',ch:o.ch||'1 cheque',rent:num(o.rent),ref:o.ref||''});added++;});
   put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();alert(added+' clients added.');TS.style.display='none';
  }catch(e){alert('That did not look like a valid client list.');}};};
-function allImgKeys(){var ks=[];S.units.forEach(function(u){
- ['img','fp'].forEach(function(k){ if(u[k]&&u[k].indexOf('data:')!==0)ks.push(u[k]); });
- (Array.isArray(u.gal)?u.gal:[]).forEach(function(g){ if(g&&String(g).indexOf('data:')!==0)ks.push(g); });
-});return ks;}
+function allImgKeys(){var ks=[];
+ S.units.forEach(function(u){
+  ['img','fp'].forEach(function(k){ if(u[k]&&u[k].indexOf('data:')!==0)ks.push(u[k]); });
+  (Array.isArray(u.gal)?u.gal:[]).forEach(function(g){ if(g&&String(g).indexOf('data:')!==0)ks.push(g); });});
+ (S.deals||[]).forEach(function(d){
+  (Array.isArray(d.docs)?d.docs:[]).forEach(function(x){ if(x&&x.k)ks.push(x.k); });});
+ (S.kd||[]).forEach(function(k2){
+  (Array.isArray(k2.docs)?k2.docs:[]).forEach(function(x){ if(x&&x.k)ks.push(x.k); });});
+ return ks;}
 function buildBackup(){ flushPut(); takeSnapshot('when you backed up'); S.bkAt=new Date().toISOString(); put(S); setTimeout(drawNag,50);
  var ks=allImgKeys();
  return Promise.all(ks.map(function(k){return idbGet(k).then(function(v){return [k,v];});}))
