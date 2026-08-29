@@ -709,6 +709,27 @@ body.lite #qcsheet .inner{background:var(--card)}
 .qcsrc b.on{border-color:var(--gold);color:var(--gold)}
 .qcrecent{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
 .qcrecent div{font-size:12.5px;color:var(--dim);padding:4px 0}
+
+/* ---- projects ---- */
+.prj{background:var(--card);border:1px solid var(--edge);border-radius:var(--r);
+ padding:15px;margin-bottom:10px;box-shadow:var(--lift)}
+.prj .pn{font-size:19px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.prj .pl2{font-size:12.5px;color:var(--dim);margin-top:3px}
+.prj .th{font-size:13.5px;line-height:1.5;color:var(--ink);opacity:.92;margin-top:11px}
+.prj .plans{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.prj .plans div{background:var(--card2);border-radius:9px;padding:9px 11px}
+.prj .plans .l{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.prj .plans .v{font-size:14px;color:var(--gold);font-weight:600;margin-top:2px}
+.prj .pb{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}
+.prj .pb button,.prj .pb a{background:transparent;border:1px solid var(--line);color:var(--ink);
+ border-radius:999px;padding:9px 14px;font-size:12.5px;font-family:inherit;text-decoration:none}
+.prj .pb .go3{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:600}
+.prj .linked{font-size:11.5px;color:var(--dim);margin-top:10px}
+.pfields label{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+ color:var(--dim);margin:11px 0 4px}
+.pfields input,.pfields textarea{width:100%;background:var(--card2);border:1px solid var(--line);
+ border-radius:10px;color:var(--ink);padding:11px;font-size:15px;font-family:inherit}
+.pfields input:focus,.pfields textarea:focus{outline:none;border-color:var(--gold)}
 </style>
 </head>
 <body>
@@ -824,6 +845,12 @@ body.lite #qcsheet .inner{background:var(--card)}
     <div class="card" id="oplist"></div>
     <button class="addbtn" id="addop">+ Add an off-plan project</button>
     <div class="hint" style="margin-top:9px">Enter the plan once. The app dates every payment, works out the cash you actually need before handover, and builds the client one pager.</div></div>
+</div>
+<div id="s-proj" class="hide">
+  <div class="sec"><h2>Projects <b id="pcount"></b></h2>
+    <div id="plist"></div>
+    <button class="addbtn" id="addproj">+ Add a project</button>
+    <div class="hint" style="margin-top:9px">Write the argument once. Then it is two taps to send it, and your team gets it when you send them a backup.</div></div>
 </div>
 <div id="s-stats" class="hide">
   <div class="sec"><h2>Stock analytics</h2><div id="slist"></div></div>
@@ -1010,7 +1037,7 @@ const DTYPES=['Ready','Off-plan','Resale','Commercial','Rent','Land'];
 const CHEQ=['1 cheque','2 cheques','3 cheques','4 cheques','6 cheques','12 cheques'];
 const SRCS=['Referral','Repeat client','Portal lead','Walk in','Prospecting call','Social','Other'];
 const PAGES=[['today','Today','◧'],['deals','Deals','◆'],['stock','Stock','▣'],['diary','Diary','▤'],['more','More','≡']];
-const STOCKSEG=[['units','Inventory'],['stats','Analytics'],['comps','Comps']];
+const STOCKSEG=[['units','Inventory'],['proj','Projects'],['stats','Analytics'],['comps','Comps']];
 const CADENCE={0:2,1:3,2:2,3:2};
 const TEMPLATES=[
 ['Neighbour sold','{name}, quick one about your {unit}.\n\nA villa a few doors from you just traded. Prices in the community are well up since launch, but the last few quarters have flattened.\n\nYour neighbours are taking profit. The window is still open, it is just not widening anymore.\n\nWant me to send what your unit would fetch today? No obligation.'],
@@ -1049,7 +1076,7 @@ function flushPut(){
 const put=d=>{_wp=d; if(_wt)return; _wt=setTimeout(function(){_wt=null;flushPut();},220);};
 window.addEventListener('pagehide',flushPut);
 document.addEventListener('visibilitychange',function(){if(document.hidden)flushPut();});
-let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
+let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
 /* repair anything an older version wrote in the wrong shape */
 function repairData(){
  var fixed=0;
@@ -1307,7 +1334,7 @@ document.getElementById('nav').addEventListener('click',function(e){
  var b=e.target.closest('b[data-p]'); if(b)goPage(b.dataset.p);});
 document.getElementById('sseg').addEventListener('click',function(e){
  var b=e.target.closest('b[data-ss]'); if(!b)return;
- SSEG=b.dataset.ss; drawStockSeg(); if(SSEG==='stats')drawStock(); window.scrollTo(0,0);});
+ SSEG=b.dataset.ss; drawStockSeg(); if(SSEG==='stats')drawStock(); if(SSEG==='proj')drawProj(); window.scrollTo(0,0);});
 
 
 
@@ -2359,7 +2386,7 @@ let PAGE='today';
 var SSEG='units', DREW={};
 function pageDraw(k){
  if(DREW[k])return; DREW[k]=1;
- if(k==='stock'){drawUnits();drawOp();drawComps();drawStock();}
+ if(k==='stock'){drawUnits();drawOp();drawComps();drawStock();drawProj();}
  if(k==='diary'){drawDiary();}
  if(k==='more'){drawMore();}
 }
@@ -3981,6 +4008,168 @@ function loadImgKey(v){
 }
 
 
+
+/* ================= PROJECTS ================= */
+/* A launch you pitch again and again. Written once, sendable in two taps. */
+function projects(){ S.proj=Array.isArray(S.proj)?S.proj:[]; return S.proj; }
+function blankProj(){
+ return {n:'',dev:'',loc:'',hand:'',from:0,
+  th:'',           /* the argument */
+  pa:'',pv:'',     /* payment plan, apartments / villas */
+  note:'',img:'',  /* cover image key */
+  at:TD};
+}
+function projPitch(pr,name){
+ var L=[];
+ L.push(name?('Hi '+name+', Mustafa here.'):'Hi, Mustafa here.');
+ L.push('');
+ if(pr.th)L.push(pr.th);
+ if(pr.th)L.push('');
+ var head=pr.n+(pr.loc?', '+pr.loc:'');
+ L.push(head+'.');
+ if(pr.pa)L.push('Apartments: '+pr.pa);
+ if(pr.pv)L.push('Townhouses and villas: '+pr.pv);
+ if(num(pr.from))L.push('From '+money(pr.from)+'.');
+ if(pr.hand)L.push('Handover '+pr.hand+'.');
+ L.push('');
+ L.push('Want me to send you the numbers?');
+ return L.join('\n');
+}
+function projFits(pr){
+ /* two tiers. a stated area match is strong. everything else is a maybe, and says so. */
+ var key=String((pr.loc||'')+' '+(pr.n||'')).toLowerCase();
+ var strong=[], maybe=[];
+ S.deals.forEach(function(d){
+  if(d.s>=4)return;
+  var areas=String(d.lcom||'').toLowerCase();
+  var hit=areas&&areas.split(/[,;\/]+/).some(function(a){
+   a=a.trim(); return a.length>3&&key.indexOf(a)>=0;});
+  var budgetOk=!num(pr.from)||!num(d.lmax)||num(d.lmax)>=num(pr.from)*0.85;
+  if(hit&&budgetOk){strong.push(d);return;}
+  /* off-plan buyers and investors are worth a call on a new launch even if the
+     area is not on their list, because most people never listed one */
+  var investory=/invest|yield|rent|portfolio|off.?plan/i.test((d.n||'')+' '+(d.ty||''));
+  var noArea=!areas.trim();
+  if(budgetOk&&(investory||noArea))maybe.push(d);
+ });
+ var out=strong.concat(maybe);
+ out.strong=strong.length; out.maybe=maybe.length;
+ return out;
+}
+function drawProj(){
+ var el=document.getElementById('plist'); if(!el)return;
+ var P=projects();
+ document.getElementById('pcount').textContent=P.length?P.length:'';
+ if(!P.length){
+  el.innerHTML='<div class="hint">Nothing here yet. Add a launch once and you can pitch it in two taps, '+
+   'and so can your team when you send them a backup.</div>';
+  return;}
+ el.innerHTML=P.map(function(pr,i){
+  var fits=projFits(pr);
+  return '<div class="prj">'+
+   '<div class="pn">'+esc(pvName(pr.n||'Untitled'))+'</div>'+
+   '<div class="pl2">'+esc([pr.dev,pr.loc,pr.hand?'handover '+pr.hand:''].filter(Boolean).join(' · '))+'</div>'+
+   (pr.th?'<div class="th">'+esc(pvNum(pr.th))+'</div>':'')+
+   ((pr.pa||pr.pv||num(pr.from))?'<div class="plans">'+
+     (pr.pa?'<div><div class="l">Apartments</div><div class="v">'+esc(pr.pa)+'</div></div>':'')+
+     (pr.pv?'<div><div class="l">Villas</div><div class="v">'+esc(pr.pv)+'</div></div>':'')+
+     (num(pr.from)?'<div><div class="l">From</div><div class="v">'+pmoney(pr.from)+'</div></div>':'')+
+    '</div>':'')+
+   '<div class="pb">'+
+    '<button class="go3" data-ppitch="'+i+'">Send the pitch</button>'+
+    '<button data-pwho="'+i+'">Who to call ('+fits.strong+(fits.maybe?'+'+fits.maybe:'')+')</button>'+
+    '<button data-ped="'+i+'">Edit</button>'+
+   '</div>'+
+   (fits.length?'<div class="linked">'+esc(pvName(fits.slice(0,4).map(function(d){return d.w;}).join(', ')))+
+     (fits.length>4?' and '+(fits.length-4)+' more':'')+'</div>':'')+
+   '</div>';}).join('');
+ el.querySelectorAll('[data-ped]').forEach(function(b){b.onclick=function(){openProj(+b.dataset.ped);};});
+ el.querySelectorAll('[data-ppitch]').forEach(function(b){b.onclick=function(){pitchSheet(+b.dataset.ppitch);};});
+ el.querySelectorAll('[data-pwho]').forEach(function(b){b.onclick=function(){whoFitsProj(+b.dataset.pwho);};});
+}
+var PEDIT=null;
+function openProj(i){
+ PEDIT=i;
+ var pr=(i===null)?blankProj():projects()[i];
+ var h='<div class="pfields">'+
+  '<label>Project</label><input id="pf-n" value="'+esc(pr.n||'')+'" placeholder="Lunaya">'+
+  '<div class="two"><div><label>Developer</label><input id="pf-dev" value="'+esc(pr.dev||'')+'"></div>'+
+  '<div><label>Where</label><input id="pf-loc" value="'+esc(pr.loc||'')+'" placeholder="Jebel Ali corridor"></div></div>'+
+  '<label>Why it is worth buying</label><textarea id="pf-th" rows="5" placeholder="The argument you make on the phone">'+esc(pr.th||'')+'</textarea>'+
+  '<div class="two"><div><label>Apartments plan</label><input id="pf-pa" value="'+esc(pr.pa||'')+'" placeholder="25% now / 75% on completion"></div>'+
+  '<div><label>Villas plan</label><input id="pf-pv" value="'+esc(pr.pv||'')+'" placeholder="40% / 60%"></div></div>'+
+  '<div class="two"><div><label>From AED</label><input id="pf-from" type="number" value="'+(num(pr.from)||'')+'"></div>'+
+  '<div><label>Handover</label><input id="pf-hand" value="'+esc(pr.hand||'')+'"></div></div>'+
+  '<label>Notes for you and the team</label><textarea id="pf-note" rows="3">'+esc(pr.note||'')+'</textarea>'+
+  '</div>'+
+  '<button class="btnfull" id="pf-save" style="margin-top:14px">Save</button>'+
+  (i===null?'':'<button class="addbtn" id="pf-del" style="margin-top:8px;border-color:rgba(212,106,94,.5);color:#D46A5E">Delete this project</button>');
+ openTool(i===null?'Add a project':'Edit project',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.getElementById('pf-save').onclick=function(){
+  var nm=String(document.getElementById('pf-n').value||'').trim();
+  if(!nm){alert('Give it a name.');return;}
+  var o=(i===null)?blankProj():projects()[i];
+  o.n=nm;
+  o.dev=document.getElementById('pf-dev').value.trim();
+  o.loc=document.getElementById('pf-loc').value.trim();
+  o.th=document.getElementById('pf-th').value.trim();
+  o.pa=document.getElementById('pf-pa').value.trim();
+  o.pv=document.getElementById('pf-pv').value.trim();
+  o.from=num(document.getElementById('pf-from').value);
+  o.hand=document.getElementById('pf-hand').value.trim();
+  o.note=document.getElementById('pf-note').value.trim();
+  if(i===null)projects().unshift(o);
+  put(S); document.getElementById('tsheet').style.display='none'; drawProj();
+ };
+ var del=document.getElementById('pf-del');
+ if(del)del.onclick=function(){
+  if(!confirm('Delete '+pr.n+'?'))return;
+  projects().splice(i,1); put(S);
+  document.getElementById('tsheet').style.display='none'; drawProj();};
+}
+function pitchSheet(i){
+ var pr=projects()[i];
+ var fits=projFits(pr);
+ var h='<div class="hint">Pick who it goes to, or copy it and paste it anywhere.</div>'+
+  '<div class="sched" id="pt-out" style="margin-top:10px;white-space:pre-wrap">'+esc(projPitch(pr,''))+'</div>'+
+  (fits.length?'<div class="quick" style="margin-top:11px;flex-wrap:wrap">'+
+    fits.slice(0,8).map(function(d,j){
+     return '<button class="qbtn alt" data-pt="'+j+'" style="padding:9px 7px;font-size:11.5px;flex:0 0 auto">'+
+      esc(pvName(d.w))+'</button>';}).join('')+'</div>':'')+
+  '<button class="btnfull" id="pt-copy" style="margin-top:12px">Copy the message</button>';
+ openTool('Pitch '+pr.n,h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.querySelectorAll('[data-pt]').forEach(function(b){b.onclick=function(){
+  var d=fits[+b.dataset.pt];
+  var ph=(d.ph||'').replace(/[^\d]/g,'');
+  var msg=projPitch(pr,String(d.w||'').split(' ')[0]);
+  document.getElementById('pt-out').textContent=msg;
+  if(ph)window.open('https://wa.me/'+ph+'?text='+encodeURIComponent(msg),'_blank');
+  else alert(d.w+' has no number saved. Copy the message instead.');};});
+ document.getElementById('pt-copy').onclick=function(){
+  var t=document.getElementById('pt-out').textContent;
+  if(navigator.clipboard)navigator.clipboard.writeText(t);
+  var b=document.getElementById('pt-copy'); b.textContent='Copied';
+  setTimeout(function(){b.textContent='Copy the message';},1200);};
+}
+function whoFitsProj(i){
+ var pr=projects()[i], fits=projFits(pr);
+ var h=fits.length
+  ? (fits.strong?'<div class="hint" style="color:var(--gold)">'+fits.strong+' with '+esc(pr.loc||pr.n)+' already on their list</div>':'')+
+    (fits.maybe?'<div class="hint">'+fits.maybe+' worth a call anyway: investors, or people who never named an area</div>':'')+
+    '<div class="card" style="margin-top:10px">'+
+    fits.map(function(d,j){
+     var ph=(d.ph||'').replace(/[^\d+]/g,'');
+     return '<div class="qi"><div class="qib"><b>'+esc(pvName(d.w))+
+      (j<fits.strong?' <span style="color:var(--gold);font-size:10px">match</span>':'')+'</b>'+
+      '<span>'+esc(pvNum(d.lcom||'no areas set'))+(num(d.lmax)?' · up to '+pmoney(d.lmax):'')+'</span></div>'+
+      (ph&&!S.priv?'<a class="qic" href="tel:'+ph+'">Call</a>':'')+'</div>';}).join('')+'</div>'
+  : '<div class="hint">Nobody matches yet. Areas are matched from the "Areas they would buy in" field on each client, so fill that in and this fills itself.</div>';
+ openTool('Who fits '+pr.n,h,'');
+ document.getElementById('tcopy').textContent='Close';
+}
+
 /* ================= QUICK CAPTURE ================= */
 /* A reply arrives while you are driving. Two fields, three seconds, tidy it later. */
 var QCSRC='Campaign', QCADDED=[];
@@ -4149,6 +4338,7 @@ document.getElementById('addunit').onclick=function(){openUnitSheet(null);};
 })();
 document.getElementById('t-undo').onclick=openSnapshots;
 document.getElementById('t-hooks').onclick=openHookTool;
+document.getElementById('addproj').onclick=function(){openProj(null);};
 document.getElementById('qcbtn').onclick=openQc;
 document.getElementById('qc-done').onclick=closeQc;
 document.getElementById('qc-save').onclick=qcSave;
@@ -4750,7 +4940,7 @@ function doRestore(o,st){
    Promise.all(ks.map(function(k){return idbSet(k,imgs[k]).catch(function(){});}))
     .then(function(){
      S=D; if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[];
-     if(!S.op)S.op=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
+     if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
      repairData();
      try{
       put(S);flushPut();
