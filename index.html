@@ -4029,14 +4029,15 @@ function drawUnits(){
    (!isR&&u.op?'<b style="color:var(--ink)">Original price:</b> '+pmoney(u.op)+' · uplift '+pmoney(u.pr-u.op)+'<br>':'')+
    (u.h?'<b style="color:var(--ink)">Handover:</b> '+esc(pvNum(u.h))+'<br>':'')+
    (u.pl?'<b style="color:var(--ink)">Plan:</b> '+esc(pvNum(u.pl))+'<br>':'')+esc(pvNum(pvName(u.n)))+
-   '<div class="ubtns"><button class="ub gold" data-offer="'+i+'">'+(isR?'Rental offer':'Sales offer')+'</button>'+
-    '<button class="ub" data-fit="'+i+'">Who fits this</button>'+
+   '<div class="ubtns"><button class="ub" data-plan="'+i+'">'+(u.img?'Masterplan':'+ Masterplan')+'</button>'+
+    '<button class="ub" data-fp="'+i+'">'+(u.fp?'Floorplan':'+ Floorplan')+'</button>'+
     '<button class="ub" data-gal="'+i+'">Photos ('+picCount(u)+')</button></div>'+
-   '<div class="ubtns"><button class="ub" data-umore="'+i+'">More &#8943;</button>'+
+   '<div class="ubtns"><button class="ub gold" data-offer="'+i+'">'+(isR?'Rental offer':'Sales offer')+'</button>'+
+    '<button class="ub" data-fit="'+i+'">Who fits this</button></div>'+
+   '<div class="ubtns"><button class="ub" data-pos="'+i+'">Unit position</button>'+
+    '<button class="ub" data-umore="'+i+'">More &#8943;</button>'+
     '<button class="ub" data-eu="'+i+'">Edit</button></div>'+
-   '<div class="ubtns umore hide" id="um-'+i+'"><button class="ub" data-pos="'+i+'">Unit position</button>'+
-    '<button class="ub" data-fp="'+i+'">'+(u.fp?'Floorplan':'+ Floorplan')+'</button></div>'+
-   '<div class="ubtns umore hide" id="um2-'+i+'"><a class="ub" href="'+mapLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Map</a>'+
+   '<div class="ubtns umore hide" id="um-'+i+'"><a class="ub" href="'+mapLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Map</a>'+
     '<a class="ub" href="'+pfLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Listings</a>'+
     '<button class="ub" data-sh="'+i+'">Share</button>'+
     '<button class="ub" data-du="'+i+'" style="color:var(--bad)">Delete</button></div>'+
@@ -4045,8 +4046,8 @@ function drawUnits(){
  document.querySelectorAll('[data-offer]').forEach(function(b){b.onclick=function(e){e.stopPropagation();salesOffer(+b.dataset.offer);};});
  document.querySelectorAll('[data-fit]').forEach(function(b){b.onclick=function(e){e.stopPropagation();whoFits(+b.dataset.fit);};});
  document.querySelectorAll('[data-umore]').forEach(function(b){b.onclick=function(e){e.stopPropagation();
-  var i=b.dataset.umore, a=document.getElementById('um-'+i), c=document.getElementById('um2-'+i);
-  var on=a.classList.toggle('hide'); c.classList.toggle('hide',on);
+  var a=document.getElementById('um-'+b.dataset.umore);
+  var on=a.classList.toggle('hide');
   b.innerHTML=on?'More &#8943;':'Less';};});
  document.querySelectorAll('[data-gal]').forEach(function(b){b.onclick=function(e){e.stopPropagation();openGallery(+b.dataset.gal);};});
  document.querySelectorAll('[data-plan]').forEach(function(b){b.onclick=function(e){e.stopPropagation();openImg(+b.dataset.plan,'img');};});
