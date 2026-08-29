@@ -778,6 +778,23 @@ body.lite #qcsheet .inner{background:var(--card)}
 .cnk b{flex:none;border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:12.5px;
  color:var(--dim);font-weight:500;white-space:nowrap}
 .cnk b.on{border-color:var(--gold);color:var(--gold)}
+
+/* ---- transaction checklist ---- */
+.ck2{display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--edge)}
+.ck2:last-child{border-bottom:0}
+.ck2 .box{width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line);flex:none;
+ display:flex;align-items:center;justify-content:center;font-size:14px;color:transparent;margin-top:1px}
+.ck2.on .box{background:var(--ok);border-color:var(--ok);color:#fff}
+.ck2 .cb3{flex:1;min-width:0}
+.ck2 .cb3 b{display:block;font-size:14px;color:var(--ink);font-weight:600}
+.ck2.on .cb3 b{color:var(--dim);text-decoration:line-through}
+.ck2 .cb3 span{font-size:11.5px;color:var(--dim)}
+.ck2 .dt{font-size:11px;color:var(--ok);flex:none;padding-top:3px}
+.ckbar{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin:4px 0 12px}
+.ckbar i{display:block;height:100%;background:var(--ok);transition:width .25s}
+.ckhead{display:flex;align-items:baseline;gap:9px;margin-bottom:4px}
+.ckhead b{font-size:13px;color:var(--ink)}
+.ckhead span{font-size:11.5px;color:var(--dim);margin-left:auto}
 </style>
 </head>
 <body>
@@ -813,6 +830,9 @@ body.lite #qcsheet .inner{background:var(--card)}
   <div class="sec hide" id="dupsec"><h2>Same number, several records <b id="dupn"></b></h2>
     <div class="card" id="dup"></div>
     <div class="hint" style="margin-top:8px">One message covering everything they own beats three separate ones. The call list handles them together.</div></div>
+  <div class="sec hide" id="chksec"><h2>Deals mid transfer <b id="chkn"></b></h2>
+    <div class="card" id="chklist"></div>
+    <div class="hint" style="margin-top:8px">Agreed but not transferred. This is where deals stall, usually on the NOC.</div></div>
   <div class="sec hide" id="kdsec"><h2>Dates that cost money <b id="kdn"></b></h2>
     <div class="card" id="kdlist"></div>
     <div class="hint" style="margin-top:8px">Anything inside 90 days. Red is this month or already gone.</div></div>
@@ -1439,7 +1459,7 @@ function drawEye(){var b=document.getElementById('eye');
  document.getElementById('eyesvg').innerHTML=S.priv?EYE_SHUT:EYE_OPEN;
  document.getElementById('eyet').textContent=S.priv?'Hidden':'Private';}
 document.getElementById('eye').onclick=function(){
- S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawEarn();invalidate();};
+ S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawChk();drawEarn();invalidate();};
 
 
 
@@ -3473,7 +3493,7 @@ function drawDeals(){
   var sub=d.ty==='Rent'?(pmoney(d.rent)+'/yr'):(pmoney(d.v)+' at '+d.r+'%');
   var when=d.nd?(dt<0?Math.abs(dt)+' days late':(dt===0?'due today':(dt===1?'tomorrow':'in '+dt+' days'))):'no date set';
   var ag=dealAge(d);
-  var tags='<span class="tg st">'+STAGES[d.s]+'</span>'+
+  var tags='<span class="tg st">'+STAGES[d.s]+'</span>'+chkPill(d,i)+
    (ag&&ag>30?'<span class="tg">'+ag+' days in the book</span>':'')+
    '<span class="tg'+(late?' due':'')+'">'+when+'</span>'+
    (d.ty?'<span class="tg">'+esc(d.ty)+'</span>':'');
@@ -3495,6 +3515,7 @@ function drawDeals(){
      '<button class="sm" data-sz="'+i+'">Later</button>'+
      '<button class="sm" data-mx="'+i+'">&#8943;</button></div>'+
    '<div class="more2">'+
+     (num(d.s)>=3?'<button data-chk="'+i+'">Transaction steps</button>':'')+
      (d.s<4?'<button class="adv" data-adv="'+i+'">'+(d.s===3?'Mark as won':'Move to '+STAGES[d.s+1])+'</button>':'')+
      (d.s===LOST?'<button data-bk="'+i+'">Reopen</button>':'')+
      '<button data-tp="'+i+'">Message</button>'+
@@ -3517,6 +3538,7 @@ function drawDeals(){
 
  var sa=document.getElementById('showall');
  if(sa)sa.onclick=function(){SHOWALL=1;drawDeals();};
+ document.querySelectorAll('[data-chk]').forEach(function(b){b.onclick=function(){openChk(+b.dataset.chk);};});
  document.querySelectorAll('[data-mx]').forEach(function(b){b.onclick=function(){
   document.getElementById('pc-'+b.dataset.mx).classList.toggle('open');};});
  document.querySelectorAll('[data-sz]').forEach(function(b){b.onclick=function(){
@@ -4108,6 +4130,105 @@ function loadImgKey(v){
 
 
 
+
+
+/* ================= TRANSACTION CHECKLIST ================= */
+/* Everything between the handshake and the money. Missing one step costs weeks. */
+var CHKSALE=[
+ ['mou','Form F signed by both sides','The MOU. Nothing is real until this is signed'],
+ ['dep','Deposit cheque received','Usually 10%, held by the agent or trustee'],
+ ['noc','Developer NOC applied for','Book it early, this is the usual delay'],
+ ['nocg','NOC issued',''],
+ ['mort','Mortgage final offer issued','Skip if it is a cash deal'],
+ ['tru','Trustee appointment booked',''],
+ ['tra','Transfer completed at the trustee',''],
+ ['keys','Keys and access handed over',''],
+ ['fee','Commission invoiced',''],
+ ['paid','Commission received','']
+];
+var CHKRENT=[
+ ['off','Offer agreed and cheques confirmed',''],
+ ['ten','Tenancy contract signed',''],
+ ['dep','Cheques collected',''],
+ ['ejari','Ejari registered',''],
+ ['dew','DEWA and cooling moved over',''],
+ ['keys','Keys handed over',''],
+ ['fee','Commission invoiced',''],
+ ['paid','Commission received','']
+];
+function chkListFor(d){return (d.ty==='Rent'||num(d.rent))?CHKRENT:CHKSALE;}
+function chkOf(d){ d.chk=d.chk||{}; return d.chk; }
+function chkProgress(d){
+ var L=chkListFor(d), c=chkOf(d), done=0;
+ L.forEach(function(x){ if(c[x[0]])done++; });
+ return {done:done,total:L.length,pct:Math.round(done/L.length*100)};
+}
+function chkNext(d){
+ var L=chkListFor(d), c=chkOf(d);
+ for(var i=0;i<L.length;i++){ if(!c[L[i][0]])return L[i]; }
+ return null;
+}
+function openChk(i){
+ var d=S.deals[i]; if(!d)return;
+ var L=chkListFor(d), c=chkOf(d), p=chkProgress(d);
+ var h='<div class="ckhead"><b>'+esc(pvName(d.w))+'</b><span>'+p.done+' of '+p.total+'</span></div>'+
+  '<div class="ckbar"><i style="width:'+p.pct+'%"></i></div>'+
+  '<div class="card">'+L.map(function(x,j){
+   var on=!!c[x[0]];
+   return '<div class="ck2'+(on?' on':'')+'" data-ck="'+x[0]+'">'+
+    '<div class="box">&#10003;</div>'+
+    '<div class="cb3"><b>'+esc(x[1])+'</b>'+(x[2]?'<span>'+esc(x[2])+'</span>':'')+'</div>'+
+    (on&&c[x[0]]!==true?'<div class="dt">'+esc(String(c[x[0]]).slice(5))+'</div>':'')+
+    '</div>';}).join('')+'</div>'+
+  '<div class="hint" style="margin-top:10px">Tap to tick. The date is stamped for you, so you can prove when things happened.</div>';
+ openTool('Transaction',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.querySelectorAll('[data-ck]').forEach(function(row){row.onclick=function(){
+  var k=row.dataset.ck;
+  if(c[k])delete c[k]; else c[k]=TD;
+  d.chk=c;
+  /* keep the next action honest */
+  var nx=chkNext(d);
+  if(nx){ d.na=nx[1]; if(!d.nd||d.nd<TD)d.nd=autoDate(2); }
+  else { d.na='Everything done, chase the payment if it is not in'; }
+  put(S); openChk(i); drawDeals(); drawHead();
+  if(navigator.vibrate)navigator.vibrate(8);};});
+}
+function chkPill(d,i){
+ if(num(d.s)<3)return '';
+ var p=chkProgress(d);
+ if(!p.done&&num(d.s)===3)return '<span class="tg" style="border-color:rgba(185,151,91,.5);color:var(--gold)">checklist not started</span>';
+ if(!p.done)return '';
+ return '<span class="tg" style="border-color:rgba(76,175,125,.5);color:var(--ok)">'+p.done+'/'+p.total+' done</span>';
+}
+
+
+function chkStalled(){
+ var out=[];
+ S.deals.forEach(function(d,i){
+  if(num(d.s)<3||num(d.s)===LOST)return;
+  var p=chkProgress(d);
+  if(p.done>=p.total)return;
+  var nx=chkNext(d);
+  var since=d.sAt||d.nd||TD;
+  out.push({i:i,d:d,p:p,next:nx,days:ddiff(since,TD),fee:dealFee(d)});});
+ out.sort(function(a,b){return b.fee-a.fee;});
+ return out;
+}
+function drawChk(){
+ var sec=document.getElementById('chksec'), el=document.getElementById('chklist');
+ if(!sec)return;
+ var L=chkStalled();
+ if(!L.length){sec.classList.add('hide');el.innerHTML='';return;}
+ sec.classList.remove('hide');
+ document.getElementById('chkn').textContent=L.length+' · '+pmoney(L.reduce(function(a,x){return a+x.fee;},0));
+ el.innerHTML=L.slice(0,4).map(function(x){
+  return '<div class="qi"><div class="qib"><b>'+esc(pvName(x.d.w))+'</b>'+
+   '<span>'+x.p.done+' of '+x.p.total+' done'+(x.next?' · next: '+esc(x.next[1]):'')+'</span></div>'+
+   '<div class="qif">'+pmoney(x.fee)+'</div>'+
+   '<button class="qic" data-chs="'+x.i+'">Open</button></div>';}).join('');
+ el.querySelectorAll('[data-chs]').forEach(function(b){b.onclick=function(){openChk(+b.dataset.chs);};});
+}
 
 /* ================= CONTACTS ================= */
 /* Not buyers, not owners. The people you need to get a deal over the line. */
