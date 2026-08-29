@@ -270,6 +270,29 @@ td.idx{text-align:center}
 .bfsave{background:var(--gold);border:none;color:var(--navy);border-radius:999px;
  padding:10px 20px;font-size:14px;font-weight:600;font-family:inherit}
 .bfhint{font-size:12px;color:var(--dim);margin-top:12px}
+
+/* ---- projects and campaigns on the desk ---- */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;padding:18px}
+.pcard{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px}
+.pcard h4{margin:0 0 3px;font-size:17px;color:var(--ink)}
+.pcard .sub{font-size:12px;color:var(--dim);margin-bottom:10px}
+.pcard .th2{font-size:13px;line-height:1.55;color:var(--ink);opacity:.9;white-space:pre-wrap}
+.pcard .pp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.pcard .pp div{background:var(--card2);border-radius:8px;padding:9px 11px}
+.pcard .pp .l{font-size:9px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.pcard .pp .v{font-size:14px;color:var(--gold);font-weight:600;margin-top:2px}
+.pcard .pb2{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}
+.pcard .pb2 button{background:transparent;border:1px solid var(--line);color:var(--ink);
+ border-radius:999px;padding:9px 14px;font-size:12.5px;font-family:inherit}
+.pcard .pb2 .g4{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:600}
+.pitchbox{white-space:pre-wrap;background:var(--card2);border:1px solid var(--line);border-radius:10px;
+ padding:14px;font-size:13.5px;line-height:1.55;color:var(--ink);margin-top:12px}
+.cstats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+ border-radius:10px;overflow:hidden;margin-top:12px}
+.cstats div{background:var(--card2);padding:11px 8px;text-align:center}
+.cstats .n{font-size:21px;font-weight:700;color:var(--ink);line-height:1}
+.cstats .n.g{color:var(--ok)}
+.cstats .l{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:4px}
 </style>
 </head>
 <body>
@@ -363,6 +386,7 @@ function normImgs(){
 function imgBytes(){var n=0;for(var k in (BK.imgs||{}))n+=String(BK.imgs[k]).length;return n;}
 
 var STAGES=['To call','Contacted','Interested','Agreed','Won','Lost'];
+var LOST=5;
 var DTYPES=['Ready','Off-plan','Resale','Commercial','Rent','Land'];
 var CHEQ=['1 cheque','2 cheques','3 cheques','4 cheques','6 cheques','12 cheques'];
 var SRCS=['Referral','Repeat client','Portal lead','Walk in','Prospecting call','Social','Other'];
@@ -545,24 +569,40 @@ var COLS={
  later:[
   {k:'n',t:'Name',w:1},{k:'ph',t:'Mobile'},{k:'w',t:'About',w:1},
   {k:'ty',t:'Why later',opts:LTYPES},{k:'wd',t:'Call again',d:1},
-  {k:'v',t:'Est value',n:1},{k:'n2',t:'The hook',w:1}]
+  {k:'v',t:'Est value',n:1},{k:'n2',t:'The hook',w:1}],
+ dates:[
+  {k:'t',t:'What',opts:['Tenancy ends','Developer payment','Licence','Emirates ID','Passport','Visa','Handover','Other']},
+  {k:'w',t:'Which property or who',w:1},{k:'d',t:'Date',d:1},
+  {k:'_in',t:'When',calc:function(x){ if(!x.d)return '';
+   var n=dayd(x.d,TD); return n<0?Math.abs(n)+' days ago':(n===0?'today':'in '+n+' days');}},
+  {k:'n',t:'Note',w:1}],
+ people:[
+  {k:'n',t:'Name',w:1},
+  {k:'k',t:'What they do',opts:['Developer','Mortgage','Conveyancing','Trustee','Photographer','Handyman','Agent','Other']},
+  {k:'org',t:'Company'},{k:'ph',t:'Mobile'},{k:'n2',t:'What they are good for',w:1}]
 };
 var BLANK={
  deals:function(){return {w:'',ph:'',u:'',ty:'Ready',v:0,r:2,s:0,na:'',nd:'',src:'Referral',n:'',
   ch:'1 cheque',rent:0,ref:'',lbd:0,lmax:0,lcom:'',npd:'',npa:0,lost:'',hist:[],cAt:TD};},
+ dates:function(){return {t:'Tenancy ends',w:'',d:TD,n:''};},
+ people:function(){return {n:'',k:'Developer',org:'',ph:'',n2:''};},
  units:function(){return {lt:'Sale',p:'',com:'',t:'',bd:0,bua:0,plot:0,pr:0,rent:0,ch:'1 cheque',
   op:0,h:'',pl:'',n:'',tag:'',img:'',fp:'',link:''};},
  later:function(){return {n:'',ph:'',w:'',ty:LTYPES[0],wd:'',v:0,n2:''};}
 };
 var LIST={deals:function(){return S().deals;},units:function(){return S().units;},
  later:function(){return S().later;},market:function(){return [];},review:function(){return [];},
- call:function(){return S().later;},tools:function(){return [];},fill:function(){return [];}};
+ call:function(){return S().later;},tools:function(){return [];},fill:function(){return [];},
+ dates:function(){S().kd=Array.isArray(S().kd)?S().kd:[];return S().kd;},
+ people:function(){S().cn=Array.isArray(S().cn)?S().cn:[];return S().cn;},
+ proj:function(){S().proj=Array.isArray(S().proj)?S().proj:[];return S().proj;},
+ camp:function(){S().camp=Array.isArray(S().camp)?S().camp:[];return S().camp;}};
 var SEL={}; var MKT=null;
 try{var mraw=localStorage.getItem('desk-market'); if(mraw)MKT=JSON.parse(mraw);}catch(e){}
 function uniq(a){var o=[],seen={};a.forEach(function(x){if(x&&!seen[x]){seen[x]=1;o.push(x);}});return o;}
 function render(){
  document.getElementById('bar').classList.remove('hide');
- var tabs=[['deals','Clients'],['units','Inventory'],['call','Call list'],['later','Prospects'],['market','Market'],['fill','Fill in'],['tools','Tools'],['review','Review']];
+ var tabs=[['deals','Clients'],['units','Inventory'],['call','Call list'],['later','Prospects'],['market','Market'],['proj','Projects'],['camp','Campaigns'],['dates','Key dates'],['people','Contacts'],['fill','Fill in'],['tools','Tools'],['review','Review']];
  document.getElementById('tabs').innerHTML=tabs.map(function(t){
   return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+((t[0]==='tools'||t[0]==='fill')?'':'<i>'+LIST[t[0]]().length+'</i>')+'</b>';}).join('');
  document.querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){
@@ -582,12 +622,21 @@ function render(){
   document.getElementById('count').innerHTML='';drawTools();return;}
  if(TAB==='fill'){document.getElementById('bar').classList.add('hide');
   document.getElementById('count').innerHTML='';drawFill();return;}
+ if(TAB==='proj'){document.getElementById('bar').classList.add('hide');
+  document.getElementById('count').innerHTML='';drawProjDesk();return;}
+ if(TAB==='camp'){document.getElementById('bar').classList.add('hide');
+  document.getElementById('count').innerHTML='';drawCampDesk();return;}
  drawFilter();drawTable();
 }
 function drawFilter(){
  var el=document.getElementById('filt'), rows=LIST[TAB]();
  var opts=['All'];
  if(TAB==='deals')opts=opts.concat(STAGES).concat(['No next date','No criteria']);
+ if(TAB==='dates')opts=opts.concat(['Next 90 days','Already gone'])
+  .concat(['Tenancy ends','Developer payment','Licence','Emirates ID','Passport','Visa','Handover','Other']
+   .filter(function(t){return LIST.dates().some(function(x){return x.t===t;});}));
+ if(TAB==='people')opts=opts.concat(['Developer','Mortgage','Conveyancing','Trustee','Photographer','Handyman','Agent','Other']
+  .filter(function(t){return LIST.people().some(function(x){return (x.k||'Other')===t;});}));
  if(TAB==='units')opts=opts.concat(['Live only','Permit expiring or gone','No paperwork','For sale','For rent','No price','No original price'])
   .concat(uniq(rows.map(function(u){return u.com;})));
  if(TAB==='later')opts=opts.concat(['Due now']).concat(uniq(rows.map(function(x){return x.ty;})));
@@ -617,6 +666,11 @@ function pass(r){
  if(TAB==='later'){
   if(F==='Due now')return r.wd&&r.wd<=TD;
   return r.ty===F;}
+ if(TAB==='dates'){
+  if(F==='Next 90 days'){var n=r.d?dayd(r.d,TD):null; return n!==null&&n<=90&&n>=-30;}
+  if(F==='Already gone'){var g=r.d?dayd(r.d,TD):null; return g!==null&&g<0;}
+  return r.t===F;}
+ if(TAB==='people')return (r.k||'Other')===F;
  return true;
 }
 function drawTable(){
@@ -653,9 +707,12 @@ function drawTable(){
  if(!idx.length)h='<div class="empty"><p>Nothing matches. Clear the search or filter, or add a row.</p></div>';
  document.getElementById('main').innerHTML=h;
  bindCells();
- document.getElementById('hint').textContent=TAB==='deals'
-  ? 'Fill Wants beds, Max budget and Areas to power Who fits this on the phone.'
-  : (TAB==='units'?'Paste units takes a whole WhatsApp forward at once.':'Your parked prospects and their call dates.');
+ var hints={deals:'Fill Wants beds, Max budget and Areas to power Who fits this on the phone.',
+  units:'Paste units takes a whole WhatsApp forward at once. Permit shows the earlier of Form A and Trakheesi.',
+  later:'Your parked prospects and their call dates.',
+  dates:'Anything with a date and a consequence. These show on your phone 90 days out.',
+  people:'Everyone who is not a buyer or an owner but decides whether your deal closes on time.'};
+ document.getElementById('hint').textContent=hints[TAB]||'';
 }
 function bindCells(){
  document.querySelectorAll('#main input,#main select').forEach(function(el){
@@ -1164,6 +1221,125 @@ function deskUnbanked(){
    return String(l.w||'').toLowerCase()===String(d.w||'').toLowerCase();});});
 }
 
+
+
+
+/* the same signals the phone shows, so both sides tell one story */
+function dKdDue(days){
+ var out=[];
+ (S().kd||[]).forEach(function(k){ if(k.d)out.push({d:k.d,t:k.t||'Other',w:k.w||''}); });
+ (S().units||[]).forEach(function(u){
+  var live=(u.st||'Available')==='Available'||u.st==='Reserved';
+  if(!live)return;
+  if(u.faTo)out.push({d:u.faTo,t:'Form A expires',w:u.p||''});
+  if(u.tkTo)out.push({d:u.tkTo,t:'Trakheesi permit expires',w:u.p||''});});
+ S().deals.forEach(function(d){
+  if(num(d.s)===LOST||!d.npd)return;
+  out.push({d:d.npd,t:'Developer payment',w:d.w||''});});
+ return out.filter(function(k){var n=dayd(k.d,TD);return n<=days&&n>=-30;})
+  .sort(function(a,b){return String(a.d).localeCompare(String(b.d));});
+}
+function dChkStalled(){
+ return S().deals.filter(function(d){
+  if(num(d.s)<3||num(d.s)===LOST)return false;
+  var c=d.chk||{}, L=(d.ty==='Rent'||num(d.rent))?8:10;
+  return Object.keys(c).length<L;});
+}
+
+/* ================= PROJECTS AND CAMPAIGNS ON THE DESK ================= */
+function dProjects(){S().proj=Array.isArray(S().proj)?S().proj:[];return S().proj;}
+function dCamps(){S().camp=Array.isArray(S().camp)?S().camp:[];return S().camp;}
+function dPitch(pr,name){
+ var L=[];
+ L.push(name?('Hi '+name+', Mustafa here.'):'Hi, Mustafa here.');
+ L.push('');
+ if(pr.th){L.push(pr.th);L.push('');}
+ L.push((pr.n||'')+(pr.loc?', '+pr.loc:'')+'.');
+ if(pr.pa)L.push('Apartments: '+pr.pa);
+ if(pr.pv)L.push('Townhouses and villas: '+pr.pv);
+ if(num(pr.from))L.push('From '+money(pr.from)+'.');
+ if(pr.hand)L.push('Handover '+pr.hand+'.');
+ L.push('');
+ L.push('Want me to send you the numbers?');
+ return L.join('\n');
+}
+function dProjFits(pr){
+ var key=String((pr.loc||'')+' '+(pr.n||'')).toLowerCase();
+ var strong=[],maybe=[];
+ S().deals.forEach(function(d){
+  if(num(d.s)>=4)return;
+  var areas=String(d.lcom||'').toLowerCase();
+  var hit=areas&&areas.split(/[,;\/]+/).some(function(a){a=a.trim();return a.length>3&&key.indexOf(a)>=0;});
+  var ok=!num(pr.from)||!num(d.lmax)||num(d.lmax)>=num(pr.from)*0.85;
+  if(hit&&ok){strong.push(d);return;}
+  var inv=/invest|yield|rent|portfolio|off.?plan/i.test((d.n||'')+' '+(d.ty||''));
+  if(ok&&(inv||!areas.trim()))maybe.push(d);});
+ var out=strong.concat(maybe); out.strong=strong.length; out.maybe=maybe.length; return out;
+}
+function drawProjDesk(){
+ var P=dProjects();
+ var h='<div class="pgrid">'+P.map(function(pr,i){
+  var f=dProjFits(pr);
+  return '<div class="pcard"><h4>'+esc(pr.n||'Untitled')+'</h4>'+
+   '<div class="sub">'+esc([pr.dev,pr.loc,pr.hand?'handover '+pr.hand:''].filter(Boolean).join(' · '))+'</div>'+
+   (pr.th?'<div class="th2">'+esc(pr.th)+'</div>':'')+
+   ((pr.pa||pr.pv||num(pr.from))?'<div class="pp">'+
+    (pr.pa?'<div><div class="l">Apartments</div><div class="v">'+esc(pr.pa)+'</div></div>':'')+
+    (pr.pv?'<div><div class="l">Villas</div><div class="v">'+esc(pr.pv)+'</div></div>':'')+
+    (num(pr.from)?'<div><div class="l">From</div><div class="v">'+money(pr.from)+'</div></div>':'')+
+    '</div>':'')+
+   '<div class="pb2"><button class="g4" data-dpp="'+i+'">Show the pitch</button>'+
+    '<button data-dpw="'+i+'">Who to call ('+f.strong+(f.maybe?'+'+f.maybe:'')+')</button></div>'+
+   '<div class="pitchbox hide" id="pb-'+i+'"></div>'+
+   '</div>';}).join('')+'</div>';
+ if(!P.length)h='<div class="empty"><p>No projects yet. Add them on the phone, or load a backup that has them.</p></div>';
+ document.getElementById('main').innerHTML=h;
+ document.querySelectorAll('[data-dpp]').forEach(function(b){b.onclick=function(){
+  var i=b.dataset.dpp, box=document.getElementById('pb-'+i);
+  box.textContent=dPitch(dProjects()[i],'');
+  var on=box.classList.toggle('hide');
+  b.textContent=on?'Show the pitch':'Hide';
+  if(!on&&navigator.clipboard)navigator.clipboard.writeText(box.textContent);};});
+ document.querySelectorAll('[data-dpw]').forEach(function(b){b.onclick=function(){
+  var f=dProjFits(dProjects()[+b.dataset.dpw]);
+  var box=document.getElementById('pb-'+b.dataset.dpw);
+  box.classList.remove('hide');
+  box.textContent=f.length
+   ? f.map(function(d,j){return (j<f.strong?'MATCH  ':'maybe  ')+d.w+
+      (d.lcom?'  ['+d.lcom+']':'')+(num(d.lmax)?'  up to '+money(d.lmax):'');}).join('\n')
+   : 'Nobody yet. Fill in Areas on the Clients tab and this fills itself.';};});
+ document.getElementById('hint').textContent='Written once, sendable anywhere. Showing the pitch copies it.';
+}
+function dCampStats(c){
+ var got=S().deals.filter(function(d){
+  if(String(d.src||'')!=='Campaign')return false;
+  var w=d.cAt||''; return w&&w>=c.d;});
+ var met=got.filter(function(d){return (d.hist||[]).some(function(h){return /viewing done|meeting done|meeting booked/i.test(h.a||'');});});
+ var won=got.filter(function(d){return num(d.s)===4;});
+ return {leads:got,met:met,won:won,fee:won.reduce(function(a,d){return a+dealFee(d);},0),
+  rate:num(c.sent)?got.length/num(c.sent)*100:0};
+}
+function drawCampDesk(){
+ var C=dCamps();
+ var h='<div class="pgrid">'+C.map(function(c,i){
+  var t=dCampStats(c);
+  return '<div class="pcard"><h4>'+esc(c.n||'Untitled')+'</h4>'+
+   '<div class="sub">'+esc([c.d,c.what].filter(Boolean).join(' · '))+'</div>'+
+   '<div class="cstats">'+
+    '<div><div class="n">'+num(c.sent)+'</div><div class="l">Sent</div></div>'+
+    '<div><div class="n'+(t.leads.length?' g':'')+'">'+t.leads.length+'</div><div class="l">Replied</div></div>'+
+    '<div><div class="n'+(t.met.length?' g':'')+'">'+t.met.length+'</div><div class="l">Met</div></div>'+
+    '<div><div class="n'+(t.won.length?' g':'')+'">'+t.won.length+'</div><div class="l">Won</div></div>'+
+   '</div>'+
+   '<div class="sub" style="margin-top:10px">Reply rate <b style="color:var(--gold)">'+t.rate.toFixed(1)+'%</b>'+
+    (t.fee?' · '+money(t.fee)+' banked':'')+'</div>'+
+   (t.leads.length?'<div class="pitchbox" style="margin-top:10px">'+
+     esc(t.leads.map(function(d){return d.w+'  ·  '+STAGES[num(d.s)];}).join('\n'))+'</div>':'')+
+   '</div>';}).join('')+'</div>';
+ if(!C.length)h='<div class="empty"><p>No campaigns logged. Log one on the phone before you send, and every reply counts against it.</p></div>';
+ document.getElementById('main').innerHTML=h;
+ document.getElementById('hint').textContent='Was it worth doing? This is the only honest answer.';
+}
 
 /* ================= BULK FILL ================= */
 /* Sixteen numbers on a phone is ten minutes of thumbs. Here it is three minutes of tabbing. */
@@ -1720,7 +1896,19 @@ function drawReview(){
   (nofit.length?'Either they are the wrong stock, or your client criteria are not filled in.':'')+'</div>';
 
  var np=deskNoPhone(), dz=deskDupes(), ub=deskUnbanked(), hh=Object.keys(deskHouseholds()).length;
+ var kd=dKdDue(90), kdNow=kd.filter(function(k){return dayd(k.d,TD)<=30;});
+ var mid=dChkStalled();
+ var noPaper=(S().units||[]).filter(function(u){
+  var live=(u.st||'Available')==='Available'||u.st==='Reserved';
+  return live&&!u.faTo&&!u.tkTo;});
  var flags=[];
+ if(kd.length)flags.push('<b>'+kd.length+' date'+(kd.length===1?'':'s')+' inside 90 days</b>'+
+  (kdNow.length?', '+kdNow.length+' within a month':'')+' — '+
+  kd.slice(0,3).map(function(k){return esc(k.t+' · '+k.w);}).join('; ')+'.');
+ if(mid.length)flags.push('<b>'+mid.length+' deal'+(mid.length===1?'':'s')+' agreed but not transferred</b> — '+
+  money(mid.reduce(function(a,d){return a+dealFee(d);},0))+'. Open Transaction steps on the phone.');
+ if(noPaper.length)flags.push('<b>'+noPaper.length+' live units with no Form A or permit dates</b> — '+
+  'fill them on the Inventory tab, the phone will warn you before they lapse.');
  if(np.length)flags.push('<b>'+np.length+' clients have no phone number</b> — '+money(np.reduce(function(a,d){return a+dealFee(d);},0))+' of fees you cannot dial. Top: '+np.slice(0,3).map(function(d){return esc(d.w);}).join(', ')+'.');
  if(dz.length)flags.push('<b>'+dz.length+' phone number'+(dz.length===1?'':'s')+' appear on more than one record</b> — '+dz.slice(0,2).map(function(g){return esc(g.who.join(' / '));}).join('; ')+'. Message them once, not once per unit.');
  if(ub.length)flags.push('<b>'+ub.length+' won deal'+(ub.length===1?'':'s')+' with no commission logged</b> — '+money(ub.reduce(function(a,d){return a+dealFee(d);},0))+'. Banked reads low until you log it.');
