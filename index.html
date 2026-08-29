@@ -688,10 +688,13 @@ body.lite .cg .cd.out{color:#B9B2A4}
 .sunbtn.on{border-color:var(--gold);color:var(--gold)}
 
 /* ---- quick capture ---- */
-#qcbtn{position:fixed;right:16px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:55;
- width:54px;height:54px;border-radius:50%;background:var(--gold);color:var(--navy);border:none;
- font-size:28px;line-height:1;box-shadow:0 8px 22px rgba(0,0,0,.35);font-family:inherit}
+#qcbtn{position:fixed;right:14px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:55;
+ width:48px;height:48px;border-radius:50%;background:var(--gold);color:var(--navy);border:none;
+ font-size:25px;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.4);font-family:inherit;
+ transition:transform .2s ease,opacity .2s ease}
 #qcbtn:active{transform:scale(.94)}
+/* gets out of the way while you are reading, comes back when you stop */
+#qcbtn.away{transform:translateY(78px);opacity:0;pointer-events:none}
 body.lite #qcbtn{color:#fff}
 #qcsheet{display:none;position:fixed;inset:0;background:rgba(4,12,20,.8);z-index:120;align-items:flex-end}
 #qcsheet.on{display:flex}
@@ -4962,6 +4965,21 @@ document.getElementById('addproj').onclick=function(){openProj(null);};
 document.getElementById('addkd').onclick=function(){openKd(null);};
 document.getElementById('addcn').onclick=function(){openContact(null);};
 document.getElementById('addcamp').onclick=function(){openCamp(null);};
+
+/* the quick-add button hides while you scroll down so it never covers a figure */
+(function(){
+ var b=document.getElementById('qcbtn'); if(!b)return;
+ var last=0,t=null;
+ window.addEventListener('scroll',function(){
+  var y=window.scrollY||document.documentElement.scrollTop||0;
+  if(y>last+6&&y>90)b.classList.add('away');
+  else if(y<last-6)b.classList.remove('away');
+  last=y;
+  clearTimeout(t);
+  t=setTimeout(function(){b.classList.remove('away');},700);
+ },{passive:true});
+})();
+
 document.getElementById('qcbtn').onclick=openQc;
 document.getElementById('qc-done').onclick=closeQc;
 document.getElementById('qc-save').onclick=qcSave;
