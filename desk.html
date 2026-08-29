@@ -527,7 +527,21 @@ var COLS={
    return (b&&p)?Math.round(p/b).toLocaleString():'';}},
   {k:'_up',t:'On OP',calc:function(u){var o=num(u.op);
    return o?(((num(u.pr)-o)/o*100).toFixed(0)+'%'):'';}},
-  {k:'h',t:'Handover'},{k:'pl',t:'Plan',w:1},{k:'tag',t:'Tag'},{k:'n',t:'Note',w:1}],
+  {k:'h',t:'Handover'},{k:'pl',t:'Plan',w:1},{k:'tag',t:'Tag'},
+  {k:'st',t:'Status',opts:['Available','Reserved','Sold','Withdrawn']},
+  {k:'rw',t:'Row',opts:['','Single row','Back to back']},
+  {k:'bk',t:'Backs onto',w:1},
+  {k:'excl',t:'Listing',opts:['','Exclusive','Open']},
+  {k:'faTo',t:'Form A to',d:1},
+  {k:'tkNo',t:'Trakheesi'},
+  {k:'tkTo',t:'Permit to',d:1},
+  {k:'_lic',t:'Permit',calc:function(u){
+    var a=u.faTo?dayd(u.faTo,TD):null, t=u.tkTo?dayd(u.tkTo,TD):null, w=null;
+    [a,t].forEach(function(x){if(x===null)return; if(w===null||x<w)w=x;});
+    if(w===null)return '';
+    return w<0?'EXPIRED':(w<=21?w+' days':'ok');}},
+  {k:'listedOn',t:'Listed on',w:1},
+  {k:'n',t:'Note',w:1}],
  later:[
   {k:'n',t:'Name',w:1},{k:'ph',t:'Mobile'},{k:'w',t:'About',w:1},
   {k:'ty',t:'Why later',opts:LTYPES},{k:'wd',t:'Call again',d:1},
@@ -574,7 +588,7 @@ function drawFilter(){
  var el=document.getElementById('filt'), rows=LIST[TAB]();
  var opts=['All'];
  if(TAB==='deals')opts=opts.concat(STAGES).concat(['No next date','No criteria']);
- if(TAB==='units')opts=opts.concat(['For sale','For rent','No price','No original price'])
+ if(TAB==='units')opts=opts.concat(['Live only','Permit expiring or gone','No paperwork','For sale','For rent','No price','No original price'])
   .concat(uniq(rows.map(function(u){return u.com;})));
  if(TAB==='later')opts=opts.concat(['Due now']).concat(uniq(rows.map(function(x){return x.ty;})));
  el.innerHTML=opts.map(function(o){return '<option'+(o===F?' selected':'')+'>'+esc(o)+'</option>';}).join('');
@@ -589,6 +603,12 @@ function pass(r){
   if(F==='No criteria')return !num(r.lmax)&&!num(r.lbd)&&!(r.lcom||'');
   return STAGES[num(r.s)]===F;}
  if(TAB==='units'){
+  if(F==='Permit expiring or gone'){
+   var a=r.faTo?dayd(r.faTo,TD):null, t=r.tkTo?dayd(r.tkTo,TD):null, w=null;
+   [a,t].forEach(function(x){if(x===null)return; if(w===null||x<w)w=x;});
+   return w!==null&&w<=21;}
+  if(F==='No paperwork')return !r.faTo&&!r.tkTo;
+  if(F==='Live only')return (r.st||'Available')==='Available'||r.st==='Reserved';
   if(F==='For sale')return (r.lt||'Sale')==='Sale';
   if(F==='For rent')return r.lt==='Rent';
   if(F==='No price')return !num(r.pr)&&!num(r.rent);
