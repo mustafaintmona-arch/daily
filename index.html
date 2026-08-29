@@ -831,6 +831,19 @@ body.lite #qcsheet .inner{background:var(--card)}
 #ntbox{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:11px;
  color:var(--ink);padding:12px;font-size:15px;font-family:inherit;line-height:1.5}
 #ntbox:focus{outline:none;border-color:var(--gold)}
+
+/* ---- valuation ---- */
+.vrow2{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--edge)}
+.vrow2:last-child{border-bottom:0}
+.vrow2 .l2{font-size:13px;color:var(--dim)}
+.vrow2 .l2 b{display:block;color:var(--ink);font-weight:400;font-size:13.5px}
+.vrow2 .r2{font-size:14px;color:var(--ink);text-align:right;white-space:nowrap}
+.vrow2.big2 .r2{font-size:17px;color:var(--gold);font-weight:700}
+.vrow2.bad2 .r2{color:var(--bad);font-weight:700}
+.vhead{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);margin:16px 0 4px}
+.vverdict{background:rgba(212,106,94,.1);border:1px solid rgba(212,106,94,.4);border-radius:11px;
+ padding:13px 14px;margin-top:14px;font-size:13.5px;line-height:1.55;color:var(--ink)}
+.vverdict.ok2{background:rgba(76,175,125,.1);border-color:rgba(76,175,125,.4)}
 </style>
 </head>
 <body>
@@ -1006,6 +1019,7 @@ body.lite #qcsheet .inner{background:var(--card)}
       <button class="tool" id="t-flip"><span>⇄</span>Flip before handover</button>
       <button class="tool" id="t-plan"><span>▤</span>Payment plan</button>
       <button class="tool" id="t-fee"><span>%</span>Deal calculator</button>
+      <button class="tool" id="t-val"><span>◎</span>What is it worth</button>
     </div></div>
   <div class="sec"><h2>Tools</h2>
     <div class="tools">
@@ -4119,6 +4133,7 @@ function drawUnits(){
     '<button class="ub" data-fit="'+i+'">Who fits this</button></div>'+
    '<div class="ubtns"><button class="ub" data-pos="'+i+'">Unit position</button>'+
     '<button class="ub" data-lic="'+i+'">Paperwork</button>'+
+    '<button class="ub" data-val="'+i+'">Valuation</button>'+
     '<button class="ub" data-umore="'+i+'">More &#8943;</button>'+
     '<button class="ub" data-eu="'+i+'">Edit</button></div>'+
    '<div class="ubtns umore hide" id="um-'+i+'"><a class="ub" href="'+mapLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Map</a>'+
@@ -4144,6 +4159,8 @@ function drawUnits(){
   e.stopPropagation();openPos(+b.dataset.pos);};});
  document.querySelectorAll('[data-lic]').forEach(function(b){b.onclick=function(e){
   e.stopPropagation();openLic(+b.dataset.lic);};});
+ document.querySelectorAll('[data-val]').forEach(function(b){b.onclick=function(e){
+  e.stopPropagation();openVal(+b.dataset.val);};});
  document.querySelectorAll('[data-pick]').forEach(function(b){b.onclick=function(e){
   e.stopPropagation();
   var i=+b.dataset.pick;
@@ -4458,6 +4475,119 @@ function drawChk(){
  el.querySelectorAll('[data-chs]').forEach(function(b){b.onclick=function(){openChk(+b.dataset.chs);};});
 }
 
+
+
+/* ================= VALUATION ================= */
+/* The argument that gets an owner from a dream price to a sellable one. */
+function valComps(com,bd,months){
+ var T=S.mkt||[];
+ if(!T.length)return [];
+ var key=String(com||'').toLowerCase();
+ var days=(months||12)*30;
+ return T.filter(function(t){
+  if(!t.psf||!t.bd)return false;
+  if(bd&&t.bd!==bd)return false;
+  if(ddiff(t.d,TD)>days)return false;
+  var c=String(t.com||'').toLowerCase();
+  return c&&(key.indexOf(c)>=0||c.indexOf(key)>=0);
+ }).sort(function(a,b){return String(b.d).localeCompare(String(a.d));});
+}
+function valueIt(com,bd,bua,ask){
+ var C=valComps(com,bd,12);
+ if(!C.length)return null;
+ var psfs=C.map(function(t){return t.psf;}).sort(function(a,b){return a-b;});
+ var med=psfs[Math.floor(psfs.length/2)];
+ var top=Math.max.apply(null,psfs), low=Math.min.apply(null,psfs);
+ var newest=C[0];
+ var mid=bua?bua*med:0, hi=bua?bua*top:0, lo=bua?bua*newest.psf:0;
+ return {n:C.length,med:med,top:top,low:low,newest:newest,
+  mid:mid,hi:hi,lo:lo,
+  implied:(ask&&bua)?ask/bua:0,
+  gap:(ask&&mid)?(ask-mid)/mid*100:0,
+  comps:C.slice(0,8)};
+}
+function openVal(i){
+ var u=(i!=null&&i>=0)?S.units[i]:null;
+ var com=u?(u.com||String(u.p||'').split(',')[0]):'';
+ var h='<div class="pfields">'+
+  '<label>Community</label><input id="vl-com" value="'+esc(com)+'" placeholder="Farm Gardens">'+
+  '<div class="two"><div><label>Bedrooms</label><input id="vl-bd" type="number" value="'+(u?num(u.bd)||'':'')+'"></div>'+
+  '<div><label>BUA sqft</label><input id="vl-bua" type="number" value="'+(u?num(u.bua)||'':'')+'"></div></div>'+
+  '<label>Asking price, if there is one</label><input id="vl-ask" type="number" value="'+(u?num(u.pr)||'':'')+'">'+
+  '</div><div id="vl-out" style="margin-top:14px"></div>';
+ openTool('What is it worth',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ function run(){
+  var com=document.getElementById('vl-com').value.trim();
+  var bd=num(document.getElementById('vl-bd').value);
+  var bua=num(document.getElementById('vl-bua').value);
+  var ask=num(document.getElementById('vl-ask').value);
+  var out=document.getElementById('vl-out');
+  if(!(S.mkt||[]).length){
+   out.innerHTML='<div class="hint">No market data loaded. More then Rebuild hooks from data, and load a sales CSV.</div>';return;}
+  var V=valueIt(com,bd,bua,ask);
+  if(!V){out.innerHTML='<div class="hint">No sales found for that community and bed count in the last 12 months.</div>';return;}
+  function row(l,r,sub,cls){return '<div class="vrow2 '+(cls||'')+'"><div class="l2">'+(sub?'<b>'+esc(l)+'</b>'+esc(sub):esc(l))+
+   '</div><div class="r2">'+r+'</div></div>';}
+  var h2='<div class="vhead">Every '+(bd?bd+'BR ':'')+'sale in the last 12 months</div><div class="card">'+
+   V.comps.map(function(t){
+    return row('Unit '+t.u+' · '+new Date(t.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'}),
+     (S.priv?'•••':t.psf.toLocaleString())+'/sqft');}).join('')+
+   (V.n>8?'<div class="hint" style="margin-top:7px">and '+(V.n-8)+' more</div>':'')+
+   row('Median','AED '+(S.priv?'•••':V.med.toLocaleString())+'/sqft','',' big2')+
+   '</div>';
+  if(bua){
+   h2+='<div class="vhead">What it is worth</div><div class="card">'+
+    row('On the most recent sale',pmoney(V.lo),' · '+(S.priv?'•••':V.newest.psf.toLocaleString())+'/sqft')+
+    row('On the 12-month median',pmoney(V.mid),'',' big2')+
+    row('On the best psf achieved',pmoney(V.hi),' · '+(S.priv?'•••':V.top.toLocaleString())+'/sqft')+
+    (ask?row('Asking price implies','AED '+(S.priv?'•••':Math.round(V.implied).toLocaleString())+'/sqft','',
+      V.implied>V.top?' bad2':''):'')+
+    '</div>';
+  }
+  if(ask&&V.mid){
+   var over=V.gap>0;
+   var aboveTop=V.implied>V.top;
+   h2+='<div class="vverdict'+(over?'':' ok2')+'">'+
+    (aboveTop
+     ? 'No '+(bd?bd+'BR ':'')+'in '+esc(com)+' has sold above AED '+V.top.toLocaleString()+
+       ' per sqft in the last year. This asking price needs AED '+Math.round(V.implied).toLocaleString()+
+       ', which is '+Math.round((V.implied-V.top)/V.top*100)+'% above the best ever achieved.'
+     : (over
+       ? 'Asking is '+Math.round(V.gap)+'% above what the evidence supports. That is a conversation, not a dealbreaker, but be ready for it.'
+       : 'Asking is '+Math.abs(Math.round(V.gap))+'% below the evidence. This should move fast, and there may be room.'))+
+    '</div>';
+  }
+  h2+='<div class="hint" style="margin-top:10px">From '+V.n+' verified sales. '+
+   (V.n<5?'That is thin, treat it as a guide not a valuation. ':'')+
+   'Position, condition and view still need your eye.</div>'+
+   '<button class="btnfull" id="vl-copy" style="margin-top:12px">Copy for the owner</button>';
+  out.innerHTML=h2;
+  document.getElementById('vl-copy').onclick=function(){
+   var L=[];
+   L.push((com||'')+(bd?' · '+bd+'BR':''));
+   L.push('');
+   L.push('Comparable sales, last 12 months:');
+   V.comps.slice(0,6).forEach(function(t){
+    L.push('  Unit '+t.u+'  '+new Date(t.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'})+
+     '  AED '+t.psf.toLocaleString()+'/sqft');});
+   L.push('');
+   L.push('Median: AED '+V.med.toLocaleString()+' per sqft');
+   if(bua){
+    L.push('On '+bua.toLocaleString()+' sqft that is '+money(V.mid)+'.');
+    L.push('Range '+money(V.lo)+' to '+money(V.hi)+'.');}
+   if(ask)L.push('Your asking price of '+money(ask)+' implies AED '+Math.round(V.implied).toLocaleString()+' per sqft.');
+   L.push('');
+   L.push('Based on '+V.n+' verified transactions. Mustafa Saleh, Allegiance Real Estate.');
+   var t=L.join('\n');
+   if(navigator.clipboard)navigator.clipboard.writeText(t);
+   var b=document.getElementById('vl-copy'); b.textContent='Copied'; setTimeout(function(){b.textContent='Copy for the owner';},1300);
+  };
+ }
+ ['vl-com','vl-bd','vl-bua','vl-ask'].forEach(function(id){
+  var e=document.getElementById(id); e.oninput=run; e.onchange=run;});
+ run();
+}
 
 /* ================= NOTES ================= */
 /* The things that do not belong to a client, a unit or a date. */
@@ -5136,6 +5266,7 @@ document.getElementById('addproj').onclick=function(){openProj(null);};
 document.getElementById('addkd').onclick=function(){openKd(null);};
 document.getElementById('addcn').onclick=function(){openContact(null);};
 document.getElementById('ntsave').onclick=saveNote;
+document.getElementById('t-val').onclick=function(){openVal(null);};
 document.getElementById('addcamp').onclick=function(){openCamp(null);};
 
 /* the quick-add button hides while you scroll down so it never covers a figure */
