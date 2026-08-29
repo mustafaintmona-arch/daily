@@ -251,6 +251,25 @@ td.idx{text-align:center}
 .warnline{color:#E88;font-size:12px;margin-top:8px}
 @media print{body *{visibility:hidden}#pr,#pr *{visibility:visible}
  #pr{position:absolute;left:0;top:0;width:100%}}
+
+/* ---- bulk fill ---- */
+.bf{width:100%;border-collapse:collapse}
+.bf th{font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);
+ text-align:left;padding:0 10px 8px;font-weight:600}
+.bf td{padding:0 4px 6px 0}
+.bf td:first-child{padding-left:0}
+.bf .who{font-size:14px;color:var(--ink);white-space:nowrap;padding-right:14px}
+.bf .who small{display:block;font-size:11px;color:var(--dim)}
+.bf input{width:100%;background:var(--card2);border:1px solid rgba(255,255,255,.1);
+ border-radius:8px;color:var(--ink);padding:9px 10px;font-size:14px;font-family:inherit}
+.bf input:focus{outline:none;border-color:var(--gold);background:#0d2436}
+.bf input.done{border-color:rgba(76,175,125,.55)}
+.bfbar{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.bfbar .c{font-size:13px;color:var(--dim);flex:1}
+.bfbar .c b{color:var(--gold)}
+.bfsave{background:var(--gold);border:none;color:var(--navy);border-radius:999px;
+ padding:10px 20px;font-size:14px;font-weight:600;font-family:inherit}
+.bfhint{font-size:12px;color:var(--dim);margin-top:12px}
 </style>
 </head>
 <body>
@@ -523,15 +542,15 @@ var BLANK={
 };
 var LIST={deals:function(){return S().deals;},units:function(){return S().units;},
  later:function(){return S().later;},market:function(){return [];},review:function(){return [];},
- call:function(){return S().later;},tools:function(){return [];}};
+ call:function(){return S().later;},tools:function(){return [];},fill:function(){return [];}};
 var SEL={}; var MKT=null;
 try{var mraw=localStorage.getItem('desk-market'); if(mraw)MKT=JSON.parse(mraw);}catch(e){}
 function uniq(a){var o=[],seen={};a.forEach(function(x){if(x&&!seen[x]){seen[x]=1;o.push(x);}});return o;}
 function render(){
  document.getElementById('bar').classList.remove('hide');
- var tabs=[['deals','Clients'],['units','Inventory'],['call','Call list'],['later','Prospects'],['market','Market'],['tools','Tools'],['review','Review']];
+ var tabs=[['deals','Clients'],['units','Inventory'],['call','Call list'],['later','Prospects'],['market','Market'],['fill','Fill in'],['tools','Tools'],['review','Review']];
  document.getElementById('tabs').innerHTML=tabs.map(function(t){
-  return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+(t[0]==='tools'?'':'<i>'+LIST[t[0]]().length+'</i>')+'</b>';}).join('');
+  return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+((t[0]==='tools'||t[0]==='fill')?'':'<i>'+LIST[t[0]]().length+'</i>')+'</b>';}).join('');
  document.querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){
   TAB=b.dataset.t;Q='';F='All';document.getElementById('q').value='';render();};});
  document.getElementById('src').textContent=BK.at?
@@ -547,6 +566,8 @@ function render(){
   document.getElementById('count').innerHTML='';drawCall();return;}
  if(TAB==='tools'){document.getElementById('bar').classList.add('hide');
   document.getElementById('count').innerHTML='';drawTools();return;}
+ if(TAB==='fill'){document.getElementById('bar').classList.add('hide');
+  document.getElementById('count').innerHTML='';drawFill();return;}
  drawFilter();drawTable();
 }
 function drawFilter(){
@@ -1121,6 +1142,83 @@ function deskUnbanked(){
   if(num(d.s)!==4||!dealFee(d))return false;
   return !(S().ledger||[]).some(function(l){
    return String(l.w||'').toLowerCase()===String(d.w||'').toLowerCase();});});
+}
+
+
+/* ================= BULK FILL ================= */
+/* Sixteen numbers on a phone is ten minutes of thumbs. Here it is three minutes of tabbing. */
+function bfRows(){
+ return S().deals.map(function(d,i){return {i:i,d:d};})
+  .filter(function(x){
+   var d=x.d;
+   if(num(d.s)>=4)return false;
+   return !(d.ph||'').trim() || !num(d.lmax) || !num(d.lbd) || !(d.lcom||'').trim();})
+  .sort(function(a,b){return dealFee(b.d)-dealFee(a.d);});
+}
+function drawFill(){
+ var el=document.getElementById('main'); if(!el)return;
+ var L=bfRows();
+ if(!L.length){
+  el.innerHTML='<div class="empty"><p>Nothing missing. Every live client has a number, a budget, beds and areas.</p></div>';
+  return;}
+ var missing=L.reduce(function(a,x){
+  var d=x.d, n=0;
+  if(!(d.ph||'').trim())n++; if(!num(d.lmax))n++; if(!num(d.lbd))n++; if(!(d.lcom||'').trim())n++;
+  return a+n;},0);
+ var blocked=L.filter(function(x){return !(x.d.ph||'').trim();})
+  .reduce(function(a,x){return a+dealFee(x.d);},0);
+ var h='<div class="bfbar"><div class="c"><b>'+L.length+'</b> clients, <b>'+missing+'</b> blanks'+
+  (blocked?' · <b>'+money(blocked)+'</b> of fees you cannot dial':'')+'</div>'+
+  '<button class="bfsave" id="bfsave">Save all</button></div>'+
+  '<table class="bf"><thead><tr><th>Client</th><th>Mobile</th><th>Max budget</th><th>Beds</th><th>Areas they would buy in</th></tr></thead><tbody>'+
+  L.map(function(x){
+   var d=x.d;
+   return '<tr><td class="who">'+esc(d.w||'')+'<small>'+esc(STAGES[num(d.s)]||'')+' · '+money(dealFee(d))+'</small></td>'+
+    '<td><input data-bf="'+x.i+'" data-k="ph" value="'+esc(d.ph||'')+'" placeholder="+971 50 000 0000" class="'+((d.ph||'').trim()?'done':'')+'"></td>'+
+    '<td><input data-bf="'+x.i+'" data-k="lmax" type="number" value="'+(num(d.lmax)||'')+'" placeholder="3000000" class="'+(num(d.lmax)?'done':'')+'"></td>'+
+    '<td><input data-bf="'+x.i+'" data-k="lbd" type="number" value="'+(num(d.lbd)||'')+'" placeholder="3" class="'+(num(d.lbd)?'done':'')+'"></td>'+
+    '<td><input data-bf="'+x.i+'" data-k="lcom" value="'+esc(d.lcom||'')+'" placeholder="The Valley, Dubai South" class="'+((d.lcom||'').trim()?'done':'')+'"></td></tr>';
+  }).join('')+'</tbody></table>'+
+  '<div class="bfhint">Tab moves across, Enter drops to the next client. Filling budget, beds and areas is what makes '+
+  'Who fits and the project matcher work.</div>';
+ el.innerHTML='<div style="padding:18px">'+h+'</div>';
+ var ins=Array.prototype.slice.call(el.querySelectorAll('[data-bf]'));
+ ins.forEach(function(inp,n){
+  inp.oninput=function(){inp.classList.toggle('done',!!inp.value.trim());};
+  inp.onkeydown=function(e){
+   if(e.key!=='Enter')return;
+   e.preventDefault();
+   var next=ins[n+4];        /* same column, next row */
+   if(next){next.focus();next.select&&next.select();}
+   else bfSave();
+  };
+ });
+ document.getElementById('bfsave').onclick=bfSave;
+}
+function bfTidy(v){
+ v=String(v||'').trim(); if(!v)return '';
+ var d=v.replace(/\D/g,'');
+ if(d.length<7)return v;
+ if(v.indexOf('+')===0)return v;
+ if(d.indexOf('00')===0)return '+'+d.slice(2);
+ if(d.indexOf('0')===0)return '+971 '+d.slice(1);
+ if(d.indexOf('971')===0)return '+'+d;
+ return '+'+d;
+}
+function bfSave(){
+ var n=0;
+ document.querySelectorAll('[data-bf]').forEach(function(inp){
+  var d=S().deals[+inp.dataset.bf], k=inp.dataset.k, v=inp.value;
+  if(!d)return;
+  var was=String(d[k]==null?'':d[k]);
+  if(k==='ph')v=bfTidy(v);
+  else if(k==='lmax'||k==='lbd')v=num(v);
+  else v=String(v).trim();
+  if(String(v)!==was){d[k]=v;n++;}
+ });
+ persist();
+ toast(n?(n+' field'+(n===1?'':'s')+' saved'):'Nothing changed');
+ drawFill();
 }
 
 /* ================= DATA REPAIR + SAFE LOAD ================= */
