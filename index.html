@@ -811,6 +811,12 @@ body.lite #qcsheet .inner{background:var(--card)}
 .at .ab span{font-size:11.5px;color:var(--dim)}
 .at .av{font-size:13px;color:var(--gold);flex:none;font-weight:600}
 .at .ar{font-size:19px;color:var(--dim);flex:none;line-height:1}
+
+/* ---- listing paperwork ---- */
+.lic{display:inline-block;font-size:10px;padding:3px 9px;border-radius:999px;margin-left:6px;font-weight:600}
+.lic.ok{background:rgba(76,175,125,.16);color:var(--ok);border:1px solid rgba(76,175,125,.4)}
+.lic.soon{background:rgba(185,151,91,.16);color:var(--gold);border:1px solid rgba(185,151,91,.45)}
+.lic.gone{background:rgba(212,106,94,.16);color:var(--bad);border:1px solid rgba(212,106,94,.5)}
 </style>
 </head>
 <body>
@@ -3898,6 +3904,62 @@ function posLine(u){
 
 
 
+
+/* ================= FORM A AND TRAKHEESI ================= */
+/* You cannot legally advertise without both. Both expire. */
+function licDays(d){ return d?ddiff(TD,d):null; }
+function licState(u){
+ var a=licDays(u.faTo), t=licDays(u.tkTo);
+ var worst=null;
+ [a,t].forEach(function(x){ if(x===null)return; if(worst===null||x<worst)worst=x; });
+ return {fa:a,tk:t,worst:worst};
+}
+function licPill(u){
+ var L=licState(u);
+ if(L.worst===null)return '';
+ if(L.worst<0)return '<span class="lic gone">permit expired</span>';
+ if(L.worst<=21)return '<span class="lic soon">permit '+L.worst+'d</span>';
+ return '<span class="lic ok">permit ok</span>';
+}
+function licLine(u){
+ var bits=[];
+ if(u.tkNo)bits.push('Trakheesi '+u.tkNo);
+ if(u.faTo)bits.push('Form A to '+u.faTo);
+ if(u.tkTo)bits.push('permit to '+u.tkTo);
+ return bits.join(' · ');
+}
+function openLic(i){
+ var u=S.units[i]; if(!u)return;
+ var h='<div class="hint">'+esc(pvNum(u.p||'Unit'))+'</div><div class="pfields">'+
+  '<label>Form A signed to</label><input id="lc-fa" type="date" value="'+esc(u.faTo||'')+'">'+
+  '<div class="two"><div><label>Trakheesi permit number</label><input id="lc-no" value="'+esc(u.tkNo||'')+'" placeholder="7 digits"></div>'+
+  '<div><label>Permit expires</label><input id="lc-tk" type="date" value="'+esc(u.tkTo||'')+'"></div></div>'+
+  '<label>Listed where</label><input id="lc-on" value="'+esc(u.listedOn||'')+'" placeholder="Property Finder, Bayut, Dubizzle">'+
+  '<label>Exclusive?</label><div class="pick" id="lc-ex"></div>'+
+  '</div>'+
+  '<button class="btnfull" id="lc-save" style="margin-top:14px">Save</button>'+
+  '<div class="hint" style="margin-top:9px">Both dates land in your key dates so you get told before they lapse, '+
+  'not after a portal takes the listing down.</div>';
+ openTool('Listing paperwork',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ var EX=u.excl||'';
+ function pick(){
+  document.getElementById('lc-ex').innerHTML=[['','Not set'],['Exclusive','Exclusive'],['Open','Open listing']]
+   .map(function(o){return '<b class="'+(EX===o[0]?'on':'')+'" data-lcx="'+o[0]+'">'+o[1]+'</b>';}).join('');
+  document.querySelectorAll('[data-lcx]').forEach(function(b){b.onclick=function(){EX=b.dataset.lcx;pick();};});
+ }
+ pick();
+ document.getElementById('lc-save').onclick=function(){
+  u.faTo=document.getElementById('lc-fa').value;
+  u.tkNo=document.getElementById('lc-no').value.trim();
+  u.tkTo=document.getElementById('lc-tk').value;
+  u.listedOn=document.getElementById('lc-on').value.trim();
+  u.excl=EX;
+  put(S); document.getElementById('tsheet').style.display='none';
+  drawUnits(); drawKdToday(); drawKdAll();
+ };
+}
+
 /* ================= UNIT STATUS + DAYS ON MARKET ================= */
 var USTAT=['Available','Reserved','Sold','Withdrawn'];
 function uStat(u){return USTAT.indexOf(u.st)>=0?u.st:'Available';}
@@ -4022,8 +4084,9 @@ function drawUnits(){
      '<div class="pr">'+pmoney(u.rent)+'</div><div class="m">per year · '+esc(u.ch||'')+'</div>'
     :'<div class="pr">'+pmoney(u.pr)+'</div>'+(psf(u)?'<div class="m">'+(S.priv?'••••':psf(u).toLocaleString())+' /sqft</div>':'')+
      (up!==null?'<div class="m '+(up>=0?'up':'down')+'">'+(S.priv?'••% on OP':(up>=0?'+':'')+up+'% on OP')+'</div>':''))+'</div></div>'+
-   (u.tag?'<span class="pill">'+esc(u.tag)+'</span>':'')+statPill(u)+domPill(u)+rowPill(u)+driftPill(u)+
+   (u.tag?'<span class="pill">'+esc(u.tag)+'</span>':'')+statPill(u)+domPill(u)+licPill(u)+rowPill(u)+driftPill(u)+
    (posLine(u)?'<div class="m" style="margin-top:6px;color:var(--gold);opacity:.85">'+esc(pvNum(posLine(u)))+'</div>':'')+
+   (licLine(u)?'<div class="m" style="margin-top:3px">'+esc(pvNum(licLine(u)))+(u.excl?' · '+esc(u.excl):'')+'</div>':'')+
    '<div class="d" id="det-'+i+'" style="display:none">'+
    (isR?'<b style="color:var(--ink)">Annual rent:</b> '+pmoney(u.rent)+' · '+esc(u.ch||'')+'<br>':'')+
    (!isR&&u.op?'<b style="color:var(--ink)">Original price:</b> '+pmoney(u.op)+' · uplift '+pmoney(u.pr-u.op)+'<br>':'')+
@@ -4035,6 +4098,7 @@ function drawUnits(){
    '<div class="ubtns"><button class="ub gold" data-offer="'+i+'">'+(isR?'Rental offer':'Sales offer')+'</button>'+
     '<button class="ub" data-fit="'+i+'">Who fits this</button></div>'+
    '<div class="ubtns"><button class="ub" data-pos="'+i+'">Unit position</button>'+
+    '<button class="ub" data-lic="'+i+'">Paperwork</button>'+
     '<button class="ub" data-umore="'+i+'">More &#8943;</button>'+
     '<button class="ub" data-eu="'+i+'">Edit</button></div>'+
    '<div class="ubtns umore hide" id="um-'+i+'"><a class="ub" href="'+mapLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Map</a>'+
@@ -4058,6 +4122,8 @@ function drawUnits(){
   if(confirm('Delete this unit?')){toTrash('unit',S.units[+b.dataset.du]);S.units.splice(+b.dataset.du,1);put(S);drawUnits();}};});
  document.querySelectorAll('[data-pos]').forEach(function(b){b.onclick=function(e){
   e.stopPropagation();openPos(+b.dataset.pos);};});
+ document.querySelectorAll('[data-lic]').forEach(function(b){b.onclick=function(e){
+  e.stopPropagation();openLic(+b.dataset.lic);};});
  document.querySelectorAll('[data-pick]').forEach(function(b){b.onclick=function(e){
   e.stopPropagation();
   var i=+b.dataset.pick;
@@ -4499,6 +4565,11 @@ function keydates(){ S.kd=Array.isArray(S.kd)?S.kd:[]; return S.kd; }
 function kdAll(){
  var out=keydates().map(function(k,i){return {i:i,own:1,d:k.d,t:k.t||'Other',w:k.w||'',n:k.n||''};});
  /* developer payments already on clients count too, no point typing them twice */
+ (S.units||[]).forEach(function(u){
+  if(!uLive(u))return;
+  if(u.faTo)out.push({i:-1,own:0,d:u.faTo,t:'Form A expires',w:u.p||'',n:'you lose the right to market it'});
+  if(u.tkTo)out.push({i:-1,own:0,d:u.tkTo,t:'Trakheesi permit expires',w:u.p||'',
+   n:(u.tkNo?'permit '+u.tkNo+' · ':'')+'portals will pull the listing'});});
  S.deals.forEach(function(d){
   /* a won deal still has instalments to come, that is exactly when it matters */
   if(d.s===LOST||!d.npd)return;
