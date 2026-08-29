@@ -3115,53 +3115,61 @@ function looksLikeMap(rows){
  var hasUnit=h.some(function(k){return /^unit|villa/.test(k);});
  return hasUnit&&hasBeds&&!hasPrice;
 }
+function comOf(txt){
+ /* "Farm Gardens 109 · listing" -> "farm gardens" */
+ var t=String(txt||'').split('·')[0].trim();
+ return t.replace(/\s*\d+\s*$/,'').trim().toLowerCase();
+}
 function rebuildHooks(txns,community){
- if(!txns.length)return {n:0,skip:0,msg:'No usable rows in that file.'};
- var byUnit={};
- txns.forEach(function(t){ if(!byUnit[t.u]||t.d>byUnit[t.u].d)byUnit[t.u]=t; });
- var made=0, skipped=0, noComp=0, noMap=0;
+ if(!txns.length)return {n:0,msg:'No usable rows in that file.'};
+ /* if the file names communities, comps must come from the same one.
+    Farm Gardens and Elora are not comparable and never were. */
+ var named=txns.some(function(t){return t.com;});
+ var UM=S.umap||{};
+ var made=0, skipped=0, noComp=0, noMap=0, wrongCom=0;
  S.later.forEach(function(x){
   if(x.dnc)return;
   var m=String(x.w||'').match(/(\d+)\s*(?:·|$)/);
   var un=m?num(m[1]):0;
   if(!un){skipped++;return;}
-  var UM=S.umap||{};
-  var me=byUnit[un];
-  var beds=0, cl='', bk='';
+  var mine=comOf(x.w);
+  var pool0=named
+   ? txns.filter(function(t){var c=String(t.com||'').toLowerCase();
+      return c&&mine&&(c===mine||c.indexOf(mine)>=0||mine.indexOf(c)>=0);})
+   : txns;
+  if(named&&!pool0.length){wrongCom++;return;}
+  var byUnit={};
+  pool0.forEach(function(t){ if(!byUnit[t.u]||t.d>byUnit[t.u].d)byUnit[t.u]=t; });
+  var me=byUnit[un], beds=0, cl='', bk='';
   if(UM[un]){beds=UM[un].bd;cl=UM[un].cl||'';bk=UM[un].bk||'';}
   if(!beds&&me){beds=me.bd;cl=me.cl;}
   if(!beds){noMap++;return;}
-  var pool=txns.filter(function(t){return t.bd===beds&&t.u!==un;});
+  var pool=pool0.filter(function(t){return t.bd===beds&&t.u!==un;});
   if(!pool.length){noComp++;return;}
   var near=cl?pool.filter(function(t){return t.cl===cl;}):[];
-  var best=(near.length?near:pool).slice().sort(function(a,b){return b.d.localeCompare(a.d);})[0];
-  var top=(near.length?near:pool).slice().sort(function(a,b){return b.pr-a.pr;})[0];
-  var where=(near.length&&best.cl===cl)?'same loop':'nearby';
+  var use=near.length?near:pool;
+  var best=use.slice().sort(function(a,b){return b.d.localeCompare(a.d);})[0];
+  var top=use.slice().sort(function(a,b){return b.pr-a.pr;})[0];
+  var where=near.length?'same loop':'nearby';
   var rank=String(x.n2||'').match(/^#(\d+)\s*(HOT|WARM|COLD)/);
   var tag=rank?('#'+rank[1]+' '+rank[2]+' · '):'';
-  x.n2=tag+'Their unit '+un+': '+beds+'BR'+(bk?', backs onto '+bk:'')+'. Unit '+best.u+' ('+where+', also '+beds+'BR) sold '+
-   monShort(best.d)+' for '+money(best.pr)+
+  x.n2=tag+'Their unit '+un+': '+beds+'BR'+(bk?', backs onto '+bk:'')+'. Unit '+best.u+
+   ' ('+where+', also '+beds+'BR) sold '+monShort(best.d)+' for '+money(best.pr)+
    (best.psf?' at AED '+best.psf.toLocaleString()+'/sqft':'')+
    '. Best '+beds+'BR nearby '+money(top.pr)+' (unit '+top.u+', '+monShort(top.d)+').';
   var bua=(me&&me.bua)?me.bua:0;
-  if(!bua){
-   /* no sale on their own villa, so use the typical BUA for that bed count */
-   var bs=pool.filter(function(t){return t.bua;}).map(function(t){return t.bua;}).sort(function(a,b){return a-b;});
-   if(bs.length)bua=bs[Math.floor(bs.length/2)];
-  }
+  if(!bua){var bs=pool.filter(function(t){return t.bua;}).map(function(t){return t.bua;}).sort(function(a,b){return a-b;});
+   if(bs.length)bua=bs[Math.floor(bs.length/2)];}
   if(bua){
-   var last12=pool.filter(function(t){return ddiff(t.d,TD)<=400&&t.psf;}).map(function(t){return t.psf;}).sort(function(a,b){return a-b;});
-   if(last12.length){
-    var med=last12[Math.floor(last12.length/2)];
-    x.v=Math.round(bua*med/10000)*10000;
-   }
-  }
-  made++;
- });
+   var l12=pool.filter(function(t){return ddiff(t.d,TD)<=400&&t.psf;}).map(function(t){return t.psf;}).sort(function(a,b){return a-b;});
+   if(l12.length)x.v=Math.round(bua*l12[Math.floor(l12.length/2)]/10000)*10000;}
+  made++;});
  put(S);
- return {n:made,skip:skipped,noComp:noComp,noMap:noMap,
+ return {n:made,skip:skipped,noComp:noComp,noMap:noMap,wrongCom:wrongCom,
   msg:made+' hook'+(made===1?'':'s')+' rebuilt from '+txns.length+' transactions'+
+   (named?', matched by community':'')+
    (skipped?', '+skipped+' had no unit number':'')+
+   (wrongCom?', '+wrongCom+' had no sales in their own community':'')+
    (noMap?', '+noMap+' need the unit map loaded first':'')+
    (noComp?', '+noComp+' had no same-bed comp':'')};
 }
