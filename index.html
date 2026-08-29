@@ -817,6 +817,20 @@ body.lite #qcsheet .inner{background:var(--card)}
 .lic.ok{background:rgba(76,175,125,.16);color:var(--ok);border:1px solid rgba(76,175,125,.4)}
 .lic.soon{background:rgba(185,151,91,.16);color:var(--gold);border:1px solid rgba(185,151,91,.45)}
 .lic.gone{background:rgba(212,106,94,.16);color:var(--bad);border:1px solid rgba(212,106,94,.5)}
+
+/* ---- notes ---- */
+.nt{padding:12px 0;border-bottom:1px solid var(--edge)}
+.nt:last-child{border-bottom:0}
+.nt .nh{display:flex;align-items:baseline;gap:9px;margin-bottom:4px}
+.nt .nh span{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);flex:1}
+.nt .nh button{background:none;border:0;color:var(--dim);font-size:15px;padding:0 4px}
+.nt p{margin:0;font-size:14px;line-height:1.5;color:var(--ink);white-space:pre-wrap}
+.nt .tags2{margin-top:6px}
+.nt .tg2{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);
+ color:var(--gold);margin-right:5px}
+#ntbox{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:11px;
+ color:var(--ink);padding:12px;font-size:15px;font-family:inherit;line-height:1.5}
+#ntbox:focus{outline:none;border-color:var(--gold)}
 </style>
 </head>
 <body>
@@ -1008,6 +1022,10 @@ body.lite #qcsheet .inner{background:var(--card)}
     </div></div>
   <div class="sec"><h2>What is killing your deals</h2><div class="card" id="objbox"></div></div>
   <div class="sec"><h2>Storage</h2><div class="card" id="storebox"></div></div>
+  <div class="sec"><h2>Notes <b id="ntcount"></b></h2>
+    <textarea id="ntbox" rows="3" placeholder="What did you hear? Use #hashtags so you can find it later."></textarea>
+    <button class="addbtn" id="ntsave" style="margin-top:8px">Save note</button>
+    <div class="card" style="margin-top:10px" id="ntlist"></div></div>
   <div class="sec"><h2>Contacts <b id="cncount"></b></h2>
     <div class="cnk" id="cnkinds"></div>
     <div class="card" id="cnlist"></div>
@@ -1190,7 +1208,7 @@ function flushPut(){
 const put=d=>{_wp=d; if(_wt)return; _wt=setTimeout(function(){_wt=null;flushPut();},220);};
 window.addEventListener('pagehide',flushPut);
 document.addEventListener('visibilitychange',function(){if(document.hidden)flushPut();});
-let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.cn)S.cn=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
+let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.cn)S.cn=[]; if(!S.nt)S.nt=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
 /* repair anything an older version wrote in the wrong shape */
 function repairData(){
  var fixed=0;
@@ -1428,6 +1446,8 @@ function searchAll(q){
   r.push({k:'Key date',t:x.w||x.t,s:x.t+' · '+x.d,go:'more'});});
  (S.cn||[]).forEach(function(c){if(hit(c.n)||hit(c.org)||hit(c.k)||hit(c.n2))
   r.push({k:'Contact',t:c.n,s:[c.k,c.org].filter(Boolean).join(' · '),go:'more'});});
+ (S.nt||[]).forEach(function(n){if(hit(n.t))
+  r.push({k:'Note',t:String(n.t).slice(0,44),s:n.d,go:'more'});});
  S.later.forEach(function(x){if(!x.dnc&&(hit(x.n)||hit(x.w)||hit(x.n2)||hit(x.ty)))
   r.push({k:'Later',t:x.n,s:x.ty+' · '+lWhen(x),go:'deals',dseg:'Later'});});
  S.diary.forEach(function(e){if(hit(e.n)||hit(e.w))
@@ -4438,6 +4458,47 @@ function drawChk(){
  el.querySelectorAll('[data-chs]').forEach(function(b){b.onclick=function(){openChk(+b.dataset.chs);};});
 }
 
+
+/* ================= NOTES ================= */
+/* The things that do not belong to a client, a unit or a date. */
+function notes(){ S.nt=Array.isArray(S.nt)?S.nt:[]; return S.nt; }
+function noteTags(t){
+ var out=[];
+ String(t||'').replace(/#([A-Za-z0-9_\-]{2,})/g,function(_,w){out.push(w);return _;});
+ return out;
+}
+function drawNotes(){
+ var el=document.getElementById('ntlist'); if(!el)return;
+ var N=notes();
+ document.getElementById('ntcount').textContent=N.length?N.length:'';
+ if(!N.length){
+  el.innerHTML='<div class="hint">Nothing yet. Anything a developer tells you, a rumour worth checking, '+
+   'a thought in the car. Use #hashtags and search finds them.</div>';
+  return;}
+ el.innerHTML=N.slice().sort(function(a,b){return String(b.d).localeCompare(String(a.d));})
+  .map(function(n){
+   var i=N.indexOf(n);
+   var tags=noteTags(n.t);
+   return '<div class="nt"><div class="nh"><span>'+
+    new Date(n.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+'</span>'+
+    '<button data-ntx="'+i+'" title="Delete">&times;</button></div>'+
+    '<p>'+esc(pvNum(n.t))+'</p>'+
+    (tags.length?'<div class="tags2">'+tags.map(function(t){
+      return '<span class="tg2">#'+esc(t)+'</span>';}).join('')+'</div>':'')+
+    '</div>';}).join('');
+ el.querySelectorAll('[data-ntx]').forEach(function(b){b.onclick=function(){
+  if(!confirm('Delete this note?'))return;
+  notes().splice(+b.dataset.ntx,1); put(S); drawNotes();};});
+}
+function saveNote(){
+ var box=document.getElementById('ntbox');
+ var t=String(box.value||'').trim();
+ if(!t)return;
+ notes().unshift({d:TD,t:t});
+ put(S); box.value=''; drawNotes();
+ if(navigator.vibrate)navigator.vibrate(6);
+}
+
 /* ================= CONTACTS ================= */
 /* Not buyers, not owners. The people you need to get a deal over the line. */
 var CNKINDS=['Developer','Mortgage','Conveyancing','Trustee','Photographer','Handyman','Agent','Other'];
@@ -5074,6 +5135,7 @@ document.getElementById('t-hooks').onclick=openHookTool;
 document.getElementById('addproj').onclick=function(){openProj(null);};
 document.getElementById('addkd').onclick=function(){openKd(null);};
 document.getElementById('addcn').onclick=function(){openContact(null);};
+document.getElementById('ntsave').onclick=saveNote;
 document.getElementById('addcamp').onclick=function(){openCamp(null);};
 
 /* the quick-add button hides while you scroll down so it never covers a figure */
@@ -5187,7 +5249,7 @@ function drawStore(){
   el.innerHTML+='<div class="row"><div><div class="lab">Total on device</div><div class="tgt">Including images</div></div><div class="val">'+mb+' MB / '+q+' MB</div></div>';});}
 }
 function drawMore(){
- drawRefs();drawKdAll();drawContacts();drawStore();drawObj();
+ drawRefs();drawKdAll();drawContacts();drawNotes();drawStore();drawObj();
  var due=[];S.deals.forEach(function(d,i){if(d.s<4&&d.nd&&d.nd<=TD)due.push(d);});
  due.sort(function(a,b){return dealFee(b)-dealFee(a);});
  document.getElementById('duelist').innerHTML=due.length?due.map(function(d){
@@ -5697,7 +5759,7 @@ function doRestore(o,st){
    Promise.all(ks.map(function(k){return idbSet(k,imgs[k]).catch(function(){});}))
     .then(function(){
      S=D; if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[];
-     if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.cn)S.cn=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
+     if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.cn)S.cn=[]; if(!S.nt)S.nt=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
      repairData();
      try{
       put(S);flushPut();
