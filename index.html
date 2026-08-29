@@ -795,6 +795,19 @@ body.lite #qcsheet .inner{background:var(--card)}
 .ckhead{display:flex;align-items:baseline;gap:9px;margin-bottom:4px}
 .ckhead b{font-size:13px;color:var(--ink)}
 .ckhead span{font-size:11.5px;color:var(--dim);margin-left:auto}
+
+/* ---- the one strip that replaces twelve cards ---- */
+.at{display:flex;gap:11px;align-items:center;padding:12px 0;border-bottom:1px solid var(--edge)}
+.at:last-child{border-bottom:0}
+.at .dot3{width:8px;height:8px;border-radius:50%;flex:none;background:var(--dim)}
+.at.red .dot3{background:var(--bad)}
+.at.gold .dot3{background:var(--gold)}
+.at.good .dot3{background:var(--ok)}
+.at .ab{flex:1;min-width:0}
+.at .ab b{display:block;font-size:14px;color:var(--ink);font-weight:600}
+.at .ab span{font-size:11.5px;color:var(--dim)}
+.at .av{font-size:13px;color:var(--gold);flex:none;font-weight:600}
+.at .ar{font-size:19px;color:var(--dim);flex:none;line-height:1}
 </style>
 </head>
 <body>
@@ -821,15 +834,16 @@ body.lite #qcsheet .inner{background:var(--card)}
     <div class="meta"><span id="daysleft"></span><span id="need"></span></div>
     <div class="legend"><span class="l1">Banked</span><span class="l2">Likely</span><span class="l3">Best case</span></div>
   </div>
-  <div class="sec hide" id="quietsec"><h2>Gone quiet <b id="quietn"></b></h2>
-    <div class="card" id="quiet"></div>
-    <div class="hint" style="margin-top:8px">Nothing logged for two weeks or more. The fee is what is at risk, not what is lost.</div></div>
   <div class="sec"><h2>When the money lands</h2><div class="card" id="cash"></div>
     <div class="hint" style="margin-top:8px">Commission is dated from the stage a deal is at, not from when you hope it closes. Off-plan resales take longest.</div></div>
+
+  <div class="sec hide" id="attsec"><h2>Needs you <b id="attn"></b></h2>
+    <div class="card" id="att"></div></div>
+  <div id="tdetail" class="hide">
   <div class="sec hide" id="nophone" style="padding-top:0"></div>
-  <div class="sec hide" id="dupsec"><h2>Same number, several records <b id="dupn"></b></h2>
-    <div class="card" id="dup"></div>
-    <div class="hint" style="margin-top:8px">One message covering everything they own beats three separate ones. The call list handles them together.</div></div>
+  <div class="sec hide" id="hhsec"><h2>Same household <b id="hhn"></b></h2>
+    <div class="card" id="hh"></div>
+    <div class="hint" style="margin-top:8px">One wallet buys once. Only the strongest option counts towards your pipeline.</div></div>
   <div class="sec hide" id="chksec"><h2>Deals mid transfer <b id="chkn"></b></h2>
     <div class="card" id="chklist"></div>
     <div class="hint" style="margin-top:8px">Agreed but not transferred. This is where deals stall, usually on the NOC.</div></div>
@@ -848,12 +862,16 @@ body.lite #qcsheet .inner{background:var(--card)}
   <div class="sec hide" id="stucksec"><h2>Sitting too long <b id="stuckn"></b></h2>
     <div class="card" id="stuck"></div>
     <div class="hint" style="margin-top:8px">At this stage far longer than your own average. Usually means an unanswered objection.</div></div>
-  <div class="sec hide" id="hhsec"><h2>Same household <b id="hhn"></b></h2>
-    <div class="card" id="hh"></div>
-    <div class="hint" style="margin-top:8px">One wallet buys once. Only the strongest option counts towards your pipeline.</div></div>
+  <div class="sec hide" id="dupsec"><h2>Same number, several records <b id="dupn"></b></h2>
+    <div class="card" id="dup"></div>
+    <div class="hint" style="margin-top:8px">One message covering everything they own beats three separate ones. The call list handles them together.</div></div>
+  <div class="sec hide" id="quietsec"><h2>Gone quiet <b id="quietn"></b></h2>
+    <div class="card" id="quiet"></div>
+    <div class="hint" style="margin-top:8px">Nothing logged for two weeks or more. The fee is what is at risk, not what is lost.</div></div>
   <div class="sec hide" id="unbsec"><h2>Won but not banked <b id="unbn"></b></h2>
     <div class="card" id="unb"></div>
     <div class="hint" style="margin-top:8px">Your target only counts commission you have logged. Until you log these, Banked reads zero.</div></div>
+  </div>
   <div class="morewrap"><button class="moretog" id="moretog">Show the full list of money moves</button></div>
   <div class="sec hide" id="movesec"><h2>Today's money moves <b id="mmn"></b></h2>
     <div id="moves"></div>
@@ -1459,7 +1477,7 @@ function drawEye(){var b=document.getElementById('eye');
  document.getElementById('eyesvg').innerHTML=S.priv?EYE_SHUT:EYE_OPEN;
  document.getElementById('eyet').textContent=S.priv?'Hidden':'Private';}
 document.getElementById('eye').onclick=function(){
- S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawChk();drawEarn();invalidate();};
+ S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawChk();drawAtt();drawEarn();invalidate();};
 
 
 
@@ -4131,6 +4149,88 @@ function loadImgKey(v){
 
 
 
+
+
+/* ================= NEEDS YOU ================= */
+/* One line per thing. Tap it to open just that, instead of scrolling past twelve cards. */
+function attItems(){
+ var out=[];
+ function add(id,label,count,sub,fee,tone){
+  if(!count)return;
+  out.push({id:id,label:label,count:count,sub:sub||'',fee:fee||0,tone:tone||''});}
+ var np=noPhone();
+ add('nophone','Clients with no number',np.length,'you cannot call them',
+  np.reduce(function(a,x){return a+dealFee(x.d);},0),'red');
+ var C=commitments();
+ var late=C.mine.filter(function(x){return x.age>3;}).length;
+ add('promsec','You promised',C.mine.length,late?late+' past 3 days':'things you said you would do',0,late?'red':'gold');
+ add('waitsec','Waiting on them',C.theirs.length,'ball in their court',0,'');
+ var ch=chkStalled();
+ add('chksec','Deals mid transfer',ch.length,ch.length?'next: '+(ch[0].next?ch[0].next[1]:''):'',
+  ch.reduce(function(a,x){return a+x.fee;},0),'gold');
+ var kd=kdDue(90);
+ var urgent=kd.filter(function(k){return kdDays(k)<=30;}).length;
+ add('kdsec','Dates that cost money',kd.length,urgent?urgent+' inside a month':'next 90 days',0,urgent?'red':'gold');
+ var q=goneQuiet();
+ add('quietsec','Gone quiet',q.length,'nothing logged for 2 weeks',
+  q.reduce(function(a,x){return a+x.fee;},0),'red');
+ var st=stuck();
+ add('stucksec','Sitting too long',st.length,'far past your own average',
+  st.reduce(function(a,x){return a+x.fee;},0),'gold');
+ var ub=unbanked();
+ add('unbsec','Won but not banked',ub.length,'target reads low until you log it',
+  ub.reduce(function(a,x){return a+dealFee(x.d);},0),'good');
+ var hh=Object.keys(households()).filter(function(k){return households()[k].length>1;}).length;
+ add('hhsec','Same household',hh,'counted once, not twice',0,'');
+ var dz=dupGroups();
+ add('dupsec','One person, several records',dz.length,'do not message them twice',0,'');
+ var pr=evOf(TD).filter(function(e){return !e.auto;});
+ add('prepsec','Before you go',pr.length,'brief yourself first',0,'gold');
+ out.sort(function(a,b){
+  var w={red:0,gold:1,good:2,'':3};
+  return (w[a.tone]-w[b.tone]) || (b.fee-a.fee);});
+ return out;
+}
+var ATTOPEN='';
+function drawAtt(){
+ var sec=document.getElementById('attsec'), el=document.getElementById('att');
+ if(!sec)return;
+ var L=attItems();
+ var det=document.getElementById('tdetail');
+ if(!L.length){
+  sec.classList.add('hide'); el.innerHTML='';
+  if(det)det.classList.add('hide');
+  return;}
+ sec.classList.remove('hide');
+ var red=L.filter(function(x){return x.tone==='red';}).length;
+ document.getElementById('attn').textContent=L.length+(red?' · '+red+' urgent':'');
+ el.innerHTML=L.map(function(x){
+  return '<div class="at '+x.tone+'" data-att="'+x.id+'">'+
+   '<div class="dot3"></div>'+
+   '<div class="ab"><b>'+esc(x.label)+' ('+x.count+')</b>'+
+    (x.sub?'<span>'+esc(x.sub)+'</span>':'')+'</div>'+
+   (x.fee?'<div class="av">'+pmoney(x.fee)+'</div>':'')+
+   '<div class="ar">'+(ATTOPEN===x.id?'&minus;':'+')+'</div></div>';}).join('');
+ el.querySelectorAll('[data-att]').forEach(function(r){r.onclick=function(){
+  var id=r.dataset.att;
+  ATTOPEN=(ATTOPEN===id)?'':id;
+  /* show only the one they asked for */
+  ['nophone','hhsec','chksec','kdsec','prepsec','promsec','waitsec','stucksec','dupsec','quietsec','unbsec']
+   .forEach(function(sid){
+    var e=document.getElementById(sid); if(!e)return;
+    e.classList.toggle('hide', sid!==ATTOPEN);});
+  det.classList.toggle('hide', !ATTOPEN);
+  drawAtt();
+  if(ATTOPEN){var t=document.getElementById(ATTOPEN);
+   if(t&&t.scrollIntoView)setTimeout(function(){t.scrollIntoView({behavior:'smooth',block:'start'});},60);}
+  if(navigator.vibrate)navigator.vibrate(5);};});
+ /* keep whatever is open, open */
+ ['nophone','hhsec','chksec','kdsec','prepsec','promsec','waitsec','stucksec','dupsec','quietsec','unbsec']
+  .forEach(function(sid){
+   var e=document.getElementById(sid); if(!e)return;
+   e.classList.toggle('hide', sid!==ATTOPEN);});
+ if(det)det.classList.toggle('hide', !ATTOPEN);
+}
 
 /* ================= TRANSACTION CHECKLIST ================= */
 /* Everything between the handshake and the money. Missing one step costs weeks. */
