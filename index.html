@@ -765,6 +765,19 @@ body.lite #qcsheet .inner{background:var(--card)}
 .kdt b{border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-size:12.5px;
  color:var(--dim);font-weight:500}
 .kdt b.on{border-color:var(--gold);color:var(--gold)}
+
+/* ---- contacts ---- */
+.cn{display:flex;gap:11px;align-items:center;padding:11px 0;border-bottom:1px solid var(--edge)}
+.cn:last-child{border-bottom:0}
+.cn .cb2{flex:1;min-width:0}
+.cn .cb2 b{display:block;font-size:14.5px;color:var(--ink)}
+.cn .cb2 span{font-size:11.5px;color:var(--dim)}
+.cn a,.cn button{background:transparent;border:1px solid var(--line);color:var(--ink);
+ border-radius:999px;padding:8px 13px;font-size:12.5px;font-family:inherit;text-decoration:none;flex:none}
+.cnk{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;margin-bottom:10px}
+.cnk b{flex:none;border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:12.5px;
+ color:var(--dim);font-weight:500;white-space:nowrap}
+.cnk b.on{border-color:var(--gold);color:var(--gold)}
 </style>
 </head>
 <body>
@@ -948,6 +961,11 @@ body.lite #qcsheet .inner{background:var(--card)}
     </div></div>
   <div class="sec"><h2>What is killing your deals</h2><div class="card" id="objbox"></div></div>
   <div class="sec"><h2>Storage</h2><div class="card" id="storebox"></div></div>
+  <div class="sec"><h2>Contacts <b id="cncount"></b></h2>
+    <div class="cnk" id="cnkinds"></div>
+    <div class="card" id="cnlist"></div>
+    <button class="addbtn" id="addcn">+ Add a contact</button>
+    <div class="hint" style="margin-top:9px">Everyone who is not a buyer or an owner but decides whether your deal closes on time.</div></div>
   <div class="sec"><h2>All key dates</h2>
     <div class="card" id="kdfull"></div>
     <button class="addbtn" id="addkd">+ Add a key date</button></div>
@@ -1125,7 +1143,7 @@ function flushPut(){
 const put=d=>{_wp=d; if(_wt)return; _wt=setTimeout(function(){_wt=null;flushPut();},220);};
 window.addEventListener('pagehide',flushPut);
 document.addEventListener('visibilitychange',function(){if(document.hidden)flushPut();});
-let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
+let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.cn)S.cn=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
 /* repair anything an older version wrote in the wrong shape */
 function repairData(){
  var fixed=0;
@@ -1361,6 +1379,8 @@ function searchAll(q){
   r.push({k:'Campaign',t:c.n,s:num(c.sent)+' sent · '+c.d,go:'stock',seg:'camp'});});
  (S.kd||[]).forEach(function(x){if(hit(x.w)||hit(x.t)||hit(x.n))
   r.push({k:'Key date',t:x.w||x.t,s:x.t+' · '+x.d,go:'more'});});
+ (S.cn||[]).forEach(function(c){if(hit(c.n)||hit(c.org)||hit(c.k)||hit(c.n2))
+  r.push({k:'Contact',t:c.n,s:[c.k,c.org].filter(Boolean).join(' · '),go:'more'});});
  S.later.forEach(function(x){if(!x.dnc&&(hit(x.n)||hit(x.w)||hit(x.n2)||hit(x.ty)))
   r.push({k:'Later',t:x.n,s:x.ty+' · '+lWhen(x),go:'deals',dseg:'Later'});});
  S.diary.forEach(function(e){if(hit(e.n)||hit(e.w))
@@ -4088,6 +4108,79 @@ function loadImgKey(v){
 
 
 
+
+/* ================= CONTACTS ================= */
+/* Not buyers, not owners. The people you need to get a deal over the line. */
+var CNKINDS=['Developer','Mortgage','Conveyancing','Trustee','Photographer','Handyman','Agent','Other'];
+var CNFILT='All';
+function contacts(){ S.cn=Array.isArray(S.cn)?S.cn:[]; return S.cn; }
+function cnPass(c){
+ if(CNFILT==='All')return true;
+ return (c.k||'Other')===CNFILT;
+}
+function drawContacts(){
+ var el=document.getElementById('cnlist'); if(!el)return;
+ var C=contacts();
+ document.getElementById('cncount').textContent=C.length?C.length:'';
+ var kinds=['All'].concat(CNKINDS.filter(function(k){return C.some(function(c){return (c.k||'Other')===k;});}));
+ document.getElementById('cnkinds').innerHTML=kinds.map(function(k){
+  return '<b class="'+(CNFILT===k?'on':'')+'" data-cnk="'+esc(k)+'">'+esc(k)+'</b>';}).join('');
+ document.querySelectorAll('[data-cnk]').forEach(function(b){b.onclick=function(){
+  CNFILT=b.dataset.cnk; drawContacts();};});
+ var L=C.map(function(c,i){return {c:c,i:i};}).filter(function(x){return cnPass(x.c);});
+ L.sort(function(a,b){return String(a.c.n||'').localeCompare(String(b.c.n||''));});
+ if(!L.length){
+  el.innerHTML='<div class="hint">Nobody yet. Add the people you always end up hunting for in WhatsApp: '+
+   'your Emaar contact, the mortgage broker, the trustee office.</div>';
+  return;}
+ el.innerHTML=L.map(function(x){
+  var c=x.c, ph=(c.ph||'').replace(/[^\d+]/g,'');
+  return '<div class="cn"><div class="cb2"><b>'+esc(pvName(c.n||''))+'</b>'+
+   '<span>'+esc([c.k,c.org,c.n2].filter(Boolean).join(' · '))+'</span></div>'+
+   (ph&&!S.priv?'<a href="tel:'+ph+'">Call</a>'+
+     '<a href="https://wa.me/'+ph.replace(/\D/g,'')+'" target="_blank">WA</a>':'')+
+   '<button data-cned="'+x.i+'">Edit</button></div>';}).join('');
+ el.querySelectorAll('[data-cned]').forEach(function(b){b.onclick=function(){openContact(+b.dataset.cned);};});
+}
+var CNK='Developer';
+function openContact(i){
+ var c=(i===null)?{n:'',ph:'',k:'Developer',org:'',n2:''}:contacts()[i];
+ CNK=c.k||'Developer';
+ var h='<div class="pfields">'+
+  '<label>Name</label><input id="cn-n" value="'+esc(c.n||'')+'" placeholder="Who they are">'+
+  '<label>What they do</label><div class="cnk" id="cn-k"></div>'+
+  '<div class="two"><div><label>Mobile</label><input id="cn-ph" type="tel" value="'+esc(c.ph||'')+'"></div>'+
+  '<div><label>Company</label><input id="cn-org" value="'+esc(c.org||'')+'" placeholder="Emaar"></div></div>'+
+  '<label>What they are good for</label><input id="cn-n2" value="'+esc(c.n2||'')+'" placeholder="Handles promotions and rebates, slow on Fridays">'+
+  '</div>'+
+  '<button class="btnfull" id="cn-save" style="margin-top:14px">Save</button>'+
+  (i===null?'':'<button class="addbtn" id="cn-del" style="margin-top:8px;border-color:rgba(212,106,94,.5);color:#D46A5E">Delete</button>');
+ openTool(i===null?'Add a contact':'Edit contact',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ function pick(){
+  document.getElementById('cn-k').innerHTML=CNKINDS.map(function(o){
+   return '<b class="'+(CNK===o?'on':'')+'" data-cnp="'+o+'">'+o+'</b>';}).join('');
+  document.querySelectorAll('[data-cnp]').forEach(function(b){b.onclick=function(){CNK=b.dataset.cnp;pick();};});
+ }
+ pick();
+ document.getElementById('cn-save').onclick=function(){
+  var nm=String(document.getElementById('cn-n').value||'').trim();
+  if(!nm){alert('Give them a name.');return;}
+  var o=(i===null)?{}:contacts()[i];
+  o.n=nm; o.k=CNK;
+  o.ph=tidyPhone(document.getElementById('cn-ph').value);
+  o.org=document.getElementById('cn-org').value.trim();
+  o.n2=document.getElementById('cn-n2').value.trim();
+  if(i===null)contacts().push(o);
+  put(S); document.getElementById('tsheet').style.display='none'; drawContacts();
+ };
+ var d=document.getElementById('cn-del');
+ if(d)d.onclick=function(){
+  if(!confirm('Delete '+(c.n||'this contact')+'?'))return;
+  contacts().splice(i,1); put(S);
+  document.getElementById('tsheet').style.display='none'; drawContacts();};
+}
+
 /* ================= DOCUMENTS ================= */
 /* A photo of the contract, the cheque, the passport page. Kept with the record. */
 function docsOf(o){return Array.isArray(o.docs)?o.docs:[];}
@@ -4646,6 +4739,7 @@ document.getElementById('t-undo').onclick=openSnapshots;
 document.getElementById('t-hooks').onclick=openHookTool;
 document.getElementById('addproj').onclick=function(){openProj(null);};
 document.getElementById('addkd').onclick=function(){openKd(null);};
+document.getElementById('addcn').onclick=function(){openContact(null);};
 document.getElementById('addcamp').onclick=function(){openCamp(null);};
 document.getElementById('qcbtn').onclick=openQc;
 document.getElementById('qc-done').onclick=closeQc;
@@ -4744,7 +4838,7 @@ function drawStore(){
   el.innerHTML+='<div class="row"><div><div class="lab">Total on device</div><div class="tgt">Including images</div></div><div class="val">'+mb+' MB / '+q+' MB</div></div>';});}
 }
 function drawMore(){
- drawRefs();drawKdAll();drawStore();drawObj();
+ drawRefs();drawKdAll();drawContacts();drawStore();drawObj();
  var due=[];S.deals.forEach(function(d,i){if(d.s<4&&d.nd&&d.nd<=TD)due.push(d);});
  due.sort(function(a,b){return dealFee(b)-dealFee(a);});
  document.getElementById('duelist').innerHTML=due.length?due.map(function(d){
@@ -5253,7 +5347,7 @@ function doRestore(o,st){
    Promise.all(ks.map(function(k){return idbSet(k,imgs[k]).catch(function(){});}))
     .then(function(){
      S=D; if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[];
-     if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
+     if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.cn)S.cn=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
      repairData();
      try{
       put(S);flushPut();
