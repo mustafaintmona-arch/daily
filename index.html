@@ -748,6 +748,23 @@ body.lite #qcsheet .inner{background:var(--card)}
 .cmp .cb{display:flex;gap:8px;margin-top:11px}
 .cmp .cb button{background:transparent;border:1px solid var(--line);color:var(--dim);
  border-radius:999px;padding:8px 13px;font-size:12px;font-family:inherit}
+
+/* ---- key dates ---- */
+.kd{display:flex;gap:11px;align-items:center;padding:11px 0;border-bottom:1px solid var(--edge)}
+.kd:last-child{border-bottom:0}
+.kd .kbar{width:3px;align-self:stretch;border-radius:3px;background:var(--line);flex:none}
+.kd.soon .kbar{background:var(--gold)}
+.kd.now .kbar{background:var(--bad)}
+.kd .kb2{flex:1;min-width:0}
+.kd .kb2 b{display:block;font-size:14px;color:var(--ink)}
+.kd .kb2 span{font-size:11.5px;color:var(--dim)}
+.kd .kw{font-size:12px;flex:none;text-align:right;color:var(--dim)}
+.kd.soon .kw{color:var(--gold)}
+.kd.now .kw{color:var(--bad);font-weight:600}
+.kdt{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 12px}
+.kdt b{border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-size:12.5px;
+ color:var(--dim);font-weight:500}
+.kdt b.on{border-color:var(--gold);color:var(--gold)}
 </style>
 </head>
 <body>
@@ -783,6 +800,9 @@ body.lite #qcsheet .inner{background:var(--card)}
   <div class="sec hide" id="dupsec"><h2>Same number, several records <b id="dupn"></b></h2>
     <div class="card" id="dup"></div>
     <div class="hint" style="margin-top:8px">One message covering everything they own beats three separate ones. The call list handles them together.</div></div>
+  <div class="sec hide" id="kdsec"><h2>Dates that cost money <b id="kdn"></b></h2>
+    <div class="card" id="kdlist"></div>
+    <div class="hint" style="margin-top:8px">Anything inside 90 days. Red is this month or already gone.</div></div>
   <div class="sec hide" id="prepsec"><h2>Before you go <b id="prepn"></b></h2>
     <div class="card" id="prep"></div>
     <div class="hint" style="margin-top:8px">Everything you know about them, what to open with, what fits, and what you still have not asked.</div></div>
@@ -928,6 +948,9 @@ body.lite #qcsheet .inner{background:var(--card)}
     </div></div>
   <div class="sec"><h2>What is killing your deals</h2><div class="card" id="objbox"></div></div>
   <div class="sec"><h2>Storage</h2><div class="card" id="storebox"></div></div>
+  <div class="sec"><h2>All key dates</h2>
+    <div class="card" id="kdfull"></div>
+    <button class="addbtn" id="addkd">+ Add a key date</button></div>
   <div class="sec"><h2>Where business comes from</h2><div class="card" id="reflist"></div></div>
   <div class="sec"><h2>Rules</h2><div class="card"><div class="hint">
     One wallet: Ashish and Ashwini are the same money. Pick one deal, drop the other.<br><br>
@@ -1100,7 +1123,7 @@ function flushPut(){
 const put=d=>{_wp=d; if(_wt)return; _wt=setTimeout(function(){_wt=null;flushPut();},220);};
 window.addEventListener('pagehide',flushPut);
 document.addEventListener('visibilitychange',function(){if(document.hidden)flushPut();});
-let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
+let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
 /* repair anything an older version wrote in the wrong shape */
 function repairData(){
  var fixed=0;
@@ -1390,7 +1413,7 @@ function drawEye(){var b=document.getElementById('eye');
  document.getElementById('eyesvg').innerHTML=S.priv?EYE_SHUT:EYE_OPEN;
  document.getElementById('eyet').textContent=S.priv?'Hidden':'Private';}
 document.getElementById('eye').onclick=function(){
- S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawEarn();invalidate();};
+ S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawEarn();invalidate();};
 
 
 
@@ -1554,7 +1577,7 @@ function openTrash(){
   if(t.k==='unit')S.units.push(t.o);
   if(t.k==='later')S.later.push(t.o);
   if(t.k==='op')S.op.push(t.o);
-  put(S);invalidate();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawDealSeg();
+  put(S);invalidate();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawDealSeg();
   TS.style.display='none';alert('Restored.');};});
 }
 
@@ -2136,7 +2159,7 @@ function laterOutcome(i,k){
   S.deals.push({ty:'Resale',w:x.n,ph:x.ph||'',u:x.w||'',v:num(x.v)||0,r:2,s:1,
    na:'Send the valuation',nd:TD,src:'Prospecting call',ref:'',n:x.n2||'',ch:'1 cheque',rent:0});
   S.later.splice(i,1);
-  put(S);drawLater();drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawDealSeg();
+  put(S);drawLater();drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawDealSeg();
   alert('Moved into your pipeline');
   return;
  }
@@ -2647,7 +2670,7 @@ function drawLedger(){
    '<button class="x" data-lgx="'+i+'" style="background:none;border:0;color:var(--dim);font-size:16px">×</button></div></div>';}).join('')+
   (L.length>12?'<div class="hint" style="padding-top:9px">Showing the last 12 of '+L.length+'.</div>':'');
  document.querySelectorAll('[data-lgx]').forEach(function(b){b.onclick=function(){
-  if(confirm('Remove this entry?')){S.ledger.splice(+b.dataset.lgx,1);put(S);drawEarn();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();}};});
+  if(confirm('Remove this entry?')){S.ledger.splice(+b.dataset.lgx,1);put(S);drawEarn();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();}};});
 }
 document.getElementById('logcomm').onclick=function(){logComm();};
 
@@ -2706,7 +2729,7 @@ function logComm(){
   if(!a){alert('How much?');return;}
   S.ledger.push({amt:a,d:document.getElementById('c-d').value||TD,
    w:document.getElementById('c-w').value.trim(),n:document.getElementById('c-n').value.trim()});
-  put(S);drawEarn();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawMap();TS.style.display='none';};
+  put(S);drawEarn();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMap();TS.style.display='none';};
 }
 function drawEarn(){
  drawLedger();
@@ -3472,19 +3495,19 @@ function drawDeals(){
   document.getElementById('pc-'+b.dataset.mx).classList.toggle('open');};});
  document.querySelectorAll('[data-sz]').forEach(function(b){b.onclick=function(){
   var d=S.deals[+b.dataset.sz], n=new Date(); n.setDate(n.getDate()+3);
-  d.nd=iso(n); put(S); drawDeals(); drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes(); drawNav(); drawMoves();
+  d.nd=iso(n); put(S); drawDeals(); drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday(); drawNav(); drawMoves();
   if(navigator.vibrate)navigator.vibrate(8);};});
  document.querySelectorAll('[data-adv]').forEach(function(b){b.onclick=function(){
   var d=S.deals[+b.dataset.adv]; if(d.s>=4)return;
   var ns=d.s+1;
   if(ns<4&&CADENCE[ns]!==undefined)d.nd=autoDate(CADENCE[ns]);
   if(ns===4){d.nd='';}
-  d.s=ns;d.sAt=TD;put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawMore();drawNav();drawMoves();drawMap();
+  d.s=ns;d.sAt=TD;put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();drawNav();drawMoves();drawMap();
   if(navigator.vibrate)navigator.vibrate(12);
   if(ns===4)setTimeout(function(){if(confirm('Nice one. Log the commission now?'))logComm();},120);};});
  document.querySelectorAll('[data-bk]').forEach(function(b){b.onclick=function(){
   var d=S.deals[+b.dataset.bk]; if(d.s<=0)return; d.s=(d.s===LOST?2:d.s-1);
-  put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawMore();};});
+  put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();};});
  document.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(){openSheet(+b.dataset.ed);};});
  document.querySelectorAll('[data-tp]').forEach(function(b){b.onclick=function(){pickTemplate(+b.dataset.tp);};});
 }
@@ -3542,7 +3565,7 @@ function openSheet(i){
 f('v').oninput=calcFee;f('r').oninput=calcFee;f('rent').oninput=calcFee;f('ty').onchange=toggleRent;
 document.getElementById('adddeal').onclick=function(){openSheet(null);};
 document.getElementById('sc').onclick=function(){document.getElementById('sheet').style.display='none';};
-document.getElementById('sdel').onclick=function(){if(EDIT!==null&&confirm('Delete this deal?')){toTrash('deal',S.deals[EDIT]);S.deals.splice(EDIT,1);put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawMore();}};
+document.getElementById('sdel').onclick=function(){if(EDIT!==null&&confirm('Delete this deal?')){toTrash('deal',S.deals[EDIT]);S.deals.splice(EDIT,1);put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();}};
 document.getElementById('sv').onclick=function(){
  var w=f('w').value.trim(); if(!w){alert('Client name is needed');return;}
  var o={w:w,ph:f('ph').value.trim(),u:f('u').value.trim(),v:num(f('v').value),r:num(f('r').value)||2,
@@ -3553,7 +3576,7 @@ document.getElementById('sv').onclick=function(){
   lost:(PICK===LOST?f('lost').value:''),
   hist:(EDIT!==null&&S.deals[EDIT].hist)?S.deals[EDIT].hist:[]};
  if(EDIT===null)S.deals.push(o);else S.deals[EDIT]=o;
- put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawMore();
+ put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();
 };
 
 function psf(u){return u.bua&&u.pr?Math.round(u.pr/u.bua):0;}
@@ -4034,6 +4057,95 @@ function loadImgKey(v){
 
 
 
+
+/* ================= KEY DATES ================= */
+/* Anything with a date and a consequence. You lost a renewal once by finding out late. */
+var KDTYPES=['Tenancy ends','Developer payment','Licence','Emirates ID','Passport','Visa','Handover','Other'];
+function keydates(){ S.kd=Array.isArray(S.kd)?S.kd:[]; return S.kd; }
+function kdAll(){
+ var out=keydates().map(function(k,i){return {i:i,own:1,d:k.d,t:k.t||'Other',w:k.w||'',n:k.n||''};});
+ /* developer payments already on clients count too, no point typing them twice */
+ S.deals.forEach(function(d){
+  /* a won deal still has instalments to come, that is exactly when it matters */
+  if(d.s===LOST||!d.npd)return;
+  out.push({i:-1,own:0,d:d.npd,t:'Developer payment',
+   w:(d.w||'')+(d.u?' · '+d.u:''),n:num(d.npa)?money(d.npa)+' due':''});});
+ out.sort(function(a,b){return String(a.d).localeCompare(String(b.d));});
+ return out;
+}
+function kdDays(k){return ddiff(TD,k.d);}   /* positive means it is still ahead of you */
+function kdDue(days){
+ return kdAll().filter(function(k){
+  var n=kdDays(k);
+  return n<=days && n>=-30;});   /* ahead within the window, or missed in the last month */
+}
+function kdRow(k){
+ var n=kdDays(k);
+ var cls=n<0?'now':(n<=30?'now':(n<=90?'soon':''));
+ var when=n<0?Math.abs(n)+' days ago':(n===0?'today':(n===1?'tomorrow':'in '+n+' days'));
+ return '<div class="kd '+cls+'"><div class="kbar"></div><div class="kb2">'+
+  '<b>'+esc(pvName(k.w||k.t))+'</b>'+
+  '<span>'+esc(k.t)+(k.n?' · '+esc(pvNum(k.n)):'')+' · '+
+   new Date(k.d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+'</span></div>'+
+  '<div class="kw">'+when+'</div>'+
+  (k.own?'<button class="qic" data-kde="'+k.i+'">Edit</button>':'')+'</div>';
+}
+function drawKdToday(){
+ var sec=document.getElementById('kdsec'), el=document.getElementById('kdlist');
+ if(!sec)return;
+ var L=kdDue(90);
+ if(!L.length){sec.classList.add('hide');el.innerHTML='';return;}
+ sec.classList.remove('hide');
+ var urgent=L.filter(function(k){return kdDays(k)<=30;}).length;
+ document.getElementById('kdn').textContent=L.length+(urgent?' · '+urgent+' inside a month':'');
+ el.innerHTML=L.slice(0,5).map(kdRow).join('')+
+  (L.length>5?'<div class="hint" style="margin-top:8px">and '+(L.length-5)+' more in More</div>':'');
+ el.querySelectorAll('[data-kde]').forEach(function(b){b.onclick=function(){openKd(+b.dataset.kde);};});
+}
+function drawKdAll(){
+ var el=document.getElementById('kdfull'); if(!el)return;
+ var L=kdAll();
+ if(!L.length){el.innerHTML='<div class="hint">Nothing yet. Add the dates that cost you money if you miss them.</div>';return;}
+ el.innerHTML=L.map(kdRow).join('');
+ el.querySelectorAll('[data-kde]').forEach(function(b){b.onclick=function(){openKd(+b.dataset.kde);};});
+}
+var KDT='Tenancy ends';
+function openKd(i){
+ var k=(i===null||i<0)?{d:'',t:'Tenancy ends',w:'',n:''}:keydates()[i];
+ KDT=k.t||'Tenancy ends';
+ var h='<div class="pfields">'+
+  '<label>What is it</label><div class="kdt" id="kd-t"></div>'+
+  '<label>Which property or who</label><input id="kd-w" value="'+esc(k.w||'')+'" placeholder="Talia 131, or your broker licence">'+
+  '<label>Date</label><input id="kd-d" type="date" value="'+esc(k.d||'')+'">'+
+  '<label>Note</label><input id="kd-n" value="'+esc(k.n||'')+'" placeholder="Rent 170,000, landlord is AbdulGafoor">'+
+  '</div>'+
+  '<button class="btnfull" id="kd-save" style="margin-top:14px">Save</button>'+
+  ((i===null||i<0)?'':'<button class="addbtn" id="kd-del" style="margin-top:8px;border-color:rgba(212,106,94,.5);color:#D46A5E">Delete</button>');
+ openTool((i===null||i<0)?'Add a key date':'Edit',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ function pick(){
+  document.getElementById('kd-t').innerHTML=KDTYPES.map(function(o){
+   return '<b class="'+(KDT===o?'on':'')+'" data-kdt="'+o+'">'+o+'</b>';}).join('');
+  document.querySelectorAll('[data-kdt]').forEach(function(b){b.onclick=function(){KDT=b.dataset.kdt;pick();};});
+ }
+ pick();
+ document.getElementById('kd-save').onclick=function(){
+  var d=document.getElementById('kd-d').value;
+  if(!d){alert('It needs a date.');return;}
+  var o=(i===null||i<0)?{}:keydates()[i];
+  o.t=KDT; o.w=document.getElementById('kd-w').value.trim();
+  o.d=d; o.n=document.getElementById('kd-n').value.trim();
+  if(i===null||i<0)keydates().push(o);
+  put(S); document.getElementById('tsheet').style.display='none';
+  drawKdToday(); drawKdAll();
+ };
+ var del=document.getElementById('kd-del');
+ if(del)del.onclick=function(){
+  if(!confirm('Delete this date?'))return;
+  keydates().splice(i,1); put(S);
+  document.getElementById('tsheet').style.display='none'; drawKdToday(); drawKdAll();};
+}
+
 /* ================= CAMPAIGNS ================= */
 /* You send once. Weeks later you need to know whether it was worth doing. */
 function campaigns(){ S.camp=Array.isArray(S.camp)?S.camp:[]; return S.camp; }
@@ -4451,6 +4563,7 @@ document.getElementById('addunit').onclick=function(){openUnitSheet(null);};
 document.getElementById('t-undo').onclick=openSnapshots;
 document.getElementById('t-hooks').onclick=openHookTool;
 document.getElementById('addproj').onclick=function(){openProj(null);};
+document.getElementById('addkd').onclick=function(){openKd(null);};
 document.getElementById('addcamp').onclick=function(){openCamp(null);};
 document.getElementById('qcbtn').onclick=openQc;
 document.getElementById('qc-done').onclick=closeQc;
@@ -4549,7 +4662,7 @@ function drawStore(){
   el.innerHTML+='<div class="row"><div><div class="lab">Total on device</div><div class="tgt">Including images</div></div><div class="val">'+mb+' MB / '+q+' MB</div></div>';});}
 }
 function drawMore(){
- drawRefs();drawStore();drawObj();
+ drawRefs();drawKdAll();drawStore();drawObj();
  var due=[];S.deals.forEach(function(d,i){if(d.s<4&&d.nd&&d.nd<=TD)due.push(d);});
  due.sort(function(a,b){return dealFee(b)-dealFee(a);});
  document.getElementById('duelist').innerHTML=due.length?due.map(function(d){
@@ -4673,7 +4786,7 @@ document.getElementById('t-import').onclick=function(){
   arr.forEach(function(o){var key=String(o.w||'').trim().toLowerCase(); if(have[key])return;
    S.deals.push({w:o.w||'',ph:o.ph||'',u:o.u||'',v:num(o.v),r:num(o.r)||2,s:num(o.s),na:o.na||'',nd:o.nd||'',
     src:o.src||'Referral',n:o.n||'',ty:o.ty||'Ready',ch:o.ch||'1 cheque',rent:num(o.rent),ref:o.ref||''});added++;});
-  put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawMore();alert(added+' clients added.');TS.style.display='none';
+  put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();alert(added+' clients added.');TS.style.display='none';
  }catch(e){alert('That did not look like a valid client list.');}};};
 function allImgKeys(){var ks=[];S.units.forEach(function(u){
  ['img','fp'].forEach(function(k){ if(u[k]&&u[k].indexOf('data:')!==0)ks.push(u[k]); });
@@ -5053,7 +5166,7 @@ function doRestore(o,st){
    Promise.all(ks.map(function(k){return idbSet(k,imgs[k]).catch(function(){});}))
     .then(function(){
      S=D; if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[];
-     if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
+     if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
      repairData();
      try{
       put(S);flushPut();
@@ -5192,7 +5305,7 @@ document.getElementById('cq').oninput=function(e){CQ=e.target.value.trim().toLow
   var on=m.classList.toggle('hide');
   t.textContent=on?'Show the full list of money moves':'Hide the full list';
   if(!on)drawMoves();};})();
-drawStockSeg();drawNav();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawEarn();drawDeals();drawDealSeg();drawLater();drawUpNext();drawMoves();drawMap();drawNag();drawNet();drawEye();DREW={};
+drawStockSeg();drawNav();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawEarn();drawDeals();drawDealSeg();drawLater();drawUpNext();drawMoves();drawMap();drawNag();drawNet();drawEye();DREW={};
 </script>
 </body>
 </html>
