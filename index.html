@@ -2167,10 +2167,26 @@ function waLink(phone,text){
  var n=String(phone||'').replace(/[^\d]/g,'');
  return 'https://wa.me/'+n+'?text='+encodeURIComponent(text);
 }
+/* A hook is a claim about someone's neighbour. If it can't be verified against
+   the unit map it does not get shown and it never goes into a message. */
+function hookBad(x){
+ var t=String(x.n2||''); if(!t)return '';
+ var m=t.match(/Their unit\s+(\d+)\s*:\s*(\d+)BR/);
+ if(!m)return '';
+ var UM=S.umap||{}, u=m[1], said=num(m[2]);
+ if(UM[u]&&num(UM[u].bd)&&num(UM[u].bd)!==said)
+  return 'Says '+said+'BR, the masterplan says '+UM[u].bd+'BR';
+ if(x.hkc&&x.hkc!==comOf(x.w))
+  return 'Comp came from '+x.hkc+', not '+comOf(x.w);
+ if(!x.hkc&&UM[u])
+  return 'Built before the community check';
+ return '';
+}
+function hookShow(x){var b=hookBad(x);return b?'':String(x.n2||'');}
 function proMsg(x,body){
  var name=String(x.n||'').trim().split(' ')[0]||'there';
  var unit=x.w||'the property';
- var hook=String(x.n2||'').replace(/^#\d+[^·]*·\s*/,'').trim();
+ var hook=String(hookShow(x)).replace(/^#\d+[^·]*·\s*/,'').trim();
  return body.split('{name}').join(name).split('{unit}').join(unit).split('{hook}').join(hook).split('{agent}').join('Mustafa');
 }
 function consecNoans(x){
@@ -2226,7 +2242,10 @@ function lRow(x,i,ready){
   (as?'<div class="sub">'+esc(as)+'</div>':'')+
   '</div>'+
   '<div class="fee" style="font-size:12px;'+(ready?'':'color:var(--dim)')+'">'+esc(lWhen(x))+'</div></div>'+
-  (x.n2?'<div class="next"><b>Why later:</b> '+esc(pvAll(x.n2))+'</div>':'')+
+  (x.n2?(hookBad(x)
+    ?'<div class="next" style="color:var(--bad)"><b>Comp not usable:</b> '+esc(hookBad(x))+
+     '. Rebuild hooks from data before you call.</div>'
+    :'<div class="next"><b>Why later:</b> '+esc(pvAll(x.n2))+'</div>'):'')+
   (ph&&!S.priv?'<div class="acts"><a href="tel:'+ph+'" data-lch="'+i+':call">Call</a>'+
    '<a href="'+wa+'" target="_blank" data-lch="'+i+':wa">WhatsApp</a></div>'+
    '<div style="margin-top:7px;font-size:11.5px"><a href="#" data-lmsg="'+i+'" style="color:var(--gold)">change message</a>'+
@@ -3157,6 +3176,7 @@ function rebuildHooks(txns,community){
    ' ('+where+', also '+beds+'BR) sold '+monShort(best.d)+' for '+money(best.pr)+
    (best.psf?' at AED '+best.psf.toLocaleString()+'/sqft':'')+
    '. Best '+beds+'BR nearby '+money(top.pr)+' (unit '+top.u+', '+monShort(top.d)+').';
+  x.hkc=mine; x.hkb=beds;
   var bua=(me&&me.bua)?me.bua:0;
   if(!bua){var bs=pool.filter(function(t){return t.bua;}).map(function(t){return t.bua;}).sort(function(a,b){return a-b;});
    if(bs.length)bua=bs[Math.floor(bs.length/2)];}
@@ -3365,7 +3385,8 @@ function buildQueue(){
   if(x.dnc||isBlocked(x.ph)||!x.wd||x.wd>TD)return;
   out.push({k:'later',i:i,n:x.n,ph:x.ph,
    sub:(x.w||'')+' · '+(x.ty||'parked'),
-   why:x.n2||'', act:'Reconnect, you parked this', fee:0,
+   why:hookShow(x)||(hookBad(x)?'Comp not usable — rebuild hooks from data':''),
+   act:'Reconnect, you parked this', fee:0,
    late:Math.round((new Date(TD)-new Date(x.wd))/864e5)});
  });
  out.sort(function(a,b){
