@@ -3994,25 +3994,29 @@ function drawUnits(){
    (!isR&&u.op?'<b style="color:var(--ink)">Original price:</b> '+pmoney(u.op)+' · uplift '+pmoney(u.pr-u.op)+'<br>':'')+
    (u.h?'<b style="color:var(--ink)">Handover:</b> '+esc(pvNum(u.h))+'<br>':'')+
    (u.pl?'<b style="color:var(--ink)">Plan:</b> '+esc(pvNum(u.pl))+'<br>':'')+esc(pvNum(pvName(u.n)))+
-   '<div class="ubtns"><button class="ub" data-row="'+i+'">'+(u.rw?esc(u.rw):'Set row position')+'</button></div>'+
-   '<div class="ubtns"><button class="ub gold" data-offer="'+i+'">'+(isR?'Rental offer':'Sales offer')+'</button><button class="ub" data-fit="'+i+'">Who fits this</button></div>'+
-   '<div class="ubtns"><button class="ub" data-gal="'+i+'">Photos ('+picCount(u)+')</button></div>'+
-   '<div class="ubtns"><button class="ub" data-plan="'+i+'">'+(u.img?'Masterplan':'+ Masterplan')+'</button>'+(u.img?'<button class="ub" data-rmi="'+i+'" style="flex:0 0 42px;color:var(--bad)">✕</button>':'')+
-   '<button class="ub" data-fp="'+i+'">'+(u.fp?'Floorplan':'+ Floorplan')+'</button>'+(u.fp?'<button class="ub" data-rmf="'+i+'" style="flex:0 0 42px;color:var(--bad)">✕</button>':'')+'</div>'+
-   '<div class="ubtns"><a class="ub" href="'+mapLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Map</a><a class="ub" href="'+pfLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Listings</a><button class="ub" data-op="'+i+'">'+(u.op?'Edit OP':'+ OP')+'</button></div>'+
-   '<div class="ubtns"><button class="ub" data-sh="'+i+'">Share</button><button class="ub" data-eu="'+i+'">Edit</button><button class="ub" data-du="'+i+'">Delete</button></div>'+
+   '<div class="ubtns"><button class="ub gold" data-offer="'+i+'">'+(isR?'Rental offer':'Sales offer')+'</button>'+
+    '<button class="ub" data-fit="'+i+'">Who fits this</button>'+
+    '<button class="ub" data-gal="'+i+'">Photos ('+picCount(u)+')</button></div>'+
+   '<div class="ubtns"><button class="ub" data-umore="'+i+'">More &#8943;</button>'+
+    '<button class="ub" data-eu="'+i+'">Edit</button></div>'+
+   '<div class="ubtns umore hide" id="um-'+i+'"><button class="ub" data-row="'+i+'">'+(u.rw?esc(u.rw):'Set row position')+'</button>'+
+    '<button class="ub" data-plan="'+i+'">'+(u.img?'Cover photo':'+ Cover')+'</button>'+
+    '<button class="ub" data-fp="'+i+'">'+(u.fp?'Floorplan':'+ Floorplan')+'</button></div>'+
+   '<div class="ubtns umore hide" id="um2-'+i+'"><a class="ub" href="'+mapLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Map</a>'+
+    '<a class="ub" href="'+pfLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Listings</a>'+
+    '<button class="ub" data-sh="'+i+'">Share</button>'+
+    '<button class="ub" data-du="'+i+'" style="color:var(--bad)">Delete</button></div>'+
    '</div></div>';}).join(''):'<div class="hint">Nothing matches that filter.</div>';
  document.querySelectorAll('.uhead').forEach(function(h){h.onclick=function(){var d=document.getElementById('det-'+h.dataset.i);d.style.display=d.style.display==='none'?'block':'none';};});
  document.querySelectorAll('[data-offer]').forEach(function(b){b.onclick=function(e){e.stopPropagation();salesOffer(+b.dataset.offer);};});
  document.querySelectorAll('[data-fit]').forEach(function(b){b.onclick=function(e){e.stopPropagation();whoFits(+b.dataset.fit);};});
+ document.querySelectorAll('[data-umore]').forEach(function(b){b.onclick=function(e){e.stopPropagation();
+  var i=b.dataset.umore, a=document.getElementById('um-'+i), c=document.getElementById('um2-'+i);
+  var on=a.classList.toggle('hide'); c.classList.toggle('hide',on);
+  b.innerHTML=on?'More &#8943;':'Less';};});
  document.querySelectorAll('[data-gal]').forEach(function(b){b.onclick=function(e){e.stopPropagation();openGallery(+b.dataset.gal);};});
  document.querySelectorAll('[data-plan]').forEach(function(b){b.onclick=function(e){e.stopPropagation();openImg(+b.dataset.plan,'img');};});
  document.querySelectorAll('[data-fp]').forEach(function(b){b.onclick=function(e){e.stopPropagation();openImg(+b.dataset.fp,'fp');};});
- document.querySelectorAll('[data-op]').forEach(function(b){b.onclick=function(e){e.stopPropagation();
-  var i=+b.dataset.op,u=S.units[i],v=prompt('Original purchase price in AED',u.op||'');
-  if(v===null)return;u.op=num(String(v).replace(/[^0-9.]/g,''));put(S);drawUnits();};});
- document.querySelectorAll('[data-rmi]').forEach(function(b){b.onclick=function(e){e.stopPropagation();removeImg(+b.dataset.rmi,'img');};});
- document.querySelectorAll('[data-rmf]').forEach(function(b){b.onclick=function(e){e.stopPropagation();removeImg(+b.dataset.rmf,'fp');};});
  document.querySelectorAll('[data-sh]').forEach(function(b){b.onclick=function(e){e.stopPropagation();shareUnit(+b.dataset.sh);};});
  document.querySelectorAll('[data-eu]').forEach(function(b){b.onclick=function(e){e.stopPropagation();editUnit(+b.dataset.eu);};});
  document.querySelectorAll('[data-du]').forEach(function(b){b.onclick=function(e){e.stopPropagation();
@@ -5048,7 +5052,7 @@ function drawComps(){
 }
 fetch('comps.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&j.communities){COMPS=j;drawComps();}}).catch(function(){});
 
-var APPVER='v32 · 23 Aug 2026 · prospecting engine';
+var APPVER='v40 · 23 Aug 2026 · prospecting engine';
 function drawObj(){
  var L=S.deals.filter(function(d){return d.s===LOST&&d.lost;});
  var el=document.getElementById('objbox');
@@ -5085,8 +5089,9 @@ function drawMore(){
   :'<div class="hint">Nothing due. Set next action dates on your deals and this becomes your call list.</div>';
  var days=[];for(var i=0;i<7;i++)days.push(iso(new Date(Date.now()-i*864e5)));
  function sum(k){return days.reduce(function(a,x){return a+num((S.days[x]||{})[k]);},0);}
- var rows=[['Calls',sum('calls'),280],['Conversations',sum('convos'),70],['Meetings',sum('meets'),14],
-  ['New opportunities',sum('opps'),14],['Gym days',sum('gym'),6],['Days logged',days.filter(function(x){return S.days[x];}).length,7]];
+ /* work only. the habit tracking went months ago, no point showing zeroes for it. */
+ var rows=[['Calls',sum('calls'),280],['Conversations',sum('convos'),70],
+  ['Viewings and meetings',sum('meets'),14]];
  document.getElementById('week').innerHTML=rows.map(function(r){
   return '<div class="row"><div class="lab">'+r[0]+'</div><div class="val '+(r[1]>=r[2]?'hit':'')+'" style="font-size:16px">'+r[1]+'<span style="color:var(--dim);font-size:11.5px;font-weight:400"> / '+r[2]+'</span></div></div>';}).join('');
  drawDnc();
