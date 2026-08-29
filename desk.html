@@ -293,6 +293,28 @@ td.idx{text-align:center}
 .cstats .n{font-size:21px;font-weight:700;color:var(--ink);line-height:1}
 .cstats .n.g{color:var(--ok)}
 .cstats .l{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+
+/* ---- transfers + documents on the desk ---- */
+.trg{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px;padding:18px}
+.trc{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px}
+.trc h4{margin:0 0 2px;font-size:17px;color:var(--ink)}
+.trc .sub{font-size:12px;color:var(--dim)}
+.trbar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:11px 0 13px}
+.trbar i{display:block;height:100%;background:var(--ok)}
+.trrow{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer}
+.trrow:last-child{border-bottom:0}
+.trrow .bx{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line);flex:none;
+ display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent}
+.trrow.on .bx{background:var(--ok);border-color:var(--ok);color:#fff}
+.trrow .tb{flex:1;min-width:0}
+.trrow .tb b{display:block;font-size:13.5px;color:var(--ink);font-weight:600}
+.trrow.on .tb b{color:var(--dim);text-decoration:line-through}
+.trrow .tb span{font-size:11px;color:var(--dim)}
+.trrow .dd{font-size:11px;color:var(--ok);flex:none}
+.docg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
+.docc{background:var(--card2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.docc img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;cursor:zoom-in}
+.docc .dl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);padding:7px 9px}
 </style>
 </head>
 <body>
@@ -382,6 +404,13 @@ function normImgs(){
   });
  });
  return moved;
+}
+function idbGet(k){
+ return idbOpen().then(function(db){return new Promise(function(res){
+  var t=db.transaction('img','readonly'), rq=t.objectStore('img').get(k);
+  rq.onsuccess=function(){res(rq.result||'');};
+  rq.onerror=function(){res('');};
+ });}).catch(function(){return '';});
 }
 function imgBytes(){var n=0;for(var k in (BK.imgs||{}))n+=String(BK.imgs[k]).length;return n;}
 
@@ -602,9 +631,9 @@ try{var mraw=localStorage.getItem('desk-market'); if(mraw)MKT=JSON.parse(mraw);}
 function uniq(a){var o=[],seen={};a.forEach(function(x){if(x&&!seen[x]){seen[x]=1;o.push(x);}});return o;}
 function render(){
  document.getElementById('bar').classList.remove('hide');
- var tabs=[['deals','Clients'],['units','Inventory'],['call','Call list'],['later','Prospects'],['market','Market'],['proj','Projects'],['camp','Campaigns'],['dates','Key dates'],['people','Contacts'],['fill','Fill in'],['tools','Tools'],['review','Review']];
+ var tabs=[['deals','Clients'],['units','Inventory'],['call','Call list'],['later','Prospects'],['market','Market'],['proj','Projects'],['camp','Campaigns'],['transfer','Transfers'],['docs','Documents'],['dates','Key dates'],['people','Contacts'],['fill','Fill in'],['tools','Tools'],['review','Review']];
  document.getElementById('tabs').innerHTML=tabs.map(function(t){
-  return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+((t[0]==='tools'||t[0]==='fill')?'':'<i>'+LIST[t[0]]().length+'</i>')+'</b>';}).join('');
+  return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+(['tools','fill','transfer','docs','proj','camp'].indexOf(t[0])>=0?'':'<i>'+LIST[t[0]]().length+'</i>')+'</b>';}).join('');
  document.querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){
   TAB=b.dataset.t;Q='';F='All';document.getElementById('q').value='';render();};});
  document.getElementById('src').textContent=BK.at?
@@ -626,6 +655,10 @@ function render(){
   document.getElementById('count').innerHTML='';drawProjDesk();return;}
  if(TAB==='camp'){document.getElementById('bar').classList.add('hide');
   document.getElementById('count').innerHTML='';drawCampDesk();return;}
+ if(TAB==='transfer'){document.getElementById('bar').classList.add('hide');
+  document.getElementById('count').innerHTML='';drawTransfers();return;}
+ if(TAB==='docs'){document.getElementById('bar').classList.add('hide');
+  document.getElementById('count').innerHTML='';drawDocs();return;}
  drawFilter();drawTable();
 }
 function drawFilter(){
@@ -1244,6 +1277,89 @@ function dChkStalled(){
   if(num(d.s)<3||num(d.s)===LOST)return false;
   var c=d.chk||{}, L=(d.ty==='Rent'||num(d.rent))?8:10;
   return Object.keys(c).length<L;});
+}
+
+
+/* ================= TRANSFERS AND DOCUMENTS ================= */
+var DCHKSALE=[
+ ['mou','Form F signed by both sides','The MOU. Nothing is real until this is signed'],
+ ['dep','Deposit cheque received','Usually 10%'],
+ ['noc','Developer NOC applied for','Book it early, this is the usual delay'],
+ ['nocg','NOC issued',''],
+ ['mort','Mortgage final offer issued','Skip if it is cash'],
+ ['tru','Trustee appointment booked',''],
+ ['tra','Transfer completed at the trustee',''],
+ ['keys','Keys and access handed over',''],
+ ['fee','Commission invoiced',''],
+ ['paid','Commission received','']];
+var DCHKRENT=[
+ ['off','Offer agreed and cheques confirmed',''],['ten','Tenancy contract signed',''],
+ ['dep','Cheques collected',''],['ejari','Ejari registered',''],
+ ['dew','DEWA and cooling moved over',''],['keys','Keys handed over',''],
+ ['fee','Commission invoiced',''],['paid','Commission received','']];
+function dChkList(d){return (d.ty==='Rent'||num(d.rent))?DCHKRENT:DCHKSALE;}
+function drawTransfers(){
+ var L=S().deals.map(function(d,i){return {d:d,i:i};})
+  .filter(function(x){return num(x.d.s)>=3&&num(x.d.s)!==LOST;})
+  .sort(function(a,b){return dealFee(b.d)-dealFee(a.d);});
+ if(!L.length){
+  document.getElementById('main').innerHTML='<div class="empty"><p>Nothing at Agreed or beyond. '+
+   'Move a deal to Agreed and its transfer steps appear here.</p></div>';
+  document.getElementById('hint').textContent='';return;}
+ var h='<div class="trg">'+L.map(function(x){
+  var d=x.d, LS=dChkList(d), c=d.chk||{}, done=LS.filter(function(z){return c[z[0]];}).length;
+  return '<div class="trc"><h4>'+esc(d.w||'')+'</h4>'+
+   '<div class="sub">'+esc(d.u||'')+' · '+money(dealFee(d))+' · '+done+' of '+LS.length+'</div>'+
+   '<div class="trbar"><i style="width:'+Math.round(done/LS.length*100)+'%"></i></div>'+
+   LS.map(function(z){
+    var on=!!c[z[0]];
+    return '<div class="trrow'+(on?' on':'')+'" data-tr="'+x.i+':'+z[0]+'">'+
+     '<div class="bx">&#10003;</div><div class="tb"><b>'+esc(z[1])+'</b>'+
+     (z[2]?'<span>'+esc(z[2])+'</span>':'')+'</div>'+
+     (on&&c[z[0]]!==true?'<div class="dd">'+esc(String(c[z[0]]).slice(5))+'</div>':'')+'</div>';
+   }).join('')+'</div>';}).join('')+'</div>';
+ document.getElementById('main').innerHTML=h;
+ document.querySelectorAll('[data-tr]').forEach(function(r){r.onclick=function(){
+  var p=r.dataset.tr.split(':'), d=S().deals[+p[0]], k=p[1];
+  d.chk=d.chk||{};
+  if(d.chk[k])delete d.chk[k]; else d.chk[k]=TD;
+  var LS=dChkList(d), nx=LS.filter(function(z){return !d.chk[z[0]];})[0];
+  if(nx){d.na=nx[1]; if(!d.nd||d.nd<TD)d.nd=iso(new Date(Date.now()+2*864e5));}
+  else d.na='Everything done, chase the payment if it is not in';
+  persist(); drawTransfers();};});
+ document.getElementById('hint').textContent='Tap a step to tick it. The date is stamped and the client’s next action follows.';
+}
+function docsOn(o){return Array.isArray(o.docs)?o.docs:[];}
+function drawDocs(){
+ var rows=[];
+ S().deals.forEach(function(d,i){ docsOn(d).forEach(function(x){rows.push({who:d.w,kind:'Client',doc:x});}); });
+ (S().kd||[]).forEach(function(k){ docsOn(k).forEach(function(x){rows.push({who:k.w||k.t,kind:'Key date',doc:x});}); });
+ if(!rows.length){
+  document.getElementById('main').innerHTML='<div class="empty"><p>No documents yet. '+
+   'Attach them on the phone against a client or a key date and they show here.</p></div>';
+  document.getElementById('hint').textContent='';return;}
+ var by={};
+ rows.forEach(function(r){ (by[r.who]=by[r.who]||[]).push(r); });
+ var h='<div class="pgrid">'+Object.keys(by).sort().map(function(who){
+  return '<div class="pcard"><h4>'+esc(who)+'</h4>'+
+   '<div class="sub">'+by[who].length+' document'+(by[who].length===1?'':'s')+' · '+esc(by[who][0].kind)+'</div>'+
+   '<div class="docg">'+by[who].map(function(r,j){
+    return '<div class="docc" id="dc-'+esc(who.replace(/\W/g,''))+j+'">'+
+     '<div class="dl">'+esc(r.doc.label||'Document')+'</div></div>';}).join('')+'</div></div>';
+  }).join('')+'</div>';
+ document.getElementById('main').innerHTML=h;
+ Object.keys(by).forEach(function(who){
+  by[who].forEach(function(r,j){
+   var cell=document.getElementById('dc-'+who.replace(/\W/g,'')+j);
+   if(!cell)return;
+   var v=r.doc.k, src=(BK.imgs||{})[v];
+   var show=function(d){ if(!d)return;
+    var im=new Image(); im.src=d; cell.insertBefore(im,cell.firstChild);
+    im.onclick=function(){ var w=window.open('','_blank');
+     if(w){w.document.write('<img src="'+d+'" style="max-width:100%">');w.document.close();} };};
+   if(src)show(src); else idbGet(v).then(show).catch(function(){});
+  });});
+ document.getElementById('hint').textContent='Everything you have photographed, in one place. Click to open full size.';
 }
 
 /* ================= PROJECTS AND CAMPAIGNS ON THE DESK ================= */
