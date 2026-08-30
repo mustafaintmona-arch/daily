@@ -6057,11 +6057,155 @@ function gymWarn(){
  var days=gymLog().filter(function(x){return !x.seed;})
   .sort(function(a,b){return String(b.d).localeCompare(String(a.d));}).slice(0,3);
  if(days.length<3)return '';
+ /* they have to be actual back-to-back days. three sessions a week apart is
+    a normal split, not overtraining. */
+ if(ddiff(days[2].d,days[0].d)>3)return '';
  var g0=gymGroups(days[0]);
  var run=g0.filter(function(m){
   return gymGroups(days[1]).indexOf(m)>=0 && gymGroups(days[2]).indexOf(m)>=0;});
  if(!run.length)return '';
  return run.join(' and ')+' worked three sessions running. That needs a day.';
+}
+/* ---- how the same day went last time ---- */
+function gymSameDay(i,beforeDate){
+ /* the most recent completed session of this same day in the cycle */
+ return gymLog().filter(function(x){
+   return x.i===i && !x.seed && (x.sets||[]).length && x.d<(beforeDate||TD);})
+  .sort(function(a,b){return String(b.d).localeCompare(String(a.d));})[0]||null;
+}
+function gymHeaviest(sess){
+ var best=null;
+ (sess.sets||[]).forEach(function(x){
+  if(!best||x.w>best.w||(x.w===best.w&&x.r>best.r))best=x;});
+ return best;
+}
+function gymTopPerEx(sess){
+ var m={};
+ (sess.sets||[]).forEach(function(x){
+  var b=m[x.e];
+  if(!b||x.w>b.w||(x.w===b.w&&x.r>b.r))m[x.e]=x;});
+ return m;
+}
+function gymCompare(cur,prev){
+ /* what changed, exercise by exercise */
+ if(!prev)return null;
+ var a=gymTopPerEx(cur), b=gymTopPerEx(prev);
+ var up=[],down=[],same=[];
+ Object.keys(a).forEach(function(e){
+  var x=a[e], y=b[e];
+  if(!y)return;
+  var sc=x.w*1000+x.r, sy=y.w*1000+y.r;
+  if(sc>sy)up.push({e:e,now:x,was:y});
+  else if(sc<sy)down.push({e:e,now:x,was:y});
+  else same.push({e:e,now:x});});
+ var v1=gymVolume(cur), v0=gymVolume(prev);
+ return {up:up,down:down,same:same,vol:v1,pvol:v0,
+  pct:v0?Math.round((v1-v0)/v0*100):null, days:ddiff(prev.d,cur.d||TD), prev:prev};
+}
+function gymSetStr(x){return x.w+' kg \u00d7 '+x.r;}
+/* every session this exercise has appeared in, newest first */
+function gymExHistory(ex,limit){
+ var out=[];
+ gymLog().slice().sort(function(a,b){return String(b.d).localeCompare(String(a.d));})
+  .forEach(function(s2){
+   if(out.length>=(limit||6))return;
+   var st=(s2.sets||[]).filter(function(x){return x.e===ex;});
+   if(!st.length)return;
+   var top=null, vol=0;
+   st.forEach(function(x){vol+=x.w*x.r; if(!top||x.w>top.w||(x.w===top.w&&x.r>top.r))top=x;});
+   out.push({d:s2.d,top:top,vol:vol,sets:st,today:s2.d===TD});});
+ return out;
+}
+function gymExCard(ex){
+ var H=gymExHistory(ex,6);
+ var past=H.filter(function(x){return !x.today;});
+ if(!past.length)return '';
+ var best=gymBest(ex);
+ var maxv=Math.max.apply(null,past.map(function(x){return x.vol;}))||1;
+ var h='<div class="vhead" style="margin-top:18px">How this one has gone</div><div class="card">'+
+  '<div class="row"><div class="lab">Heaviest ever</div><div class="v2">'+
+   (best?gymSetStr(best)+' <span style="color:var(--t3);font-size:11.5px">'+
+    new Date(best.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</span>':'\u2014')+'</div></div>'+
+  '<div class="row"><div class="lab">Sessions logged</div><div class="v2">'+past.length+'</div></div>';
+ h+='<div style="margin-top:12px">'+past.slice(0,5).map(function(x){
+   var pct=Math.max(6,Math.round(x.vol/maxv*100));
+   return '<div style="padding:7px 0">'+
+    '<div style="display:flex;justify-content:space-between;font-size:12.5px">'+
+     '<span style="color:var(--t2)">'+new Date(x.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</span>'+
+     '<span style="color:var(--t1)">'+gymSetStr(x.top)+' <span style="color:var(--t3)">\u00b7 '+
+      Math.round(x.vol).toLocaleString()+' kg</span></span></div>'+
+    '<div style="height:4px;background:var(--s3);border-radius:2px;margin-top:5px;overflow:hidden">'+
+     '<div style="height:100%;width:'+pct+'%;background:var(--acc);opacity:'+(x.vol===maxv?1:.55)+'"></div></div>'+
+    '</div>';}).join('')+'</div>';
+ /* the trend, stated plainly */
+ if(past.length>=3){
+  var a1=past[0].top, b1=past[past.length-1].top;
+  var d1=(a1.w*1000+a1.r)-(b1.w*1000+b1.r);
+  h+='<div class="hint" style="margin-top:6px">'+
+   (d1>0?'Top set is up from '+gymSetStr(b1)+' when you started tracking this.'
+    :(d1<0?'Top set is down from '+gymSetStr(b1)+'. Worth checking whether it is fatigue or form.'
+          :'Top set has not moved across '+past.length+' sessions. Time to change something.'))+
+   '</div>';}
+ h+='</div>';
+ return h;
+}
+function gymLastCard(i){
+ var prev=gymSameDay(i);
+ if(!prev)return '<div class="hint" style="margin-top:10px">'+
+  'First time logging this one. From next time it will tell you what to beat.</div>';
+ var h=gymHeaviest(prev), top=gymTopPerEx(prev);
+ var ago=ddiff(prev.d,TD);
+ return '<div class="card" style="margin-top:10px">'+
+  '<div class="vhead" style="margin:0 0 8px">Last time \u00b7 '+
+   new Date(prev.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+
+   ' \u00b7 '+ago+' day'+(ago===1?'':'s')+' ago</div>'+
+  '<div class="row"><div class="lab">Total lifted</div><div class="v2">'+
+   Math.round(gymVolume(prev)).toLocaleString()+' kg</div></div>'+
+  (h?'<div class="row"><div class="lab">Heaviest set</div><div class="v2">'+
+   esc(h.e)+' '+gymSetStr(h)+'</div></div>':'')+
+  '<div class="row"><div class="lab">Sets</div><div class="v2">'+(prev.sets||[]).length+'</div></div>'+
+  '<div style="margin-top:10px">'+Object.keys(top).map(function(e){
+   return '<div class="row" style="padding:8px 0"><div class="lab" style="font-size:13px">'+esc(e)+'</div>'+
+    '<div class="v2" style="font-size:12.5px">'+gymSetStr(top[e])+'</div></div>';}).join('')+'</div>'+
+  '</div>';
+}
+function gymRecapCompare(cur){
+ var c=gymCompare(cur,gymSameDay(cur.i,cur.d));
+ if(!c)return '';
+ /* only compare totals once you have done at least as many exercises as last
+    time, or a half-finished session looks like a collapse */
+ var nowEx=Object.keys(gymTopPerEx(cur)).length, wasEx=Object.keys(gymTopPerEx(c.prev)).length;
+ var partial=nowEx<wasEx;
+ var h='<div class="card" style="margin-top:12px">'+
+  '<div class="vhead" style="margin:0 0 8px">Against '+
+   new Date(c.prev.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+
+   ' \u00b7 '+c.days+' days ago</div>'+
+  (partial
+   ? '<div class="row"><div class="lab">Volume</div><div class="v2">'+
+     Math.round(c.vol).toLocaleString()+' kg <span style="color:var(--t3);font-size:11.5px">'+
+     nowEx+' of '+wasEx+' exercises so far</span></div></div>'
+   : '<div class="row"><div class="lab">Volume</div><div class="v2"'+
+     (c.pct>0?' style="color:var(--pos)"':(c.pct<0?' style="color:var(--neg)"':''))+'>'+
+     Math.round(c.vol).toLocaleString()+' kg'+(c.pct!==null?' \u00b7 '+(c.pct>0?'+':'')+c.pct+'%':'')+
+     '</div></div>');
+ c.up.forEach(function(x){
+  h+='<div class="row"><div class="lab" style="font-size:13px">'+esc(x.e)+'</div>'+
+   '<div class="v2" style="font-size:12.5px;color:var(--pos)">'+gymSetStr(x.now)+
+   ' <span style="color:var(--t3)">was '+gymSetStr(x.was)+'</span></div></div>';});
+ c.down.forEach(function(x){
+  h+='<div class="row"><div class="lab" style="font-size:13px">'+esc(x.e)+'</div>'+
+   '<div class="v2" style="font-size:12.5px;color:var(--neg)">'+gymSetStr(x.now)+
+   ' <span style="color:var(--t3)">was '+gymSetStr(x.was)+'</span></div></div>';});
+ h+='</div>';
+ /* the honest read, not a cheer */
+ var line='';
+ if(partial)line='Still going. '+(c.up.length?c.up.length+' up so far':'Nothing beaten yet')+'.';
+ else if(c.up.length&&!c.down.length)line='Everything you repeated went up.';
+ else if(c.down.length&&!c.up.length)line='Everything came down. One bad session is noise, two is a pattern worth looking at.';
+ else if(c.up.length&&c.down.length)line=c.up.length+' up, '+c.down.length+' down.';
+ else if(c.pct!==null&&c.pct<0)line='Same weights, less volume. You did fewer sets.';
+ if(line)h+='<div class="hint" style="margin-top:8px">'+esc(line)+'</div>';
+ return h;
 }
 function drawGym(){
  var g=gym(), el=document.getElementById('gymtoday'); if(!el)return;
@@ -6087,6 +6231,7 @@ function drawGym(){
    ? '<button class="btnfull" id="gymskip" style="margin-top:12px">Move on to '+esc(gymDayName(idx+1))+'</button>'
    : '<button class="btnfull" id="gymgo" style="margin-top:12px">'+(t?'Carry on':'Start the session')+'</button>'+
      '<button class="addbtn" id="gymswap" style="margin-top:8px">Do a different day</button>');
+ if(!rest)el.innerHTML+=gymLastCard(idx);
  var w=gymWarn();
  if(w)el.innerHTML+='<div class="card" style="margin-top:10px;border-color:rgba(224,119,106,.4)">'+
   '<div class="tgt" style="color:var(--neg)">'+esc(w)+'</div></div>';
@@ -6167,7 +6312,9 @@ function gymSession(){
  openTool(p.n,h,'');
  document.getElementById('tcopy').textContent='Done';
  document.getElementById('tcopy').onclick=function(){
-  t.done=1;put(S);closeTool();drawGym();haptic('heavy');};
+  t.done=1;put(S);drawGym();haptic('heavy');
+  if((t.sets||[]).length&&gymSameDay(t.i,t.d))gymRecap(gymLog().indexOf(t));
+  else closeTool();};
  document.querySelectorAll('[data-gx]').forEach(function(b){
   b.onclick=function(){GEX=b.dataset.gx;haptic('light');gymSession();};});
  drawGymEx();
@@ -6199,6 +6346,7 @@ function drawGymEx(){
      ' <button data-gxd="'+k+'" style="background:none;border:0;color:var(--t3);padding:0 4px">\u00d7</button></div></div>';
    }).join('')+'</div>';
  }
+ h+=gymExCard(GEX);
  el.innerHTML=h;
  document.getElementById('gx-log').onclick=function(){
   var W=num(document.getElementById('gx-w').value), R=num(document.getElementById('gx-r').value);
@@ -6232,6 +6380,7 @@ function gymRecap(i){
     '<div class="tgt">'+byEx[e].map(function(x){return x.w+'\u00d7'+x.r;}).join(' · ')+'</div></div>'+
     '<div class="v2" style="font-size:12px">'+Math.round(byEx[e].reduce(function(a,x){return a+x.w*x.r;},0)).toLocaleString()+'</div></div>';
   }).join('')+'</div>';
+ h+=gymRecapCompare(s2);
  if(s2.d===TD)h+='<button class="addbtn" id="gr-go" style="margin-top:12px">Carry on with this session</button>';
  openTool(s2.n,h,'');
  document.getElementById('tcopy').textContent='Close';
@@ -6240,20 +6389,54 @@ function gymRecap(i){
 }
 function gymEditPlan(){
  var P=gymPlan();
- var h='<div class="hint">One line per exercise. Change these to whatever you actually do.</div>'+
+ var h='<div class="hint">One line per exercise, as many as you like. '+
+  'Add or remove days to make the cycle whatever length suits you.</div>'+
   P.map(function(p,i){
-   return '<label>'+esc(p.n)+'</label>'+
-    '<input id="gp-n'+i+'" value="'+esc(p.n)+'" style="margin-bottom:5px">'+
-    '<textarea id="gp-e'+i+'" rows="'+Math.max(2,p.ex.length)+'">'+esc(p.ex.join('\\n'))+'</textarea>';
+   return '<div class="card" style="margin-top:12px">'+
+    '<div style="display:flex;gap:8px;align-items:center">'+
+     '<input id="gp-n'+i+'" value="'+esc(p.n)+'" style="margin-top:0;flex:1">'+
+     (P.length>1?'<button class="mg" data-gpd="'+i+'" style="flex:none">Remove</button>':'')+
+    '</div>'+
+    '<textarea id="gp-e'+i+'" rows="'+Math.max(2,p.ex.length+1)+'" style="margin-top:8px" '+
+     'placeholder="Bench press&#10;Incline dumbbell press&#10;Cable fly">'+esc(p.ex.join('\n'))+'</textarea>'+
+    '<div class="hint" style="margin-top:6px">'+(p.ex.length||0)+' exercise'+(p.ex.length===1?'':'s')+
+     '. Leave it empty for a rest day.</div>'+
+   '</div>';
   }).join('')+
-  '<button class="btnfull" id="gp-save" style="margin-top:14px">Save the plan</button>';
+  '<button class="addbtn" id="gp-add" style="margin-top:12px">+ Add another day</button>'+
+  '<button class="btnfull" id="gp-save" style="margin-top:8px">Save the plan</button>'+
+  '<div class="hint" style="margin-top:9px">Your cycle is '+P.length+' day'+(P.length===1?'':'s')+
+   ' long. It rolls, so it never has to line up with the week.</div>';
  openTool('Your plan',h,'');
  document.getElementById('tcopy').textContent='Close';
+ function grab(){
+  var out=[];
+  gymPlan().forEach(function(p,i){
+   var ne=document.getElementById('gp-n'+i), ee=document.getElementById('gp-e'+i);
+   if(!ne||!ee)return;
+   out.push({n:ne.value.trim()||('Day '+(i+1)),
+    ex:ee.value.split('\n').map(function(x){return x.trim();}).filter(Boolean)});});
+  return out;
+ }
+ document.getElementById('gp-add').onclick=function(){
+  var cur=grab();
+  cur.push({n:'New day',ex:[]});
+  gym().plan=cur; put(S); gymEditPlan(); haptic('light');
+ };
+ document.querySelectorAll('[data-gpd]').forEach(function(b){
+  b.onclick=function(){
+   var i=+b.dataset.gpd, cur=grab();
+   if(cur.length<=1)return;
+   if(!confirm('Remove '+(cur[i].n||'this day')+' from the cycle? Sessions you have already logged stay in your history.'))return;
+   cur.splice(i,1);
+   var g=gym(); g.plan=cur;
+   if(g.at>=cur.length)g.at=0;
+   put(S); gymEditPlan(); drawGym(); haptic();};});
  document.getElementById('gp-save').onclick=function(){
-  P.forEach(function(p,i){
-   p.n=document.getElementById('gp-n'+i).value.trim()||p.n;
-   p.ex=document.getElementById('gp-e'+i).value.split('\\n')
-     .map(function(x){return x.trim();}).filter(Boolean);});
+  var cur=grab();
+  if(!cur.length){alert('Keep at least one day.');return;}
+  var g=gym(); g.plan=cur;
+  if(g.at>=cur.length)g.at=0;
   put(S); closeTool(); drawGym(); haptic();};
 }
 function closeTool(){
