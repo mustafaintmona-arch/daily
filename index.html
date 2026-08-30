@@ -1284,6 +1284,7 @@ const pmoney=n=>S.priv?'AED •••••••':money(n);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const num=v=>Number(v||0);
 const autoDate=n=>{const d=new Date();d.setDate(d.getDate()+n);return iso(d);};
+function dueIn(x){return x?Math.round((new Date(x)-new Date(TD))/864e5):null;}
 const ddiff=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
 const lastNDays=n=>{const out=[];for(let i=n-1;i>=0;i--)out.push(iso(new Date(Date.now()-i*864e5)));return out;};
 document.getElementById('dt').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
@@ -3629,6 +3630,8 @@ function drawDeals(){
      (d.s<4?'<button class="adv" data-adv="'+i+'">'+(d.s===3?'Mark as won':'Move to '+STAGES[d.s+1])+'</button>':'')+
      (d.s===LOST?'<button data-bk="'+i+'">Reopen</button>':'')+
      '<button data-tp="'+i+'">Message</button>'+
+     '<button data-br="'+i+'">Briefing</button>'+
+     '<button data-dr="'+i+'">Deal room</button>'+
      '<button data-ql="'+i+'">'+(qScore(d)>=4?'Qualified':'Qualify '+qScore(d)+'/5')+'</button>'+
      '<button data-blk="'+i+'">'+(d.blk?'Blocked: '+esc((blkDef(d.blk)||[])[1]||''):'Blocked by')+'</button>'+
      '<button data-ed="'+i+'">Edit</button>'+
@@ -3671,6 +3674,8 @@ function drawDeals(){
  document.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(){openSheet(+b.dataset.ed);};});
  document.querySelectorAll('[data-tp]').forEach(function(b){b.onclick=function(){pickTemplate(+b.dataset.tp);};});
  document.querySelectorAll('[data-ql]').forEach(function(b){b.onclick=function(){openQual(+b.dataset.ql);};});
+ document.querySelectorAll('[data-br]').forEach(function(b){b.onclick=function(){openBrief(+b.dataset.br);};});
+ document.querySelectorAll('[data-dr]').forEach(function(b){b.onclick=function(){dealRoom(+b.dataset.dr);};});
  document.querySelectorAll('[data-blk]').forEach(function(b){b.onclick=function(){openBlk(+b.dataset.blk);};});
 }
 
@@ -6500,6 +6505,196 @@ function salesOffer(i){
    setTimeout(function(){window.print();},250);});
  };
  go();
+}
+
+/* ================= PRE-CALL BRIEFING =================
+   Ten seconds before you dial. Everything you would be embarrassed to have
+   forgotten, and nothing else. */
+function shownTo(w){
+ /* units this person has been shown, from the viewing log */
+ var name=low(w);
+ return (S.vw||[]).filter(function(v){return low(v.n)&&name.indexOf(low(v.n).split(' ')[0])>=0;});
+}
+function briefOf(i){
+ var d=S.deals[i]; if(!d)return null;
+ var q=d.q||{}, b=[];
+ var want=[d.u||'', num(d.lbd)?d.lbd+' bed':'', d.lcom||'', num(d.lmax)?'up to '+money(d.lmax):''].filter(Boolean);
+ var lt=lastTouch(d), quiet=lt?ddiff(lt,TD):null;
+ var hist=(d.hist||[]).slice(-3).reverse();
+ var vws=(S.vw||[]).filter(function(v){
+  var f=low(String(d.w||'').split(' ')[0]);
+  return f&&low(v.n).indexOf(f)>=0;});
+ var rejected=vws.filter(function(v){return v.nx==='no'||v.pr==='low';});
+ return {d:d,q:q,want:want,quiet:quiet,lt:lt,hist:hist,vws:vws,rejected:rejected,
+  blk:d.blk?blkDef(d.blk):null, score:qScore(d), fee:dealFee(d)};
+}
+function openBrief(i){
+ var B=briefOf(i); if(!B)return;
+ var d=B.d, q=B.q;
+ function line(l,v,tone){
+  return '<div class="row"><div class="lab">'+esc(l)+'</div>'+
+   '<div class="v2" style="font-size:13px;text-align:right;max-width:62%'+(tone?';color:'+tone:'')+'">'+
+   esc(pvAll(v))+'</div></div>';}
+ var h='<div class="hint">'+esc(pvName(d.w))+(d.u?' · '+esc(pvNum(d.u)):'')+
+   ' · '+STAGES[d.s]+' · '+pmoney(B.fee)+'</div>';
+ /* the headline: what they want and whether you can actually close it */
+ h+='<div class="card" style="margin-top:12px">';
+ h+=line('They want', B.want.length?B.want.join(' · '):'not written down yet', B.want.length?'':'var(--bad)');
+ h+=line('Budget', q.bud||(num(d.lmax)?money(d.lmax):'not asked'), q.bud?'':'var(--bad)');
+ h+=line('Funds', q.fund||'not asked', q.fund?'':'var(--bad)');
+ h+=line('Who decides', q.who||'not asked', q.who?'':'var(--bad)');
+ h+=line('Why', q.why||'not asked', q.why?'':'');
+ h+=line('Timing', q.when||'not asked', q.when?'':'');
+ h+='</div>';
+ if(B.blk){
+  h+='<div class="card" style="margin-top:10px;border-color:rgba(212,106,94,.5)">'+
+   '<div class="lab" style="color:var(--bad);font-weight:600">Blocking this: '+esc(B.blk[1])+'</div>'+
+   '<div class="tgt" style="margin-top:5px">'+esc(blkAns(d.blk))+'</div></div>';
+ }
+ if(B.vws.length){
+  h+='<div class="vhead" style="margin-top:14px">Already shown '+B.vws.length+'</div><div class="card">'+
+   B.vws.slice(0,5).map(function(v){
+    var u=S.units[v.u];
+    return '<div class="row big2"><div><div class="lab">'+esc(pvNum(u?u.p:'a unit'))+'</div>'+
+     (v.w?'<div class="tgt">'+esc(pvAll(v.w))+'</div>':'')+'</div>'+
+     '<div class="v2" style="font-size:11.5px'+(v.nx==='no'?';color:var(--bad)':'')+'">'+
+     (v.nx==='no'?'rejected':(v.nx==='offer'?'offered':'thinking'))+'</div></div>';}).join('')+
+   '</div>';
+  /* the pattern is worth more than any single rejection */
+  var why={};
+  B.rejected.forEach(function(v){ if(v.pr==='low')why.price=(why.price||0)+1; });
+  if(why.price>=2)h+='<div class="hint" style="margin-top:7px;color:var(--bad)">'+
+   why.price+' of what you showed them was called too expensive. Bring the budget conversation forward.</div>';
+ }
+ h+='<div class="card" style="margin-top:10px">';
+ h+=line('Next step', d.na||'nothing set', d.na?'':'var(--bad)');
+ if(d.nd)h+=line('Due', new Date(d.nd).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+
+  (dueIn(d.nd)<0?' · '+Math.abs(dueIn(d.nd))+' days late':''), dueIn(d.nd)<0?'var(--bad)':'');
+ h+=line('Last contact', B.lt?(B.quiet===0?'today':B.quiet+' days ago'):'never logged',
+  (B.quiet!==null&&B.quiet>=14)?'var(--bad)':'');
+ if(d.src)h+=line('Came from', d.src);
+ if(d.hh)h+=line('Same wallet as', d.hh);
+ h+='</div>';
+ if(B.hist.length){
+  h+='<div class="vhead" style="margin-top:14px">Recently</div><div class="card">'+
+   B.hist.map(function(x){
+    return '<div class="row"><div class="lab" style="font-size:12.5px">'+esc(pvAll(x.a||''))+'</div>'+
+     '<div class="v2" style="font-size:11.5px">'+(x.d?new Date(x.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'')+'</div></div>';}).join('')+
+   '</div>';}
+ if(String(d.n||'').trim()){
+  h+='<div class="vhead" style="margin-top:14px">What you know</div>'+
+   '<div class="tplbox"><p style="white-space:pre-wrap">'+esc(pvAll(d.n))+'</p></div>';}
+ if(B.score<4)h+='<div class="hint" style="margin-top:10px;color:var(--gold)">'+
+  'Only '+B.score+' of 5 qualifying questions answered. Ask the missing one on this call.</div>';
+ var ph=(d.ph||'').replace(/[^\d+]/g,'');
+ h+='<div class="oacts" style="margin-top:12px">'+
+   (ph&&!S.priv?'<a class="ub gold" href="tel:'+ph+'" style="text-decoration:none;text-align:center">Call now</a>':'')+
+   '<button data-brq="'+i+'">Qualify</button>'+
+   '<button data-brb="'+i+'">Blocked by</button>'+
+  '</div>';
+ openTool('Before you call',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ var bq=document.querySelector('[data-brq]'), bb=document.querySelector('[data-brb]');
+ if(bq)bq.onclick=function(){closeTool();setTimeout(function(){openQual(i);},200);};
+ if(bb)bb.onclick=function(){closeTool();setTimeout(function(){openBlk(i);},200);};
+}
+
+/* ================= DEAL ROOM =================
+   Everything about one live deal on one screen, instead of four tabs. */
+function dealRoom(i){
+ var d=S.deals[i]; if(!d)return;
+ var isR=(d.ty==='Rent'||num(d.rent));
+ var L=chkListFor(d), c=chkOf(d), pr=chkProgress(d);
+ var next=L.filter(function(x){return !c[x[0]];})[0];
+ var fee=dealFee(d), vat=fee*0.05;
+ var kds=kdAll().filter(function(k){return low(k.w).indexOf(low(d.w))>=0||
+   (d.u&&low(k.w).indexOf(low(d.u))>=0);});
+ var docs=docsOf(d);
+ var cn=contacts();
+ function row(l,v,tone){
+  return '<div class="row"><div class="lab">'+esc(l)+'</div><div class="v2" style="font-size:13px'+
+   (tone?';color:'+tone:'')+'">'+(v==null?'—':v)+'</div></div>';}
+ var h='<div class="hint">'+esc(pvName(d.w))+' · '+STAGES[d.s]+
+  (dealAge(d)?' · '+dealAge(d)+' days in the book':'')+'</div>';
+
+ h+='<div class="vhead" style="margin-top:12px">The deal</div><div class="card">'+
+  row('Property', esc(pvNum(d.u||'not set')), d.u?'':'var(--bad)')+
+  row(isR?'Annual rent':'Price', isR?pmoney(d.rent):pmoney(d.v), (isR?num(d.rent):num(d.v))?'':'var(--bad)')+
+  row('Your rate', (d.r||0)+'%')+
+  row('Your fee', pmoney(fee),'var(--gold)')+
+  row('Fee plus VAT', pmoney(fee+vat))+
+  (d.ch?row('Cheques', esc(d.ch)):'')+
+  '</div>';
+
+ h+='<div class="vhead" style="margin-top:14px">Progress '+pr.done+' of '+pr.total+'</div>'+
+  '<div class="card">'+
+  '<div style="height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:10px">'+
+   '<div style="height:100%;width:'+pr.pct+'%;background:var(--ok)"></div></div>'+
+  L.map(function(x){
+   var on=!!c[x[0]];
+   return '<div class="row" data-drc="'+i+':'+x[0]+'" style="cursor:pointer">'+
+    '<div class="lab" style="font-size:13px'+(on?';color:var(--dim);text-decoration:line-through':'')+'">'+
+     esc(x[1])+'</div>'+
+    '<div class="v2" style="color:'+(on?'var(--ok)':'var(--dim)')+'">'+(on?'done':'—')+'</div></div>';
+  }).join('')+'</div>';
+ if(next)h+='<div class="hint" style="margin-top:7px;color:var(--gold)">Next: '+esc(next[1])+
+  (next[2]?' — '+esc(next[2]):'')+'</div>';
+
+ /* the honest risk read, from data rather than optimism */
+ var risks=[];
+ if(!d.ph)risks.push('No phone number, you cannot chase this');
+ if(!d.nd)risks.push('No next date set');
+ else if(dueIn(d.nd)<0)risks.push('Next step is '+Math.abs(dueIn(d.nd))+' days late');
+ var lt=lastTouch(d), q=lt?ddiff(lt,TD):999;
+ if(q>=14)risks.push('Nothing logged for '+(lt?q+' days':'ever'));
+ if(d.blk)risks.push('Blocked: '+(blkDef(d.blk)||[])[1]);
+ if(qScore(d)<4)risks.push('Only '+qScore(d)+' of 5 qualifying questions answered');
+ if(num(d.s)>=3&&!pr.done)risks.push('Agreed but the transfer checklist has not been started');
+ if(!isR&&!num(d.v))risks.push('No value, so the fee is a guess');
+ kds.forEach(function(k){var dd=kdDays(k); if(dd>=0&&dd<=30)risks.push(k.t+' in '+dd+' days');});
+ h+='<div class="vhead" style="margin-top:14px">What could go wrong</div>';
+ h+=risks.length
+  ? '<div class="card" style="border-color:rgba(212,106,94,.45)">'+risks.map(function(r){
+     return '<div class="tgt" style="margin-bottom:5px;color:var(--bad)">&bull; '+esc(pvAll(r))+'</div>';}).join('')+'</div>'
+  : '<div class="hint" style="color:var(--ok)">Nothing obvious. Rare.</div>';
+
+ if(kds.length){
+  h+='<div class="vhead" style="margin-top:14px">Dates</div><div class="card">'+
+   kds.slice(0,6).map(function(k){
+    var dd=kdDays(k);
+    return row(esc(k.t), new Date(k.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+
+     ' · '+(dd<0?Math.abs(dd)+'d ago':dd+'d'), dd>=0&&dd<=30?'var(--bad)':'');}).join('')+'</div>';}
+
+ h+='<div class="vhead" style="margin-top:14px">Paperwork</div><div class="card">'+
+  row('Documents attached', docs.length||'<span style="color:var(--bad)">none</span>')+
+  row('Contacts in the book', cn.length||'<span style="color:var(--bad)">none</span>')+
+  '</div>';
+
+ var hist=(d.hist||[]).slice().reverse();
+ if(hist.length){
+  h+='<div class="vhead" style="margin-top:14px">History</div><div class="card">'+
+   hist.slice(0,8).map(function(x){
+    return '<div class="row"><div class="lab" style="font-size:12.5px">'+esc(pvAll(x.a||''))+'</div>'+
+     '<div class="v2" style="font-size:11.5px">'+(x.d?new Date(x.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'')+'</div></div>';}).join('')+
+   '</div>';}
+
+ h+='<div class="oacts" style="margin-top:12px">'+
+   '<button data-drbr="'+i+'">Briefing</button>'+
+   '<button data-drdoc="'+i+'">Documents</button>'+
+   '<button data-drkd="'+i+'">Add a date</button>'+
+  '</div>';
+ openTool('Deal room',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.querySelectorAll('[data-drc]').forEach(function(r){
+  r.onclick=function(){
+   var p=r.dataset.drc.split(':'), dd=S.deals[+p[0]];
+   var cc=chkOf(dd); cc[p[1]]=cc[p[1]]?0:1;
+   put(S); drawDeals(); drawAtt(); dealRoom(+p[0]);};});
+ var b1=document.querySelector('[data-drbr]'); if(b1)b1.onclick=function(){closeTool();setTimeout(function(){openBrief(i);},200);};
+ var b2=document.querySelector('[data-drdoc]');
+ if(b2)b2.onclick=function(){closeTool();setTimeout(function(){openDocs('deal',i);},200);};
+ var b3=document.querySelector('[data-drkd]');
+ if(b3)b3.onclick=function(){closeTool();setTimeout(function(){openKd(-1);},200);};
 }
 
 /* ================= VIEWINGS AND FEEDBACK =================
