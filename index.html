@@ -2173,12 +2173,15 @@ function hookBad(x){
  var t=String(x.n2||''); if(!t)return '';
  var m=t.match(/Their unit\s+(\d+)\s*:\s*(\d+)BR/);
  if(!m)return '';
- var UM=S.umap||{}, u=m[1], said=num(m[2]);
- if(UM[u]&&num(UM[u].bd)&&num(UM[u].bd)!==said)
-  return 'Says '+said+'BR, the masterplan says '+UM[u].bd+'BR';
- if(x.hkc&&x.hkc!==comOf(x.w))
-  return 'Comp came from '+x.hkc+', not '+comOf(x.w);
- if(!x.hkc&&UM[u])
+ var UM=S.umap||{}, u=m[1], said=num(m[2]), mine=comOf(x.w);
+ /* unit numbers repeat across communities, so a map row only applies
+    to the community it came from */
+ var e=UM[u], applies=e&&(!e.cm||e.cm===mine);
+ if(applies&&num(e.bd)&&num(e.bd)!==said)
+  return 'Says '+said+'BR, the masterplan says '+e.bd+'BR';
+ if(x.hkc&&x.hkc!==mine)
+  return 'Comp came from '+x.hkc+', not '+mine;
+ if(!x.hkc&&applies)
   return 'Built before the community check';
  return '';
 }
@@ -2249,8 +2252,10 @@ function lRow(x,i,ready){
   (ph&&!S.priv?'<div class="acts"><a href="tel:'+ph+'" data-lch="'+i+':call">Call</a>'+
    '<a href="'+wa+'" target="_blank" data-lch="'+i+':wa">WhatsApp</a></div>'+
    '<div style="margin-top:7px;font-size:11.5px"><a href="#" data-lmsg="'+i+'" style="color:var(--gold)">change message</a>'+
+   ' &middot; <a href="#" data-lpitch="'+i+'" style="color:var(--gold)">listing pitch</a>'+
    ' &middot; <a href="#" data-led="'+i+'" style="color:var(--dim)">edit</a></div>'
-   :'<div style="margin-top:7px;font-size:11.5px"><a href="#" data-led="'+i+'" style="color:var(--dim)">edit</a></div>')+
+   :'<div style="margin-top:7px;font-size:11.5px"><a href="#" data-lpitch="'+i+'" style="color:var(--gold)">listing pitch</a>'+
+    ' &middot; <a href="#" data-led="'+i+'" style="color:var(--dim)">edit</a></div>')+
   '<div class="oacts">'+OUT.map(function(o){
    var cls=o[0]==='remove'?'rm':(o[0]==='val'?'val':'');
    return '<button class="'+cls+'" data-lout="'+i+':'+o[0]+'">'+o[1]+'</button>';}).join('')+
@@ -2336,6 +2341,7 @@ function drawLater(){
  document.querySelectorAll('[data-lch]').forEach(function(a){a.onclick=function(){
   var p=a.dataset.lch.split(':'); if(S.later[+p[0]])S.later[+p[0]]._ch=p[1];};});
  document.querySelectorAll('[data-lmsg]').forEach(function(a){a.onclick=function(e){e.preventDefault();laterMsgSheet(+a.dataset.lmsg);};});
+ document.querySelectorAll('[data-lpitch]').forEach(function(a){a.onclick=function(e){e.preventDefault();listingPitch(+a.dataset.lpitch);};});
  document.querySelectorAll('[data-lout]').forEach(function(b){b.onclick=function(){
   var p=b.dataset.lout.split(':'); laterOutcome(+p[0],p[1]);};});
  document.querySelectorAll('[data-led]').forEach(function(a){a.onclick=function(e){e.preventDefault();laterEdit(+a.dataset.led);};});
@@ -3122,7 +3128,8 @@ function parseUnitMap(rows){
   var u=num(String(pickCol(o,['unit','villa number','unit no'])).replace(/\D/g,''));
   var bd=num(pickCol(o,['beds','beds_masterplan','bedrooms']));
   if(!u||!bd)return;
-  m[u]={bd:bd,cl:pickCol(o,['cluster'])||'',bk:pickCol(o,['backs_onto'])||''};
+  m[u]={bd:bd,cl:pickCol(o,['cluster'])||'',bk:pickCol(o,['backs_onto'])||'',
+        cm:String(pickCol(o,['community'])||'').trim().toLowerCase()};
  });
  return m;
 }
@@ -5987,6 +5994,122 @@ function salesOffer(i){
    if(im[1])h+='<figure><img src="'+im[1]+'"><figcaption>Floorplan</figcaption></figure>';
    document.getElementById('printwrap').innerHTML=h+tail;
    setTimeout(function(){window.print();},250);});
+ };
+ go();
+}
+
+/* ================= LISTING PITCH =================
+   What you hand a landlord who says "yes, send me something".
+   Every number comes from the sales CSV. Nothing here is invented. */
+function pitchFacts(com,bd,bua){
+ var C=valComps(com,bd,12);
+ if(!C.length)return null;
+ var psfs=C.map(function(t){return t.psf;}).sort(function(a,b){return a-b;});
+ var med=psfs[Math.floor(psfs.length/2)];
+ var newest=C[0];
+ var half=C.filter(function(t){return ddiff(t.d,TD)<=180;});
+ var prev=C.filter(function(t){var g=ddiff(t.d,TD);return g>180&&g<=365;});
+ function medOf(a){if(!a.length)return 0;var p=a.map(function(t){return t.psf;}).sort(function(x,y){return x-y;});
+  return p[Math.floor(p.length/2)];}
+ var m6=medOf(half), mprev=medOf(prev);
+ return {n:C.length,med:med,newest:newest,n6:half.length,nprev:prev.length,
+  m6:m6,mprev:mprev,
+  move:(m6&&mprev)?((m6-mprev)/mprev*100):null,
+  low:bua?Math.round(bua*psfs[0]/10000)*10000:0,
+  mid:bua?Math.round(bua*med/10000)*10000:0,
+  hi:bua?Math.round(bua*psfs[psfs.length-1]/10000)*10000:0,
+  comps:C.slice(0,6)};
+}
+function listingPitch(i){
+ var x=S.later[i]; if(!x)return;
+ var com=comOf(x.w), un=(String(x.w||'').match(/(\d+)/)||[])[1]||'';
+ var UM=S.umap||{}, e=UM[un], bd=(e&&(!e.cm||e.cm===com))?num(e.bd):0;
+ var pretty=com.replace(/\b\w/g,function(c){return c.toUpperCase();});
+ openTool('Listing pitch',
+  '<div class="hint">For '+esc(pvName(x.n))+' &middot; '+esc(pvNum(x.w||''))+
+   '. Every figure comes from your sales file.</div>'+
+  '<div class="two"><div><label>Community</label><input id="lp-com" value="'+esc(pretty)+'"></div>'+
+  '<div><label>Bedrooms</label><input id="lp-bd" type="number" value="'+(bd||'')+'"></div></div>'+
+  '<div class="two"><div><label>BUA sqft</label><input id="lp-bua" type="number" placeholder="4950"></div>'+
+  '<div><label>Agency fee %</label><input id="lp-fee" type="number" step="0.5" value="2"></div></div>'+
+  '<div class="res" id="lp-out"></div>'+
+  '<button class="addbtn" id="lp-pdf" style="border-style:solid;border-color:var(--gold);color:var(--gold)">Generate PDF to send</button>','');
+ document.getElementById('tcopy').textContent='Copy the message';
+ function vals(){return {com:document.getElementById('lp-com').value.trim(),
+  bd:num(document.getElementById('lp-bd').value),
+  bua:num(document.getElementById('lp-bua').value),
+  fee:num(document.getElementById('lp-fee').value)};}
+ function go(){
+  var v=vals(), o=document.getElementById('lp-out');
+  if(!(S.mkt||[]).length){
+   o.innerHTML='<div class="hint" style="color:var(--bad)">No market data loaded. '+
+    'More then Rebuild hooks from data, and load a sales CSV first.</div>';COPYTEXT='';return;}
+  var F=pitchFacts(v.com,v.bd,v.bua);
+  if(!F){o.innerHTML='<div class="hint" style="color:var(--bad)">No '+(v.bd?v.bd+'BR ':'')+
+   'sales in '+esc(v.com)+' in the last 12 months. Widen the bed count or check the spelling.</div>';COPYTEXT='';return;}
+  var mv=F.move==null?'':((F.move>=0?'up ':'down ')+Math.abs(F.move).toFixed(1)+'%');
+  function row(l,r,c){return '<div class="row'+(c?' '+c:'')+'"><div class="lab">'+l+'</div><div class="v2">'+r+'</div></div>';}
+  o.innerHTML=
+   row('Sales in the last 12 months',F.n)+
+   row('Median','AED '+(S.priv?'•••':F.med.toLocaleString())+'/sqft')+
+   row('Most recent','Unit '+F.newest.u+' · '+(S.priv?'•••':F.newest.psf.toLocaleString())+'/sqft · '+monShort(F.newest.d))+
+   (mv?row('Last 6 months vs the 6 before',mv,F.move>=0?'':'bad'):'')+
+   (v.bua?row('Suggested range',pmoney(F.low)+' to '+pmoney(F.hi))+
+     row('On the median',pmoney(F.mid),'tot'):
+     '<div class="hint" style="margin-top:8px">Add the BUA and it will price the unit.</div>');
+  var first=String(x.n||'').trim().split(' ')[0]||'there';
+  COPYTEXT=first+', here is where '+v.com+' actually sits right now.\n\n'+
+   F.n+(v.bd?' '+v.bd+' bedroom':'')+' sales in the last 12 months. Median AED '+F.med.toLocaleString()+
+   ' per sqft. The most recent was unit '+F.newest.u+' at AED '+F.newest.psf.toLocaleString()+
+   ' in '+monShort(F.newest.d)+'.'+
+   (mv?' Over the last six months the median has gone '+mv+' against the six before it.':'')+
+   (v.bua?'\n\nOn your size that puts you between '+money(F.low)+' and '+money(F.hi)+
+    ', with '+money(F.mid)+' as the realistic number.':'')+
+   '\n\nI have put the full breakdown in a PDF with every comparable sale listed, so you can see exactly '+
+   'where the figure comes from. Happy to walk you through it whenever suits.\n\nMustafa Saleh\nAllegiance Real Estate';
+ }
+ ['lp-com','lp-bd','lp-bua','lp-fee'].forEach(function(id){document.getElementById(id).oninput=go;});
+ document.getElementById('lp-pdf').onclick=function(){
+  var v=vals(), F=pitchFacts(v.com,v.bd,v.bua);
+  if(!F){alert('Nothing to build a pitch from yet.');return;}
+  function row(l,val,c){return '<tr class="'+(c||'')+'"><td>'+l+'</td><td class="r">'+val+'</td></tr>';}
+  var mv=F.move==null?'':((F.move>=0?'up ':'down ')+Math.abs(F.move).toFixed(1)+'%');
+  var h='<div class="ph"><h1>'+esc(v.com)+(v.bd?' &middot; '+v.bd+' bedroom':'')+'</h1>'+
+   '<div class="sub2">Prepared for '+esc(x.n||'the owner')+(x.w?' &middot; '+esc(x.w.split('·')[0].trim()):'')+'</div></div>';
+  h+='<h3>Where the market is</h3><table>'+
+   row('Recorded sales, last 12 months',F.n)+
+   row('Median price','AED '+F.med.toLocaleString()+' per sqft')+
+   row('Most recent sale','Unit '+F.newest.u+' &middot; AED '+F.newest.psf.toLocaleString()+'/sqft &middot; '+monShort(F.newest.d))+
+   (mv?row('Last 6 months vs the 6 before',mv+' ('+F.n6+' sales against '+F.nprev+')'):'')+
+   '</table>';
+  h+='<h3>The comparable sales</h3><table>'+F.comps.map(function(t){
+   return row('Unit '+t.u+' &middot; '+monShort(t.d),money(t.pr||0)+(t.psf?' &middot; AED '+t.psf.toLocaleString()+'/sqft':''));
+  }).join('')+'</table>';
+  if(v.bua){
+   var fee=F.mid*v.fee/100, feev=fee*1.05;
+   h+='<h3>What your unit is worth</h3><table>'+
+    row('Built up area',v.bua.toLocaleString()+' sqft')+
+    row('Conservative',money(F.low))+
+    row('On the 12-month median',money(F.mid))+
+    row('Best case achieved',money(F.hi))+
+    row('Realistic asking price',money(F.mid),'tot')+'</table>';
+   h+='<h3>What it costs you to sell</h3><table>'+
+    row('Agency fee '+v.fee+'% incl VAT',money(feev))+
+    row('DLD transfer, paid by the buyer','—')+
+    row('Net to you, on the median',money(F.mid-feev),'tot')+'</table>';
+  }
+  h+='<h3>How I would sell it</h3><div class="note2">'+
+   'Priced off the '+F.n+' recorded sales above, not off what the portals are asking. '+
+   'Professional photography and a floorplan before it goes live. '+
+   'Listed on Property Finder and Bayut with a Trakheesi permit, and taken directly to the buyers already '+
+   'registered with me for this community. You get a written update every week with the enquiries, the '+
+   'viewings and what the feedback actually was, including when it is not what you want to hear.'+
+   '</div>';
+  var tail='<div class="foot2">Figures are taken from recorded transactions and are indicative, not a formal valuation. '+
+   'Prepared '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+
+   '.<br><b>Mustafa Saleh</b> &middot; Allegiance Real Estate &middot; Dubai</div>';
+  document.getElementById('printwrap').innerHTML=h+tail;
+  setTimeout(function(){window.print();},250);
  };
  go();
 }
