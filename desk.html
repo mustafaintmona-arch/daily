@@ -510,6 +510,9 @@ function boot(){
  try{var raw=localStorage.getItem(KEY); if(raw)BK=JSON.parse(raw);}catch(e){}
  if(BK&&BK.S){
   BK.imgs=BK.imgs||{};
+  /* the saved copy can be older than the code, so repair it on the way in
+     and not only when a file is loaded */
+  try{ if(repairData(BK.S))persist(); }catch(e){}
   render();
   idbAll().then(function(m){
    var n=0; for(var k in m){if(!BK.imgs[k]){BK.imgs[k]=m[k];n++;}}
@@ -647,14 +650,26 @@ function wireTabs(){
  if(!el)return;
  function fade(){ if(wrap)wrap.classList.toggle('more',el.scrollWidth-el.clientWidth-el.scrollLeft>6); }
  el.scrollLeft=TABSCROLL;
- var down=false,x0=0,s0=0,moved=0;
- el.onmousedown=function(e){down=true;moved=0;x0=e.pageX;s0=el.scrollLeft;el.classList.add('drag');};
- window.addEventListener('mousemove',function(e){
-  if(!down)return;
-  var dx=e.pageX-x0; moved=Math.abs(dx);
-  el.scrollLeft=s0-dx; TABSCROLL=el.scrollLeft; fade();});
- window.addEventListener('mouseup',function(){
-  if(!down)return; down=false; el.classList.remove('drag');});
+ /* only treat it as a drag once the mouse has actually travelled, otherwise
+    a plain click on a tab gets swallowed */
+ var down=false,x0=0,s0=0,dragging=false;
+ el.onmousedown=function(e){down=true;dragging=false;x0=e.pageX;s0=el.scrollLeft;};
+ if(!wireTabs._on){
+  wireTabs._on=true;
+  window.addEventListener('mousemove',function(e){
+   var t=document.getElementById('tabs'); if(!down||!t)return;
+   var dx=e.pageX-x0;
+   if(!dragging&&Math.abs(dx)<5)return;         /* below the threshold, still a click */
+   dragging=true; t.classList.add('drag');
+   t.scrollLeft=s0-dx; TABSCROLL=t.scrollLeft;
+   var w=document.getElementById('tabwrap');
+   if(w)w.classList.toggle('more',t.scrollWidth-t.clientWidth-t.scrollLeft>6);});
+  window.addEventListener('mouseup',function(){
+   var t=document.getElementById('tabs');
+   down=false;
+   if(t&&dragging)setTimeout(function(){t.classList.remove('drag');},0);
+   else if(t)t.classList.remove('drag');
+   dragging=false;});}
  el.onwheel=function(e){
   if(Math.abs(e.deltaX)>Math.abs(e.deltaY))return;   /* trackpad sideways already works */
   e.preventDefault(); el.scrollLeft+=e.deltaY; TABSCROLL=el.scrollLeft; fade();};
@@ -669,6 +684,8 @@ function render(){
  document.getElementById('tabs').innerHTML=tabs.map(function(t){
   return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+(['tools','fill','transfer','docs','proj','camp'].indexOf(t[0])>=0?'':'<i>'+LIST[t[0]]().length+'</i>')+'</b>';}).join('');
  document.querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){
+  var t=document.getElementById('tabs');
+  if(t&&t.classList.contains('drag'))return;   /* they were scrolling, not choosing */
   TAB=b.dataset.t;Q='';F='All';document.getElementById('q').value='';render();};});
  wireTabs();
  document.getElementById('src').textContent=BK.at?
