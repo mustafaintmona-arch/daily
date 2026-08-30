@@ -431,6 +431,7 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 .pc2 .tg.st{border-color:rgba(185,151,91,.45);color:var(--gold)}
 .pc2 .tg.due{border-color:rgba(212,106,94,.5);color:var(--bad)}
 .pc2 .tg.pay{border-color:rgba(76,175,125,.45);color:var(--ok)}
+.pc2 .tg.blk{border-color:rgba(212,106,94,.5);color:var(--bad)}
 .pc2 .na2{font-size:14px;color:var(--ink);margin-top:11px;line-height:1.4}
 .pc2 .na2 em{font-style:normal;color:var(--dim);font-size:12.5px;display:block;margin-top:2px}
 .pc2 .acts{display:flex;gap:8px;margin-top:13px}
@@ -3600,6 +3601,8 @@ function drawDeals(){
    (ag&&ag>30?'<span class="tg">'+ag+' days in the book</span>':'')+
    '<span class="tg'+(late?' due':'')+'">'+when+'</span>'+
    (d.ty?'<span class="tg">'+esc(d.ty)+'</span>':'');
+  if(d.blk){var bdf=blkDef(d.blk);
+   if(bdf)tags+='<span class="tg blk">'+esc(bdf[1])+'</span>';}
   if(d.npd){var nd=daysTo(d.npd);
    if(nd>=0&&nd<=90)tags+='<span class="tg pay">Pays '+pmoney(d.npa)+' in '+nd+'d</span>';}
   var prim = ph&&!S.priv
@@ -4539,18 +4542,46 @@ function openBlk(i){
   '<div class="oacts" style="margin-top:10px" id="bk-l">'+
   BLOCKS.map(function(b){
    return '<button data-bk2="'+b[0]+'"'+(d.blk===b[0]?' class="val"':'')+'>'+esc(b[1])+'</button>';}).join('')+
-  (d.blk?'<button class="rm" data-bk2="">Clear it</button>':'')+
-  '</div>','');
- var list=document.getElementById('bk-l');
+  '</div><div id="bk-body"></div>','');
+ var list=document.getElementById('bk-l'), body=document.getElementById('bk-body');
+ function redraw(){drawDeals();drawAtt();drawBlk();drawQual();}
+ function paint(){
+  list.querySelectorAll('[data-bk2]').forEach(function(o){
+   o.className=(d.blk&&o.dataset.bk2===d.blk)?'val':'';});
+  if(!d.blk){body.innerHTML='<div class="hint" style="margin-top:12px">Nothing marked yet. Tap one above.</div>';COPYTEXT='';return;}
+  var def=blkDef(d.blk); if(!def)return;
+  body.innerHTML=
+   '<div class="row big2" style="margin-top:14px"><div><div class="lab">'+esc(def[1])+'</div>'+
+   '<div class="tgt">'+esc(def[2])+'</div></div></div>'+
+   '<label style="margin-top:10px">The answer that works</label>'+
+   '<textarea id="bk-a" rows="5">'+esc(blkAns(d.blk))+'</textarea>'+
+   '<div class="oacts" style="margin-top:10px">'+
+    '<button class="val" id="bk-3">Chase in 3 days</button>'+
+    '<button id="bk-s">Save the answer</button>'+
+    '<button class="rm" id="bk-x">Clear the blocker</button>'+
+   '</div>'+
+   '<div class="hint" style="margin-top:8px">Chase in 3 days sets the next step and the date, so this does not sit here quietly for a month.</div>';
+  COPYTEXT=blkAns(d.blk);
+  document.getElementById('bk-s').onclick=function(){
+   var b=this;
+   S.ans=S.ans||{}; S.ans[d.blk]=document.getElementById('bk-a').value.trim();
+   put(S); COPYTEXT=S.ans[d.blk]; drawBlk();
+   b.textContent='Saved';
+   setTimeout(function(){b.textContent='Save the answer';},900);};
+  document.getElementById('bk-3').onclick=function(){
+   d.nd=autoDate(3);
+   d.na='Answer the '+String(def[1]).toLowerCase()+' objection';
+   put(S); redraw(); drawHero(); drawHead();
+   this.textContent='Set for '+new Date(d.nd).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+   this.disabled=true;};
+  document.getElementById('bk-x').onclick=function(){
+   delete d.blk; put(S); redraw(); paint();};
+ }
  list.querySelectorAll('[data-bk2]').forEach(function(b){
   b.onclick=function(){
-   var k=b.dataset.bk2;
-   /* show the choice on the button first, then move on */
-   list.querySelectorAll('[data-bk2]').forEach(function(o){
-    if(o.dataset.bk2)o.className=(o.dataset.bk2===k?'val':'');});
-   if(k){d.blk=k;}else{delete d.blk;}
-   put(S); drawDeals(); drawAtt(); drawBlk();drawQual();
-   setTimeout(function(){closeTool(); if(k)setTimeout(function(){openAns(k);},220);},420);};});
+   d.blk=b.dataset.bk2;
+   put(S); redraw(); paint();};});
+ paint();
 }
 var ATTOPEN='';
 function drawAtt(){
