@@ -1057,8 +1057,8 @@ body.lite #qcsheet .inner{background:var(--card)}
     <button class="addbtn" id="addkd">+ Add a key date</button></div>
   <div class="sec"><h2>Where business comes from</h2><div class="card" id="reflist"></div></div>
   <div class="sec"><h2>Rules</h2><div class="card"><div class="hint">
-    One wallet: Ashish and Ashwini are the same money. Pick one deal, drop the other.<br><br>
-    Never ask T for money before the unit is locked.<br><br>
+    One wallet: a husband and wife are one pocket. Pick one deal, drop the other.<br><br>
+    Never ask a client for money before the unit is locked.<br><br>
     US and UK clients pay by wire, not card. Send escrow details early.<br><br>
     A zero logged honestly beats a gap.</div></div></div>
   <div class="sec"><h2>Do not contact <b id="dnccount"></b></h2><div class="card" id="dnclist"></div></div>
@@ -4386,7 +4386,8 @@ function attItems(){
  var ub=unbanked();
  add('unbsec','Won but not banked',ub.length,'target reads low until you log it',
   ub.reduce(function(a,x){return a+dealFee(x.d);},0),'good');
- var hh=Object.keys(households()).filter(function(k){return households()[k].length>1;}).length;
+ var HH=households();
+ var hh=Object.keys(HH).filter(function(k){return HH[k].length>1;}).length;
  add('hhsec','Same household',hh,'counted once, not twice',0,'');
  var dz=dupGroups();
  add('dupsec','One person, several records',dz.length,'do not message them twice',0,'');
@@ -5635,7 +5636,7 @@ function drawMore(){
  var due=[];S.deals.forEach(function(d,i){if(d.s<4&&d.nd&&d.nd<=TD)due.push(d);});
  due.sort(function(a,b){return dealFee(b)-dealFee(a);});
  document.getElementById('duelist').innerHTML=due.length?due.map(function(d){
-  return '<div class="row"><div><div class="lab">'+esc(pvName(d.w))+'</div><div class="tgt">'+esc(d.na)+'</div></div><div style="font-family:Georgia,serif;color:var(--gold);white-space:nowrap">'+money(dealFee(d))+'</div></div>';}).join('')
+  return '<div class="row"><div><div class="lab">'+esc(pvName(d.w))+'</div><div class="tgt">'+esc(pvAll(d.na))+'</div></div><div style="font-family:Georgia,serif;color:var(--gold);white-space:nowrap">'+pmoney(dealFee(d))+'</div></div>';}).join('')
   :'<div class="hint">Nothing due. Set next action dates on your deals and this becomes your call list.</div>';
  var days=[];for(var i=0;i<7;i++)days.push(iso(new Date(Date.now()-i*864e5)));
  function sum(k){return days.reduce(function(a,x){return a+num((S.days[x]||{})[k]);},0);}
