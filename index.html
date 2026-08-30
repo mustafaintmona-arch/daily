@@ -898,6 +898,9 @@ body.lite #qcsheet .inner{background:var(--card)}
   <div class="sec hide" id="stucksec"><h2>Sitting too long <b id="stuckn"></b></h2>
     <div class="card" id="stuck"></div>
     <div class="hint" style="margin-top:8px">At this stage far longer than your own average. Usually means an unanswered objection.</div></div>
+  <div class="sec hide" id="blksec"><h2>What is blocking your money <b id="blkn"></b></h2>
+    <div class="card" id="blk"></div>
+    <div class="hint" style="margin-top:8px">The same few objections kill most deals. Tap one to see the answer that worked last time, and edit it when you find better words.</div></div>
   <div class="sec hide" id="dupsec"><h2>Same number, several records <b id="dupn"></b></h2>
     <div class="card" id="dup"></div>
     <div class="hint" style="margin-top:8px">One message covering everything they own beats three separate ones. The call list handles them together.</div></div>
@@ -1520,7 +1523,7 @@ function drawEye(){var b=document.getElementById('eye');
  document.getElementById('eyesvg').innerHTML=S.priv?EYE_SHUT:EYE_OPEN;
  document.getElementById('eyet').textContent=S.priv?'Hidden':'Private';}
 document.getElementById('eye').onclick=function(){
- S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawChk();drawAtt();drawEarn();invalidate();};
+ S.priv=S.priv?0:1;put(S);drawEye();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawCommit();drawPrep();drawDupes();drawKdToday();drawChk();drawAtt();drawEarn();invalidate();};
 
 
 
@@ -1684,7 +1687,7 @@ function openTrash(){
   if(t.k==='unit')S.units.push(t.o);
   if(t.k==='later')S.later.push(t.o);
   if(t.k==='op')S.op.push(t.o);
-  put(S);invalidate();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawDealSeg();
+  put(S);invalidate();drawDeals();drawLater();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawCommit();drawPrep();drawDupes();drawKdToday();drawDealSeg();
   TS.style.display='none';alert('Restored.');};});
 }
 
@@ -2290,7 +2293,7 @@ function laterOutcome(i,k){
   S.deals.push({ty:'Resale',w:x.n,ph:x.ph||'',u:x.w||'',v:num(x.v)||0,r:2,s:1,
    na:'Send the valuation',nd:TD,src:'Prospecting call',ref:'',n:x.n2||'',ch:'1 cheque',rent:0});
   S.later.splice(i,1);
-  put(S);drawLater();drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawDealSeg();
+  put(S);drawLater();drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawCommit();drawPrep();drawDupes();drawKdToday();drawDealSeg();
   alert('Moved into your pipeline');
   return;
  }
@@ -2802,7 +2805,7 @@ function drawLedger(){
    '<button class="x" data-lgx="'+i+'" style="background:none;border:0;color:var(--dim);font-size:16px">×</button></div></div>';}).join('')+
   (L.length>12?'<div class="hint" style="padding-top:9px">Showing the last 12 of '+L.length+'.</div>':'');
  document.querySelectorAll('[data-lgx]').forEach(function(b){b.onclick=function(){
-  if(confirm('Remove this entry?')){S.ledger.splice(+b.dataset.lgx,1);put(S);drawEarn();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();}};});
+  if(confirm('Remove this entry?')){S.ledger.splice(+b.dataset.lgx,1);put(S);drawEarn();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawCommit();drawPrep();drawDupes();drawKdToday();}};});
 }
 document.getElementById('logcomm').onclick=function(){logComm();};
 
@@ -2861,7 +2864,7 @@ function logComm(){
   if(!a){alert('How much?');return;}
   S.ledger.push({amt:a,d:document.getElementById('c-d').value||TD,
    w:document.getElementById('c-w').value.trim(),n:document.getElementById('c-n').value.trim()});
-  put(S);drawEarn();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMap();TS.style.display='none';};
+  put(S);drawEarn();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawCommit();drawPrep();drawDupes();drawKdToday();drawMap();TS.style.display='none';};
 }
 function drawEarn(){
  drawLedger();
@@ -3616,6 +3619,7 @@ function drawDeals(){
      (d.s<4?'<button class="adv" data-adv="'+i+'">'+(d.s===3?'Mark as won':'Move to '+STAGES[d.s+1])+'</button>':'')+
      (d.s===LOST?'<button data-bk="'+i+'">Reopen</button>':'')+
      '<button data-tp="'+i+'">Message</button>'+
+     '<button data-blk="'+i+'">'+(d.blk?'Blocked: '+esc((blkDef(d.blk)||[])[1]||''):'Blocked by')+'</button>'+
      '<button data-ed="'+i+'">Edit</button>'+
      (d.s>0&&d.s<4?'<button data-bk="'+i+'">Step back</button>':'')+
    '</div></div>';
@@ -3640,21 +3644,22 @@ function drawDeals(){
   document.getElementById('pc-'+b.dataset.mx).classList.toggle('open');};});
  document.querySelectorAll('[data-sz]').forEach(function(b){b.onclick=function(){
   var d=S.deals[+b.dataset.sz], n=new Date(); n.setDate(n.getDate()+3);
-  d.nd=iso(n); put(S); drawDeals(); drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday(); drawNav(); drawMoves();
+  d.nd=iso(n); put(S); drawDeals(); drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawCommit();drawPrep();drawDupes();drawKdToday(); drawNav(); drawMoves();
   if(navigator.vibrate)navigator.vibrate(8);};});
  document.querySelectorAll('[data-adv]').forEach(function(b){b.onclick=function(){
   var d=S.deals[+b.dataset.adv]; if(d.s>=4)return;
   var ns=d.s+1;
   if(ns<4&&CADENCE[ns]!==undefined)d.nd=autoDate(CADENCE[ns]);
   if(ns===4){d.nd='';}
-  d.s=ns;d.sAt=TD;put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();drawNav();drawMoves();drawMap();
+  d.s=ns;d.sAt=TD;put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();drawNav();drawMoves();drawMap();
   if(navigator.vibrate)navigator.vibrate(12);
   if(ns===4)setTimeout(function(){if(confirm('Nice one. Log the commission now?'))logComm();},120);};});
  document.querySelectorAll('[data-bk]').forEach(function(b){b.onclick=function(){
   var d=S.deals[+b.dataset.bk]; if(d.s<=0)return; d.s=(d.s===LOST?2:d.s-1);
-  put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();};});
+  put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();};});
  document.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(){openSheet(+b.dataset.ed);};});
  document.querySelectorAll('[data-tp]').forEach(function(b){b.onclick=function(){pickTemplate(+b.dataset.tp);};});
+ document.querySelectorAll('[data-blk]').forEach(function(b){b.onclick=function(){openBlk(+b.dataset.blk);};});
 }
 
 var EDIT=null, PICK=0;
@@ -3715,7 +3720,7 @@ function openSheet(i){
 f('v').oninput=calcFee;f('r').oninput=calcFee;f('rent').oninput=calcFee;f('ty').onchange=toggleRent;
 document.getElementById('adddeal').onclick=function(){openSheet(null);};
 document.getElementById('sc').onclick=function(){document.getElementById('sheet').style.display='none';};
-document.getElementById('sdel').onclick=function(){if(EDIT!==null&&confirm('Delete this deal?')){toTrash('deal',S.deals[EDIT]);S.deals.splice(EDIT,1);put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();}};
+document.getElementById('sdel').onclick=function(){if(EDIT!==null&&confirm('Delete this deal?')){toTrash('deal',S.deals[EDIT]);S.deals.splice(EDIT,1);put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();}};
 document.getElementById('sv').onclick=function(){
  var w=f('w').value.trim(); if(!w){alert('Client name is needed');return;}
  var o={w:w,ph:f('ph').value.trim(),u:f('u').value.trim(),v:num(f('v').value),r:num(f('r').value)||2,
@@ -3726,7 +3731,7 @@ document.getElementById('sv').onclick=function(){
   lost:(PICK===LOST?f('lost').value:''),
   hist:(EDIT!==null&&S.deals[EDIT].hist)?S.deals[EDIT].hist:[]};
  if(EDIT===null)S.deals.push(o);else S.deals[EDIT]=o;
- put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();
+ put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();
 };
 
 function psf(u){return u.bua&&u.pr?Math.round(u.pr/u.bua):0;}
@@ -4358,6 +4363,10 @@ function attItems(){
  var st=stuck();
  add('stucksec','Sitting too long',st.length,'far past your own average',
   st.reduce(function(a,x){return a+x.fee;},0),'gold');
+ var bg=blkGroups();
+ add('blksec','What is blocking your money',blocked().length,
+  bg.length?'mostly: '+((bg[0].def||[])[1]||'') : '',
+  bg.reduce(function(a,x){return a+x.fee;},0),'gold');
  var ub=unbanked();
  add('unbsec','Won but not banked',ub.length,'target reads low until you log it',
   ub.reduce(function(a,x){return a+dealFee(x.d);},0),'good');
@@ -4371,6 +4380,107 @@ function attItems(){
   var w={red:0,gold:1,good:2,'':3};
   return (w[a.tone]-w[b.tone]) || (b.fee-a.fee);});
  return out;
+}
+/* ================= BLOCKERS =================
+   Deals do not die of nothing. They die of one sentence the client said
+   that never got answered. This records that sentence and your answer to it. */
+var BLOCKS=[
+ ['money','Cannot move the money','Transfer limits, no UAE account, cash they cannot bank',
+  'Ask exactly which step fails: the bank, the limit or the paperwork. Then solve that one step. '+
+  'Escrow details early, developer accepts wires from the home country, and the first instalment can be '+
+  'split. Never offer to carry cash yourself.'],
+ ['notme','Someone else decides','A brother, a husband, a partner, a board',
+  'Stop selling to the messenger. Ask for a call with the person who decides, together, and frame it as '+
+  'saving them from relaying numbers they did not choose. Book the call before you send anything else.'],
+ ['price','Price is too high','Above their number, or above what they think it is worth',
+  'Do not discount first. Show what actually sold, unit by unit with dates. If the gap is real, change the '+
+  'unit, not the price. If the gap is a feeling, the comps close it.'],
+ ['wait','Waiting for the market','Timing, war, rates, a correction they expect',
+  'Agree that waiting is reasonable, then price it. Show what the same unit cost twelve months ago and what '+
+  'the payment plan costs them monthly. Waiting has a number, and it is usually bigger than the risk.'],
+ ['plan','Payment plan does not work','Instalments too close together or too big',
+  'Go back to the developer before you go back to the client. Waivers, restructures and post-handover '+
+  'plans exist. Come back with two options, not an apology.'],
+ ['trust','Not sure about the developer','Delays, quality, a bad experience before',
+  'Handover record, escrow protection and the specific project, not the brand. If they were burned before, '+
+  'name it out loud. Pretending it did not happen is what loses them.'],
+ ['fee','Wants the fee cut','Asking you to share or drop commission',
+  'Hold it, calmly. Say what you do that an agent who discounts does not: the data, the paperwork, the chase. '+
+  'A fee cut buys you nothing and tells them the price was soft.'],
+ ['nosell','Not selling right now','Landlord holding, family not agreed',
+  'Do not push. Ask what would have to be true for them to sell, put a date on it, and send them one honest '+
+  'market update between now and then. Most listings come from the fourth touch, not the first.'],
+ ['unit','Wrong unit','Layout, floor, view, no maid room, backing something',
+  'You already know their real constraint if you ask one more question. Change the unit and keep the client.']
+];
+function blkDef(k){return BLOCKS.filter(function(b){return b[0]===k;})[0];}
+function blkAns(k){var d=blkDef(k);return (S.ans&&S.ans[k])||(d?d[3]:'');}
+function blocked(){
+ var out=[];
+ S.deals.forEach(function(d,i){
+  if(!d.blk||d.s>=4||d.s===LOST)return;
+  out.push({i:i,d:d,k:d.blk,fee:dealFee(d)});});
+ out.sort(function(a,b){return b.fee-a.fee;});
+ return out;
+}
+function blkGroups(){
+ var g={};
+ blocked().forEach(function(r){(g[r.k]=g[r.k]||[]).push(r);});
+ return Object.keys(g).map(function(k){
+  return {k:k,def:blkDef(k),rows:g[k],
+   fee:g[k].reduce(function(a,r){return a+r.fee;},0)};})
+  .sort(function(a,b){return b.fee-a.fee;});
+}
+function drawBlk(){
+ var el=document.getElementById('blk'); if(!el)return;
+ var G=blkGroups();
+ var n=document.getElementById('blkn');
+ if(n)n.textContent=G.length?blocked().length+' · '+pmoney(G.reduce(function(a,x){return a+x.fee;},0)):'';
+ if(!G.length){el.innerHTML='<div class="hint">Nothing marked yet. Open any client, tap the three dots, '+
+  'then Blocked by. One tap and you start seeing which objection is actually costing you money.</div>';return;}
+ el.innerHTML=G.map(function(g){
+  return '<div class="row big2" data-blkk="'+g.k+'"><div>'+
+   '<div class="lab">'+esc(g.def?g.def[1]:g.k)+'</div>'+
+   '<div class="tgt">'+esc(g.rows.map(function(r){return pvName(r.d.w);}).join(', '))+'</div></div>'+
+   '<div class="v2">'+pmoney(g.fee)+'</div></div>';}).join('');
+ el.querySelectorAll('[data-blkk]').forEach(function(r){
+  r.onclick=function(){openAns(r.dataset.blkk);};});
+}
+function openAns(k){
+ var d=blkDef(k); if(!d)return;
+ var rows=blkGroups().filter(function(g){return g.k===k;})[0];
+ openTool(d[1],
+  '<div class="hint">'+esc(d[2])+'</div>'+
+  (rows?'<div class="card" style="margin-top:10px">'+rows.rows.map(function(r){
+    return '<div class="row"><div class="lab">'+esc(pvName(r.d.w))+'</div><div class="v2">'+pmoney(r.fee)+'</div></div>';
+   }).join('')+'</div>':'')+
+  '<label style="margin-top:12px">The answer that works</label>'+
+  '<textarea id="an-t" rows="6">'+esc(blkAns(k))+'</textarea>'+
+  '<button class="addbtn" id="an-s" style="margin-top:8px">Save it</button>'+
+  '<div class="hint" style="margin-top:8px">Edit this the moment you find better words. '+
+  'Next time this objection comes up you will not be rewriting it from memory.</div>','');
+ COPYTEXT=blkAns(k);
+ document.getElementById('an-s').onclick=function(){
+  S.ans=S.ans||{}; S.ans[k]=document.getElementById('an-t').value.trim();
+  put(S); COPYTEXT=S.ans[k]; drawBlk();
+  this.textContent='Saved';
+  setTimeout(function(){closeTool();},500);};
+}
+function openBlk(i){
+ var d=S.deals[i]; if(!d)return;
+ openTool('What is blocking '+pvName(d.w),
+  '<div class="hint">Pick the one sentence that is actually stopping this. Be honest, a wrong tag is worse than none.</div>'+
+  '<div class="oacts" style="margin-top:10px" id="bk-l">'+
+  BLOCKS.map(function(b){
+   return '<button data-bk2="'+b[0]+'"'+(d.blk===b[0]?' class="val"':'')+'>'+esc(b[1])+'</button>';}).join('')+
+  (d.blk?'<button class="rm" data-bk2="">Clear it</button>':'')+
+  '</div>','');
+ document.getElementById('bk-l').querySelectorAll('[data-bk2]').forEach(function(b){
+  b.onclick=function(){
+   var k=b.dataset.bk2;
+   if(k){d.blk=k;}else{delete d.blk;}
+   put(S); closeTool(); drawDeals(); drawAtt(); drawBlk();
+   if(k)setTimeout(function(){openAns(k);},260);};});
 }
 var ATTOPEN='';
 function drawAtt(){
@@ -4396,7 +4506,7 @@ function drawAtt(){
   var id=r.dataset.att;
   ATTOPEN=(ATTOPEN===id)?'':id;
   /* show only the one they asked for */
-  ['nophone','hhsec','chksec','kdsec','prepsec','promsec','waitsec','stucksec','dupsec','quietsec','unbsec']
+  ['nophone','hhsec','chksec','kdsec','prepsec','promsec','waitsec','stucksec','blksec','dupsec','quietsec','unbsec']
    .forEach(function(sid){
     var e=document.getElementById(sid); if(!e)return;
     e.classList.toggle('hide', sid!==ATTOPEN);});
@@ -4406,7 +4516,7 @@ function drawAtt(){
    if(t&&t.scrollIntoView)setTimeout(function(){t.scrollIntoView({behavior:'smooth',block:'start'});},60);}
   if(navigator.vibrate)navigator.vibrate(5);};});
  /* keep whatever is open, open */
- ['nophone','hhsec','chksec','kdsec','prepsec','promsec','waitsec','stucksec','dupsec','quietsec','unbsec']
+ ['nophone','hhsec','chksec','kdsec','prepsec','promsec','waitsec','stucksec','blksec','dupsec','quietsec','unbsec']
   .forEach(function(sid){
    var e=document.getElementById(sid); if(!e)return;
    e.classList.toggle('hide', sid!==ATTOPEN);});
@@ -5541,7 +5651,7 @@ document.getElementById('t-import').onclick=function(){
   arr.forEach(function(o){var key=String(o.w||'').trim().toLowerCase(); if(have[key])return;
    S.deals.push({w:o.w||'',ph:o.ph||'',u:o.u||'',v:num(o.v),r:num(o.r)||2,s:num(o.s),na:o.na||'',nd:o.nd||'',
     src:o.src||'Referral',n:o.n||'',ty:o.ty||'Ready',ch:o.ch||'1 cheque',rent:num(o.rent),ref:o.ref||''});added++;});
-  put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();alert(added+' clients added.');TS.style.display='none';
+  put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();alert(added+' clients added.');TS.style.display='none';
  }catch(e){alert('That did not look like a valid client list.');}};};
 function allImgKeys(){var ks=[];
  S.units.forEach(function(u){
@@ -6181,7 +6291,7 @@ document.getElementById('cq').oninput=function(e){CQ=e.target.value.trim().toLow
   var on=m.classList.toggle('hide');
   t.textContent=on?'Show the full list of money moves':'Hide the full list';
   if(!on)drawMoves();};})();
-drawStockSeg();drawNav();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawCommit();drawPrep();drawDupes();drawKdToday();drawEarn();drawDeals();drawDealSeg();drawLater();drawUpNext();drawMoves();drawMap();drawNag();drawNet();drawEye();DREW={};
+drawStockSeg();drawNav();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawCommit();drawPrep();drawDupes();drawKdToday();drawEarn();drawDeals();drawDealSeg();drawLater();drawUpNext();drawMoves();drawMap();drawNag();drawNet();drawEye();DREW={};
 </script>
 </body>
 </html>
