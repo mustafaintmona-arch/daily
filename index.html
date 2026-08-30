@@ -984,6 +984,7 @@ body.lite #qcsheet .inner{background:var(--card)}
 <div id="s-proj" class="hide">
   <div class="sec"><h2>Projects <b id="pcount"></b></h2>
     <div id="plist"></div>
+    <button class="addbtn" id="pasteproj">Paste a launch</button>
     <button class="addbtn" id="addproj">+ Add a project</button>
     <div class="hint" style="margin-top:9px">Write the argument once. Then it is two taps to send it, and your team gets it when you send them a backup.</div></div>
 </div>
@@ -5229,6 +5230,165 @@ function blankProj(){
   note:'',img:'',  /* cover image key */
   at:TD};
 }
+/* ================= PASTE A LAUNCH =================
+   Developers send the same shapeless block of text every time. This reads it,
+   fills the fields it can, and shows you what it found before anything is saved. */
+function parseLaunch(t){
+ var raw=String(t||'');
+ /* strip the decoration developers love */
+ var txt=raw.replace(/[*_~`]/g,'')
+   .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu,'')
+   .replace(/\u00a0/g,' ');
+ var lines=txt.split(/\n+/).map(function(l){return l.replace(/^[\s\-\u2022\u25aa\u2705\u2013|]+/,'').trim();})
+   .filter(function(l){return l.length;});
+ /* developers shout a banner before they say anything useful */
+ var BANNER=/^(new\s*launch|launching\s*(soon|now)|now\s*launching|launch\s*alert|pre\s*launch|coming\s*soon|eoi|exclusive|just\s*launched|book\s*now|limited)/i;
+ var o=blankProj(), got=[];
+ function find(re){var m=txt.match(re); return m?m[1].trim():'';}
+ function money2(s){
+  var m=String(s).replace(/,/g,'').match(/([\d.]+)\s*(m|mil|mill|million|k)?/i);
+  if(!m)return 0;
+  var v=parseFloat(m[1]); if(!v)return 0;
+  var u=(m[2]||'').toLowerCase();
+  if(u.indexOf('m')===0)v*=1e6; else if(u==='k')v*=1e3;
+  return Math.round(v);
+ }
+ /* name: an explicit label wins, otherwise the first short line that is not a price */
+ var n=find(/(?:project|community|development)\s*[:\-]\s*(.+)/i);
+ if(!n){
+  for(var i=0;i<lines.length&&i<7;i++){
+   var l=lines[i];
+   if(BANNER.test(l))continue;
+   if(l.length>2&&l.length<60&&!/\d{3,}|aed|price|from|payment|handover|%/i.test(l)){n=l;break;}}
+ }
+ if(n){
+  var parts=n.split(/\s*[\u2013\u2014\-|,]\s*/);
+  o.n=parts[0].trim();
+  if(parts.length>1&&!/^by\b/i.test(parts[1])&&parts[1].length<40)o.loc=parts.slice(1).join(', ').trim();
+  got.push('name');}
+
+ var dev=find(/(?:developer|by|from developer)\s*[:\-]\s*(.+)/i);
+ if(!dev){
+  var known=txt.match(/\b(Emaar|DAMAC|Sobha|Nakheel|Meraas|Aldar|Ellington|Omniyat|Beyond|Azizi|Danube|Binghatti|Select Group|MAG|Imtiaz|Samana|Nshama|Dubai Properties|Wasl|Deyaar|Union Properties)\b/i);
+  if(known)dev=known[1];}
+ if(dev){o.dev=dev.trim();got.push('developer');}
+
+ var loc=find(/(?:location|located in|where|area)\s*[:\-]?\s*(.+)/i);
+ if(loc)o.loc=loc.replace(/^:\s*/,'').split(/https?:/)[0].trim();
+ if(o.loc)got.push('location');
+
+ var hand=find(/(?:handover|completion|delivery|ready)[ \t:\-]*((?:[Qq][1-4][ \t]*)?[A-Za-z0-9 ',\/\-]*\d{4})/i);
+ if(!hand){var hm=txt.match(/(?:^|\n)[^\n]*?((?:[Qq][1-4][ \t]*)?\d{4})[^\n]*?(?:handover|completion)/i)||
+           txt.match(/(?:handover|completion|delivery|ready)[ \t:\-]*([A-Za-z0-9 ',\/\-]+)/i);
+  if(hm)hand=hm[1];}
+ if(hand){o.hand=hand.replace(/^(in|by|on)\s+/i,'').trim();got.push('handover');}
+
+ var from=find(/(?:starting from|prices from|from|starts at|starting at)\s*(?:aed\s*)?([\d.,]+\s*(?:m|mil|million|k)?)/i);
+ if(from){o.from=money2(from); if(o.from)got.push('starting price');}
+
+ /* payment plans: look for the two common shapes, and label by what is near them */
+ var plans=[];
+ var m;
+ /* 80/20, 80 / 20, 80% / 20%, 40% during construction / 60% on handover */
+ var re=/(\d{1,2})\s*%?\s*(?:\/|\s+-\s+|\s+then\s+)\s*(\d{1,2})\s*%?/g;
+ while((m=re.exec(txt))){
+  var pa=+m[1], pb=+m[2];
+  if(pa+pb<90||pa+pb>110)continue;   /* a payment plan adds up to about 100 */
+  plans.push({v:pa+'/'+pb,at:m.index});}
+ /* 40% during construction / 60% on handover */
+ var re3=/(\d{1,2})\s*%[^\/\n]{0,45}\/\s*(\d{1,2})\s*%/g;
+ while((m=re3.exec(txt))){
+  var qa=+m[1], qb=+m[2];
+  if(qa+qb<90||qa+qb>110)continue;
+  if(!plans.some(function(x){return x.v===qa+'/'+qb;}))plans.push({v:qa+'/'+qb,at:m.index});}
+ if(!plans.length){
+  var re2=/(\d{1,2}\s*%\s*(?:on booking|now|down)[^.\n]{0,40})/gi;
+  while((m=re2.exec(txt)))plans.push({v:m[1].trim(),at:m.index});}
+ plans.forEach(function(p){
+  /* the line the plan sits on decides what it is. a window bleeding into the
+     next line was labelling the apartments plan as the villas plan. */
+  var ls=txt.lastIndexOf('\n',p.at)+1, le=txt.indexOf('\n',p.at);
+  var line=txt.slice(ls,le<0?txt.length:le).toLowerCase();
+  var wide=txt.slice(Math.max(0,p.at-110),p.at+60).toLowerCase();
+  var isV=/villa|townhouse|\bth\b|duplex/, isA=/apart|flat|studio|\bbed/;
+  var where = isV.test(line)?'v' : (isA.test(line)?'a' : (isV.test(wide)?'v':(isA.test(wide)?'a':'')));
+  if(where==='v'&&!o.pv){o.pv=p.v;got.push('villas plan');}
+  else if(where==='a'&&!o.pa){o.pa=p.v;got.push('apartments plan');}
+  else if(!o.pa){o.pa=p.v;got.push('payment plan');}
+  else if(!o.pv){o.pv=p.v;got.push('second payment plan');}
+ });
+ /* the selling points: bullet-ish lines that are not admin */
+ var pts=lines.filter(function(l){
+  if(l.length<12||l.length>200)return false;
+  if(BANNER.test(l))return false;
+  if(l.indexOf(o.n)===0)return false;
+  if(/^(location|developer|handover|payment|price|from|project|community|prices)\s*[:\-]?/i.test(l))return false;
+  /* anything already captured as a number does not need repeating in the argument */
+  if(/\d{1,2}\s*%?\s*\/\s*\d{1,2}/.test(l))return false;
+  if(/(starting from|prices from|from)\s*(aed)?\s*[\d.,]/i.test(l))return false;
+  if(/(handover|completion|delivery)/i.test(l))return false;
+  if(/https?:\/\//.test(l))return false;
+  return true;});
+ if(pts.length){o.th=pts.slice(0,6).join('\n');got.push('the argument');}
+ o.note='Pasted '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+
+  '. Check the figures against the developer sheet before you send anything.';
+ return {o:o,got:got,raw:raw};
+}
+function openPasteProj(){
+ openTool('Paste a launch',
+  '<div class="hint">Paste the developer message, brochure text or WhatsApp forward. '+
+  'The app pulls out what it recognises. Nothing saves until you have checked it.</div>'+
+  '<textarea id="pp-x" rows="8" placeholder="NEW LAUNCH\nEmaar &middot; Golf Vale, Emaar South\n2 beds from AED 1.9M\n80/20 payment plan\nHandover Q4 2029\nNext to the golf course and 5 minutes from Al Maktoum airport" style="margin-top:12px"></textarea>'+
+  '<button class="btnfull" id="pp-go" style="margin-top:10px">Read it</button>'+
+  '<div id="pp-out"></div>','');
+ document.getElementById('tcopy').textContent='Close';
+ document.getElementById('pp-go').onclick=function(){
+  var t=document.getElementById('pp-x').value;
+  if(!t.trim()){alert('Paste something first.');return;}
+  var R=parseLaunch(t), o=R.o;
+  var out=document.getElementById('pp-out');
+  if(!R.got.length){
+   out.innerHTML='<div class="hint" style="margin-top:12px;color:var(--bad)">Could not find anything usable. '+
+    'Add it by hand instead.</div>';return;}
+  function fld(id,label,val,ph,ta){
+   return '<label style="margin-top:10px">'+label+'</label>'+
+    (ta?'<textarea id="'+id+'" rows="5">'+esc(val||'')+'</textarea>'
+       :'<input id="'+id+'" value="'+esc(val||'')+'" placeholder="'+ph+'">');}
+  out.innerHTML='<div class="hint" style="margin-top:12px;color:var(--ok)">Found: '+esc(R.got.join(', '))+
+   '. Anything it missed, type in.</div>'+
+   '<div class="pfields">'+
+   fld('pp-n','Project',o.n,'Golf Vale')+
+   '<div class="two"><div>'+fld('pp-dev','Developer',o.dev,'Emaar')+'</div>'+
+   '<div>'+fld('pp-loc','Where',o.loc,'Emaar South')+'</div></div>'+
+   fld('pp-th','Why it is worth buying',o.th,'',1)+
+   '<div class="two"><div>'+fld('pp-pa','Apartments plan',o.pa,'80/20')+'</div>'+
+   '<div>'+fld('pp-pv','Villas plan',o.pv,'')+'</div></div>'+
+   '<div class="two"><div><label style="margin-top:10px">From AED</label>'+
+    '<input id="pp-from" type="number" value="'+(o.from||'')+'"></div>'+
+   '<div>'+fld('pp-hand','Handover',o.hand,'Q4 2029')+'</div></div>'+
+   '</div>'+
+   '<button class="btnfull" id="pp-save" style="margin-top:14px">Save the project</button>'+
+   '<div class="hint" style="margin-top:8px">Check the price and the plan against the developer sheet. '+
+   'A wrong number in a pitch is worse than no pitch.</div>';
+  document.getElementById('pp-save').onclick=function(){
+   var nm=document.getElementById('pp-n').value.trim();
+   if(!nm){alert('Give it a name.');return;}
+   var p=blankProj();
+   p.n=nm;
+   p.dev=document.getElementById('pp-dev').value.trim();
+   p.loc=document.getElementById('pp-loc').value.trim();
+   p.th=document.getElementById('pp-th').value.trim();
+   p.pa=document.getElementById('pp-pa').value.trim();
+   p.pv=document.getElementById('pp-pv').value.trim();
+   p.from=num(document.getElementById('pp-from').value);
+   p.hand=document.getElementById('pp-hand').value.trim();
+   p.note=o.note;
+   projects().unshift(p); put(S);
+   closeTool(); drawProj();
+   setTimeout(function(){pitchSheet(0);},250);
+  };
+ };
+}
 function projPitch(pr,name){
  var L=[];
  L.push(name?('Hi '+name+', Mustafa here.'):'Hi, Mustafa here.');
@@ -5338,6 +5498,31 @@ function openProj(i){
   projects().splice(i,1); put(S);
   document.getElementById('tsheet').style.display='none'; drawProj();};
 }
+function projPdf(i){
+ var pr=projects()[i]; if(!pr)return;
+ function row(l,v){return '<tr><td>'+l+'</td><td class="r">'+v+'</td></tr>';}
+ var h='<div class="ph"><h1>'+esc(pr.n||'Project')+'</h1><div class="sub2">'+
+  esc([pr.dev,pr.loc].filter(Boolean).join(' &middot; '))+'</div></div>';
+ if(pr.th)h+='<h3>Why this one</h3><div class="note2">'+esc(pr.th).replace(/\n/g,'<br>')+'</div>';
+ var any=pr.pa||pr.pv||num(pr.from)||pr.hand;
+ if(any){
+  h+='<h3>The numbers</h3><table>';
+  if(num(pr.from))h+=row('Starting from',money(pr.from));
+  if(pr.pa)h+=row('Apartments payment plan',esc(pr.pa));
+  if(pr.pv)h+=row('Townhouses and villas',esc(pr.pv));
+  if(pr.hand)h+=row('Handover',esc(pr.hand));
+  h+='</table>';}
+ h+='<h3>What happens next</h3><div class="note2">'+
+  'Tell me the size and the budget you have in mind and I will come back with the specific units worth '+
+  'taking, what they cost all in, and what the same thing is trading for nearby. If the numbers do not '+
+  'work I will tell you that too.</div>';
+ var tail='<div class="foot2">Prices and payment plans are set by the developer and can change without notice. '+
+  'Figures here are indicative and confirmed at booking. Prepared '+
+  new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+
+  '.<br><b>Mustafa Saleh</b> &middot; Allegiance Real Estate &middot; Dubai</div>';
+ document.getElementById('printwrap').innerHTML=h+tail;
+ setTimeout(function(){window.print();},250);
+}
 function pitchSheet(i){
  var pr=projects()[i];
  var fits=projFits(pr);
@@ -5347,7 +5532,8 @@ function pitchSheet(i){
     fits.slice(0,8).map(function(d,j){
      return '<button class="qbtn alt" data-pt="'+j+'" style="padding:9px 7px;font-size:11.5px;flex:0 0 auto">'+
       esc(pvName(d.w))+'</button>';}).join('')+'</div>':'')+
-  '<button class="btnfull" id="pt-copy" style="margin-top:12px">Copy the message</button>';
+  '<button class="btnfull" id="pt-copy" style="margin-top:12px">Copy the message</button>'+
+  '<button class="addbtn" id="pt-pdf" style="margin-top:8px;border-style:solid;border-color:var(--gold);color:var(--gold)">One-pager PDF to send</button>';
  openTool('Pitch '+pr.n,h,'');
  document.getElementById('tcopy').textContent='Close';
  document.querySelectorAll('[data-pt]').forEach(function(b){b.onclick=function(){
@@ -5362,6 +5548,7 @@ function pitchSheet(i){
   if(navigator.clipboard)navigator.clipboard.writeText(t);
   var b=document.getElementById('pt-copy'); b.textContent='Copied';
   setTimeout(function(){b.textContent='Copy the message';},1200);};
+ document.getElementById('pt-pdf').onclick=function(){projPdf(i);};
 }
 function whoFitsProj(i){
  var pr=projects()[i], fits=projFits(pr);
@@ -5549,6 +5736,7 @@ document.getElementById('addunit').onclick=function(){openUnitSheet(null);};
 document.getElementById('t-undo').onclick=openSnapshots;
 document.getElementById('t-hooks').onclick=openHookTool;
 document.getElementById('addproj').onclick=function(){openProj(null);};
+document.getElementById('pasteproj').onclick=function(){openPasteProj();};
 document.getElementById('addkd').onclick=function(){openKd(null);};
 document.getElementById('addcn').onclick=function(){openContact(null);};
 document.getElementById('ntsave').onclick=saveNote;
@@ -5719,6 +5907,10 @@ function defaultCopy(){navigator.clipboard.writeText(COPYTEXT).then(function(){
 }).catch(function(){prompt('Copy this',COPYTEXT);});}
 document.getElementById('tc').onclick=function(){TS.style.display='none';};
 document.getElementById('tcopy').onclick=defaultCopy;
+function closeTool(){
+ var t=document.getElementById('tsheet');
+ if(t)t.style.display='none';
+}
 function openTool(title,html,copy){
  document.getElementById('t-title').textContent=title;TB.innerHTML=html;TB.id='tbody';COPYTEXT=copy||'';
  var b=document.getElementById('tcopy');b.textContent='Copy';b.onclick=defaultCopy;
