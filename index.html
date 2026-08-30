@@ -1322,6 +1322,14 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
     <div class="card" id="evlist"></div></div>
 </div>
 
+<div id="p-gym" class="hide">
+  <div class="sec" id="gymtoday"></div>
+  <div class="sec"><h2>Your cycle</h2><div class="card" id="gymcycle"></div></div>
+  <div class="sec"><h2>Last 7 days</h2><div id="gymweek"></div></div>
+  <div class="sec"><h2>History</h2><div class="card" id="gymhist"></div>
+    <button class="addbtn" id="gymedit" style="margin-top:9px">Edit the plan</button></div>
+</div>
+
 <div id="p-more" class="hide">
   <div class="sec"><h2>Due today</h2><div class="card" id="duelist"></div></div>
   <div class="sec"><h2>This week</h2><div class="card" id="week"></div></div>
@@ -1491,7 +1499,7 @@ const PROB=[0.10,0.25,0.50,0.80,1.00];
 const DTYPES=['Ready','Off-plan','Resale','Commercial','Rent','Land'];
 const CHEQ=['1 cheque','2 cheques','3 cheques','4 cheques','6 cheques','12 cheques'];
 const SRCS=['Referral','Repeat client','Portal lead','Walk in','Prospecting call','Social','Other'];
-const PAGES=[['today','Today','◧'],['deals','Deals','◆'],['stock','Stock','▣'],['diary','Diary','▤'],['more','More','≡']];
+const PAGES=[['today','Today','◧'],['deals','Deals','◆'],['stock','Stock','▣'],['diary','Diary','▤'],['gym','Gym','◑'],['more','More','≡']];
 const STOCKSEG=[['units','Inventory'],['proj','Projects'],['stats','Analytics'],['comps','Comps']];
 const CADENCE={0:2,1:3,2:2,3:2};
 const TEMPLATES=[
@@ -2735,6 +2743,7 @@ function pageDraw(k){
  if(DREW[k])return; DREW[k]=1;
  if(k==='stock'){drawUnits();drawComps();drawStock();drawProj();}
  if(k==='diary'){drawDiary();}
+ if(k==='gym'){drawGym();}
  if(k==='more'){drawMore();}
 }
 function drawStockSeg(){
@@ -3887,6 +3896,7 @@ function openSheet(i){
 }
 f('v').oninput=calcFee;f('r').oninput=calcFee;f('rent').oninput=calcFee;f('ty').onchange=toggleRent;
 document.getElementById('adddeal').onclick=function(){openSheet(null);};
+var ge=document.getElementById('gymedit'); if(ge)ge.onclick=function(){gymEditPlan();};
 document.getElementById('sc').onclick=function(){document.getElementById('sheet').style.display='none';};
 document.getElementById('sdel').onclick=function(){if(EDIT!==null&&confirm('Delete this deal?')){toTrash('deal',S.deals[EDIT]);S.deals.splice(EDIT,1);put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawQual();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();}};
 document.getElementById('sv').onclick=function(){
@@ -5940,6 +5950,282 @@ function tick(el){
 function haptic(kind){
  if(!navigator.vibrate)return;
  navigator.vibrate(kind==='heavy'?18:(kind==='light'?5:10));
+}
+
+/* ================= GYM =================
+   A rolling cycle, not a calendar. Miss a day and it picks up where you left off.
+   Every set is weight and reps, so the app can tell you if you are getting stronger. */
+var GYMPLAN=[
+ {n:'Chest and biceps', ex:['Bench press','Incline dumbbell press','Cable fly','Barbell curl','Incline curl']},
+ {n:'Back and biceps',  ex:['Lat pulldown','Barbell row','Seated cable row','Hammer curl','Face pull']},
+ {n:'Legs',             ex:['Squat','Romanian deadlift','Leg press','Leg curl','Calf raise']},
+ {n:'Shoulders',        ex:['Overhead press','Lateral raise','Rear delt fly','Shrug','Triceps pushdown']},
+ {n:'Rest',             ex:[]}
+];
+function gym(){
+ S.gym=S.gym||{};
+ if(!Array.isArray(S.gym.plan)||!S.gym.plan.length)S.gym.plan=JSON.parse(JSON.stringify(GYMPLAN));
+ if(!Array.isArray(S.gym.log))S.gym.log=[];
+ if(S.gym.at===undefined){
+  /* Chest and biceps was Saturday, so the cycle sits on back and biceps. */
+  S.gym.at=1;
+  var y=new Date(); y.setDate(y.getDate()-1);
+  S.gym.log.push({d:iso(y),i:0,n:'Chest and biceps',sets:[],done:1,seed:1});
+ }
+ return S.gym;
+}
+function gymPlan(){return gym().plan;}
+function gymLog(){return gym().log;}
+function gymToday(){
+ var g=gym();
+ var t=gymLog().filter(function(x){return x.d===TD;})[0];
+ return t||null;
+}
+function gymDayName(i){var p=gymPlan()[i%gymPlan().length];return p?p.n:'';}
+function gymStart(i){
+ var g=gym();
+ var t=gymToday();
+ if(t)return t;
+ var idx=(i===undefined)?g.at:i;
+ var p=gymPlan()[idx%gymPlan().length];
+ var s2={d:TD,i:idx%gymPlan().length,n:p.n,sets:[],done:0};
+ gymLog().push(s2); put(S);
+ return s2;
+}
+function gymSets(sess,ex){
+ return (sess.sets||[]).filter(function(x){return x.e===ex;});
+}
+/* the best set you have ever done on this exercise, before today */
+function gymBest(ex){
+ var best=null;
+ gymLog().forEach(function(s2){
+  if(s2.d===TD)return;
+  (s2.sets||[]).forEach(function(x){
+   if(x.e!==ex)return;
+   if(!best||x.w>best.w||(x.w===best.w&&x.r>best.r))best={w:x.w,r:x.r,d:s2.d};});});
+ return best;
+}
+function gymLast(ex){
+ var out=null;
+ gymLog().slice().sort(function(a,b){return String(b.d).localeCompare(String(a.d));})
+  .forEach(function(s2){
+   if(out||s2.d===TD)return;
+   var st=(s2.sets||[]).filter(function(x){return x.e===ex;});
+   if(st.length)out={sets:st,d:s2.d};});
+ return out;
+}
+function gymVolume(s2){
+ return (s2.sets||[]).reduce(function(a,x){return a+num(x.w)*num(x.r);},0);
+}
+function gymWeek(){
+ var cut=iso(new Date(Date.now()-7*864e5));
+ var L=gymLog().filter(function(x){return x.d>=cut&&(x.sets||[]).length;});
+ var vol=L.reduce(function(a,x){return a+gymVolume(x);},0);
+ var pbs=0;
+ L.forEach(function(s2){(s2.sets||[]).forEach(function(x){if(x.pb)pbs++;});});
+ return {n:L.length,vol:vol,pbs:pbs};
+}
+/* biceps three days running is the thing his own split does. say so once. */
+function gymWarn(){
+ var days=gymLog().slice().sort(function(a,b){return String(b.d).localeCompare(String(a.d));}).slice(0,3);
+ if(days.length<3)return '';
+ var hit=days.filter(function(s2){
+  return /bicep|curl/i.test(s2.n)||(s2.sets||[]).some(function(x){return /curl/i.test(x.e);});});
+ if(hit.length>=3)return 'Biceps have been worked three sessions running. They need a day.';
+ return '';
+}
+function drawGym(){
+ var g=gym(), el=document.getElementById('gymtoday'); if(!el)return;
+ var t=gymToday();
+ var idx=t?t.i:(g.at%gymPlan().length);
+ var p=gymPlan()[idx];
+ var doneN=t?gymPlan()[idx].ex.filter(function(e){return gymSets(t,e).length;}).length:0;
+ var total=p.ex.length;
+ var rest=!p.ex.length;
+ el.innerHTML='<div class="card">'+
+  '<div class="hint">'+new Date(TD).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+
+   ' · day '+(idx+1)+' of '+gymPlan().length+'</div>'+
+  '<div style="font-size:var(--f5);font-weight:650;letter-spacing:-.03em;margin-top:6px">'+esc(p.n)+'</div>'+
+  (rest?'<div class="tgt" style="margin-top:5px">Nothing today. Take it.</div>'
+       :'<div class="tgt" style="margin-top:5px">'+doneN+' of '+total+' done'+
+        (t&&gymVolume(t)?' · '+Math.round(gymVolume(t)).toLocaleString()+' kg lifted':'')+'</div>')+
+  (rest?'':'<div style="display:flex;gap:4px;margin:13px 0 2px">'+
+    p.ex.map(function(e){
+     return '<div style="flex:1;height:4px;border-radius:2px;background:'+
+      ((t&&gymSets(t,e).length)?'var(--acc)':'var(--s3)')+'"></div>';}).join('')+'</div>')+
+  '</div>'+
+  (rest
+   ? '<button class="btnfull" id="gymskip" style="margin-top:12px">Move on to '+esc(gymDayName(idx+1))+'</button>'
+   : '<button class="btnfull" id="gymgo" style="margin-top:12px">'+(t?'Carry on':'Start the session')+'</button>'+
+     '<button class="addbtn" id="gymswap" style="margin-top:8px">Do a different day</button>');
+ var w=gymWarn();
+ if(w)el.innerHTML+='<div class="card" style="margin-top:10px;border-color:rgba(224,119,106,.4)">'+
+  '<div class="tgt" style="color:var(--neg)">'+esc(w)+'</div></div>';
+ var go=document.getElementById('gymgo');
+ if(go)go.onclick=function(){gymStart();haptic();gymSession();};
+ var sk=document.getElementById('gymskip');
+ if(sk)sk.onclick=function(){g.at=(idx+1)%gymPlan().length;put(S);drawGym();haptic();};
+ var sw=document.getElementById('gymswap');
+ if(sw)sw.onclick=function(){gymPick();};
+ drawGymCycle(); drawGymWeek(); drawGymHist();
+}
+function drawGymCycle(){
+ var el=document.getElementById('gymcycle'); if(!el)return;
+ var g=gym(), t=gymToday(), cur=t?t.i:(g.at%gymPlan().length);
+ el.innerHTML=gymPlan().map(function(p,i){
+  var last=gymLog().filter(function(x){return x.i===i&&(x.sets||[]).length;})
+    .sort(function(a,b){return String(b.d).localeCompare(String(a.d));})[0];
+  var isNow=i===cur;
+  return '<div class="row"><div><div class="lab"'+(isNow?' style="color:var(--acc)"':'')+'>'+esc(p.n)+'</div>'+
+   '<div class="tgt">'+(isNow?'today':(last?'last '+new Date(last.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'not done yet'))+'</div></div>'+
+   '<div class="v2" style="font-size:12px">'+(p.ex.length?p.ex.length+' moves':'rest')+'</div></div>';}).join('');
+}
+function drawGymWeek(){
+ var el=document.getElementById('gymweek'); if(!el)return;
+ var w=gymWeek();
+ el.innerHTML='<div class="stat3">'+
+  '<div><div class="n">'+w.n+'</div><div class="l">sessions</div></div>'+
+  '<div><div class="n">'+(w.vol>=1000?(w.vol/1000).toFixed(1)+'t':Math.round(w.vol))+'</div><div class="l">volume</div></div>'+
+  '<div><div class="n'+(w.pbs?' good':'')+'">'+w.pbs+'</div><div class="l">best lifts</div></div></div>';
+}
+function drawGymHist(){
+ var el=document.getElementById('gymhist'); if(!el)return;
+ var L=gymLog().filter(function(x){return (x.sets||[]).length&&!x.seed;})
+  .sort(function(a,b){return String(b.d).localeCompare(String(a.d));}).slice(0,12);
+ if(!L.length){el.innerHTML='<div class="hint">Nothing logged yet. Start a session and every set lands here.</div>';return;}
+ el.innerHTML=L.map(function(s2,k){
+  return '<div class="row" data-gh="'+gymLog().indexOf(s2)+'" style="cursor:pointer"><div>'+
+   '<div class="lab">'+esc(s2.n)+'</div>'+
+   '<div class="tgt">'+new Date(s2.d).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+
+   ' · '+(s2.sets||[]).length+' sets</div></div>'+
+   '<div class="v2" style="font-size:13px">'+Math.round(gymVolume(s2)).toLocaleString()+' kg</div></div>';}).join('');
+ el.querySelectorAll('[data-gh]').forEach(function(r){
+  r.onclick=function(){gymRecap(+r.dataset.gh);};});
+}
+function gymPick(){
+ openTool('Which day',
+  '<div class="hint">Pick what you are actually training. The cycle carries on from there.</div>'+
+  '<div class="oacts" style="margin-top:12px">'+
+  gymPlan().map(function(p,i){return '<button data-gp="'+i+'">'+esc(p.n)+'</button>';}).join('')+
+  '</div>','');
+ document.getElementById('tcopy').textContent='Close';
+ document.querySelectorAll('[data-gp]').forEach(function(b){
+  b.onclick=function(){
+   var i=+b.dataset.gp, g=gym();
+   var t=gymToday();
+   if(t){t.i=i;t.n=gymPlan()[i].n;}
+   g.at=i; put(S); closeTool(); drawGym();
+   if(gymPlan()[i].ex.length)setTimeout(function(){gymStart(i);gymSession();},200);};});
+}
+var GEX='';
+/* a short label that still tells two similar exercises apart */
+function exShort(e){
+ var w=String(e||'').split(/\s+/);
+ if(w.length===1)return w[0].slice(0,9);
+ var a=w[0], b=w[w.length-1];
+ if(a.length<=6)return a+' '+b.slice(0,6);
+ return a.slice(0,6)+' '+b.slice(0,5);
+}
+function gymSession(){
+ var t=gymToday()||gymStart();
+ var p=gymPlan()[t.i];
+ if(!GEX||p.ex.indexOf(GEX)<0)GEX=p.ex.filter(function(e){return !gymSets(t,e).length;})[0]||p.ex[0]||'';
+ var h='<div class="cseg" id="gxseg">'+p.ex.map(function(e){
+   var n=gymSets(t,e).length;
+   return '<b class="'+(GEX===e?'on':'')+'" data-gx="'+esc(e)+'" style="font-size:10px;line-height:1.25">'+
+    esc(exShort(e))+(n?'<br><span style="opacity:.7">'+n+'</span>':'')+'</b>';}).join('')+'</div>'+
+  '<div id="gxbody"></div>';
+ openTool(p.n,h,'');
+ document.getElementById('tcopy').textContent='Done';
+ document.getElementById('tcopy').onclick=function(){
+  t.done=1;put(S);closeTool();drawGym();haptic('heavy');};
+ document.querySelectorAll('[data-gx]').forEach(function(b){
+  b.onclick=function(){GEX=b.dataset.gx;haptic('light');gymSession();};});
+ drawGymEx();
+}
+function drawGymEx(){
+ var t=gymToday(); if(!t)return;
+ var el=document.getElementById('gxbody'); if(!el)return;
+ var sets=gymSets(t,GEX), last=gymLast(GEX), best=gymBest(GEX);
+ var lastSet=sets[sets.length-1];
+ var w=lastSet?lastSet.w:(last&&last.sets.length?last.sets[last.sets.length-1].w:20);
+ var r=lastSet?lastSet.r:(last&&last.sets.length?last.sets[last.sets.length-1].r:10);
+ var h='<div style="font-size:var(--f4);font-weight:650;letter-spacing:-.02em">'+esc(GEX)+'</div>';
+ h+='<div class="tgt" style="margin-top:4px">'+
+  (last?'Last time '+last.sets.map(function(x){return x.w+'\u00d7'+x.r;}).join(', ')
+       :'First time logging this one')+
+  (best?' · best '+best.w+'\u00d7'+best.r:'')+'</div>';
+ h+='<div style="display:flex;gap:8px;align-items:flex-end;margin-top:16px">'+
+  '<div style="flex:1"><label style="margin-top:0">kg</label>'+
+   '<input id="gx-w" type="number" inputmode="decimal" step="0.5" value="'+w+'" style="text-align:center;font-size:20px"></div>'+
+  '<div style="flex:1"><label style="margin-top:0">reps</label>'+
+   '<input id="gx-r" type="number" inputmode="numeric" value="'+r+'" style="text-align:center;font-size:20px"></div>'+
+  '<button class="btnfull" id="gx-log" style="flex:1.2;margin-top:0">Log set</button></div>';
+ if(sets.length){
+  h+='<div class="vhead" style="margin-top:18px">Today</div><div class="card">'+
+   sets.map(function(x,k){
+    return '<div class="row"><div class="lab">Set '+(k+1)+'</div>'+
+     '<div class="v2">'+x.w+' kg \u00d7 '+x.r+
+     (x.pb?' <span style="color:var(--pos);font-size:11px">best</span>':'')+
+     ' <button data-gxd="'+k+'" style="background:none;border:0;color:var(--t3);padding:0 4px">\u00d7</button></div></div>';
+   }).join('')+'</div>';
+ }
+ el.innerHTML=h;
+ document.getElementById('gx-log').onclick=function(){
+  var W=num(document.getElementById('gx-w').value), R=num(document.getElementById('gx-r').value);
+  if(!W||!R){alert('Put a weight and a rep count in.');return;}
+  var b=gymBest(GEX);
+  var pb=(!b||W>b.w||(W===b.w&&R>b.r))?1:0;
+  t.sets.push({e:GEX,w:W,r:R,pb:pb});
+  put(S); haptic(pb?'heavy':'light');
+  drawGymEx(); drawGym();
+  if(pb)setTimeout(function(){
+   var n=document.getElementById('gxbody');
+   if(n)n.insertAdjacentHTML('afterbegin',
+    '<div class="card" style="margin-bottom:10px;border-color:rgba(79,190,139,.5)">'+
+    '<div class="tgt" style="color:var(--pos)">Best you have done on '+esc(GEX)+'.</div></div>');},60);
+ };
+ el.querySelectorAll('[data-gxd]').forEach(function(b){
+  b.onclick=function(){
+   var k=+b.dataset.gxd, n=0;
+   for(var j=0;j<t.sets.length;j++){
+    if(t.sets[j].e===GEX){ if(n===k){t.sets.splice(j,1);break;} n++; }}
+   put(S); drawGymEx(); drawGym();};});
+}
+function gymRecap(i){
+ var s2=gymLog()[i]; if(!s2)return;
+ var byEx={};
+ (s2.sets||[]).forEach(function(x){(byEx[x.e]=byEx[x.e]||[]).push(x);});
+ var h='<div class="hint">'+new Date(s2.d).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+
+  ' · '+Math.round(gymVolume(s2)).toLocaleString()+' kg total</div><div class="card" style="margin-top:12px">'+
+  Object.keys(byEx).map(function(e){
+   return '<div class="row"><div><div class="lab">'+esc(e)+'</div>'+
+    '<div class="tgt">'+byEx[e].map(function(x){return x.w+'\u00d7'+x.r;}).join(' · ')+'</div></div>'+
+    '<div class="v2" style="font-size:12px">'+Math.round(byEx[e].reduce(function(a,x){return a+x.w*x.r;},0)).toLocaleString()+'</div></div>';
+  }).join('')+'</div>';
+ if(s2.d===TD)h+='<button class="addbtn" id="gr-go" style="margin-top:12px">Carry on with this session</button>';
+ openTool(s2.n,h,'');
+ document.getElementById('tcopy').textContent='Close';
+ var g=document.getElementById('gr-go');
+ if(g)g.onclick=function(){closeTool();setTimeout(gymSession,180);};
+}
+function gymEditPlan(){
+ var P=gymPlan();
+ var h='<div class="hint">One line per exercise. Change these to whatever you actually do.</div>'+
+  P.map(function(p,i){
+   return '<label>'+esc(p.n)+'</label>'+
+    '<input id="gp-n'+i+'" value="'+esc(p.n)+'" style="margin-bottom:5px">'+
+    '<textarea id="gp-e'+i+'" rows="'+Math.max(2,p.ex.length)+'">'+esc(p.ex.join('\\n'))+'</textarea>';
+  }).join('')+
+  '<button class="btnfull" id="gp-save" style="margin-top:14px">Save the plan</button>';
+ openTool('Your plan',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.getElementById('gp-save').onclick=function(){
+  P.forEach(function(p,i){
+   p.n=document.getElementById('gp-n'+i).value.trim()||p.n;
+   p.ex=document.getElementById('gp-e'+i).value.split('\\n')
+     .map(function(x){return x.trim();}).filter(Boolean);});
+  put(S); closeTool(); drawGym(); haptic();};
 }
 function closeTool(){
  var t=document.getElementById('tsheet');
