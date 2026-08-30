@@ -967,9 +967,7 @@ body{background:var(--s0);color:var(--t1);font-size:var(--f2);line-height:1.5;le
 #sheet,#tsheet,#usheet{background:rgba(4,11,19,.72)}
 #sheet .inner,#tsheet .inner,#usheet .inner{background:var(--s1);border:1px solid var(--hair2);
  border-bottom:0;border-radius:var(--r3) var(--r3) 0 0;box-shadow:var(--e3);
- padding:var(--x5) var(--x4) calc(var(--x5) + env(safe-area-inset-bottom));
- animation:up .24s cubic-bezier(.22,.9,.28,1)}
-@keyframes up{from{transform:translateY(28px)}to{transform:none}}
+ padding:var(--x5) var(--x4) calc(var(--x5) + env(safe-area-inset-bottom))}
 #sheet h3,#tsheet h3,#usheet h3{font-size:var(--f4);font-weight:650;letter-spacing:-.02em}
 
 .cseg{position:sticky;top:0;z-index:4;background:var(--s1);
@@ -984,13 +982,7 @@ input,textarea,select{background:var(--s2);border:1px solid var(--hair2);border-
 input:focus,textarea:focus,select:focus{border-color:var(--acc);background:var(--s3);outline:0}
 label{margin-top:var(--x4);margin-bottom:var(--x1)}
 
-button,.ub,.cb,.tool,.qbtn,.addbtn,.btnfull,.acts a,.acts button,.oacts button,
-.cseg b,.seg b,.chips b,.pick b,.stage b,.mg,.pc2{
- transition:transform .08s ease,background .14s ease,border-color .14s ease,color .14s ease;
- -webkit-tap-highlight-color:transparent}
-button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
-.btnfull:active,.acts a:active,.acts button:active,.oacts button:active{transform:scale(.975)}
-.pc2:active{background:var(--s2)}
+
 
 .brief{padding:var(--x4);gap:var(--x3)}
 .brief p{font-size:var(--f2);color:var(--t2);line-height:1.55}
@@ -1010,9 +1002,127 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
 .sched::-webkit-scrollbar,.vwrap::-webkit-scrollbar,.qbody::-webkit-scrollbar,
 .chips::-webkit-scrollbar,.slists::-webkit-scrollbar{display:none}
 
+
+
+/* =========================================================
+   MOTION — spring curves, transform only, choreographed.
+   Nothing here animates layout, so everything stays on the GPU.
+   ========================================================= */
+:root{
+ /* curves: the first is the sheet spring, the second is standard, the third is exit */
+ --spring:cubic-bezier(.32,.72,0,1);
+ --ease:cubic-bezier(.4,0,.2,1);
+ --exit:cubic-bezier(.4,0,1,1);
+ --snap:cubic-bezier(.2,.9,.3,1.2);   /* slight overshoot, for things that land */
+ --d1:120ms;   /* press */
+ --d2:200ms;   /* small moves */
+ --d3:320ms;   /* sheets, pages */
+ --d4:480ms;   /* the long settle */
+}
+
+/* ---------- taps: instant down, springy release ---------- */
+button,.ub,.cb,.tool,.qbtn,.addbtn,.btnfull,.acts a,.acts button,.oacts button,
+.cseg b,.seg b,.chips b,.pick b,.stage b,.mg,.qout button,.nav b,.tog,.upick{
+ transition:transform var(--d2) var(--snap),
+            background var(--d2) var(--ease),
+            border-color var(--d2) var(--ease),
+            color var(--d2) var(--ease),
+            opacity var(--d2) var(--ease);
+ -webkit-tap-highlight-color:transparent;
+ will-change:transform}
+button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
+.btnfull:active,.acts a:active,.acts button:active,.oacts button:active,
+.cseg b:active,.seg b:active,.qout button:active{
+ transform:scale(.96);
+ transition:transform var(--d1) var(--exit)}
+.nav b:active{transform:scale(.9);transition:transform 90ms var(--exit)}
+
+/* cards depress as one surface */
+.pc2:active,.unit:active,.dcard:active,.move:active{
+ transform:scale(.99);transition:transform var(--d1) var(--exit)}
+.pc2,.unit,.dcard,.move{transition:transform var(--d3) var(--snap),
+ background var(--d2) var(--ease),border-color var(--d2) var(--ease)}
+
+/* ---------- sheets: the Apple curve, with the backdrop breathing ---------- */
+#sheet,#tsheet,#usheet{
+ animation:bdIn var(--d3) var(--ease) both;
+ -webkit-backdrop-filter:blur(0px);backdrop-filter:blur(0px)}
+@keyframes bdIn{
+ from{opacity:0;-webkit-backdrop-filter:blur(0px);backdrop-filter:blur(0px)}
+ to{opacity:1;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}}
+#sheet .inner,#tsheet .inner,#usheet .inner{
+ animation:sheetIn var(--d3) var(--spring) both;
+ will-change:transform}
+@keyframes sheetIn{
+ from{transform:translate3d(0,32px,0)}
+ to{transform:translate3d(0,0,0)}}
+
+/* the content inside a sheet arrives just after the sheet itself */
+#tsheet .inner > *{animation:riseIn var(--d3) var(--spring) both;animation-delay:60ms}
+@keyframes riseIn{from{opacity:0;transform:translate3d(0,10px,0)}to{opacity:1;transform:none}}
+
+/* ---------- pages: cross-fade with a hint of travel ---------- */
+.fade{animation:pageIn var(--d3) var(--spring) both}
+@keyframes pageIn{
+ from{opacity:0;transform:translate3d(0,8px,0)}
+ to{opacity:1;transform:none}}
+
+/* ---------- lists: choreography, not a wall of content ---------- */
+.stag > *{animation:riseIn var(--d3) var(--spring) both}
+.stag > *:nth-child(1){animation-delay:0ms}
+.stag > *:nth-child(2){animation-delay:26ms}
+.stag > *:nth-child(3){animation-delay:52ms}
+.stag > *:nth-child(4){animation-delay:78ms}
+.stag > *:nth-child(5){animation-delay:104ms}
+.stag > *:nth-child(6){animation-delay:130ms}
+.stag > *:nth-child(7){animation-delay:150ms}
+.stag > *:nth-child(n+8){animation-delay:165ms}
+
+/* ---------- segmented control: the pill slides, it does not blink ---------- */
+.cseg,.seg,.calseg{position:relative;isolation:isolate}
+.cseg b,.seg b,.calseg b{position:relative;z-index:1;background:transparent!important;
+ transition:color var(--d2) var(--ease)}
+.cseg b.on,.seg b.on,.calseg b.on{color:#141414}
+.cseg:before,.seg:before,.calseg:before{
+ content:'';position:absolute;z-index:0;top:var(--x1);bottom:var(--x1);
+ left:var(--x1);width:calc((100% - var(--x2)) / var(--n,3));
+ background:var(--acc);border-radius:var(--r1);box-shadow:var(--e1);
+ transform:translate3d(calc(var(--i,0) * 100%),0,0);
+ transition:transform var(--d3) var(--spring)}
+
+/* ---------- numbers that change should not just pop ---------- */
+.hd .huge,.stat3 .n,.fee2,.big{transition:opacity var(--d2) var(--ease)}
+.tick{animation:tick var(--d4) var(--spring) both}
+@keyframes tick{from{opacity:0;transform:translate3d(0,-6px,0)}to{opacity:1;transform:none}}
+
+/* ---------- progress and bars fill, they do not jump ---------- */
+.bar i,.bar u,.bar s,.trbar i,.qprog i{transition:width var(--d4) var(--spring)}
+
+/* ---------- scrolling feels native ---------- */
+.vwrap,.qbody,.sched,#tsheet .inner,#sheet .inner,.chips,.slists{
+ -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+
+/* ---------- the up-next card swipe ---------- */
+.upn.slide{transition:transform var(--d2) var(--exit),opacity var(--d2) var(--exit)}
+.upn.out-l{transform:translate3d(-28px,0,0);opacity:0}
+.upn.out-r{transform:translate3d(28px,0,0);opacity:0}
+.upn.in{animation:cardIn var(--d3) var(--spring) both}
+@keyframes cardIn{from{opacity:0;transform:translate3d(0,12px,0) scale(.985)}to{opacity:1;transform:none}}
+
+/* ---------- full screen layers ---------- */
+#view,#queue{animation:layerIn var(--d3) var(--spring) both}
+@keyframes layerIn{from{opacity:0;transform:translate3d(0,20px,0)}to{opacity:1;transform:none}}
+
+/* ---------- lightbox ---------- */
+#lightbox{animation:bdIn var(--d2) var(--ease) both}
+#lightbox img{animation:zoomIn var(--d3) var(--spring) both}
+@keyframes zoomIn{from{transform:scale(.94);opacity:0}to{transform:none;opacity:1}}
+
+/* ---------- honour the setting ---------- */
 @media (prefers-reduced-motion:reduce){
- *{animation:none!important;transition:none!important}
- button:active,.ub:active,.cb:active{transform:none}
+ *,*:before,*:after{animation-duration:1ms!important;animation-delay:0ms!important;
+  transition-duration:1ms!important}
+ button:active,.ub:active,.cb:active,.pc2:active{transform:none}
 }
 </style>
 </head>
@@ -2601,7 +2711,12 @@ function goPage(k){
   if(p[0]===PAGE){el.classList.remove('fade');void el.offsetWidth;el.classList.add('fade');}});
  document.getElementById('pgtitle').textContent=PAGES.filter(function(p){return p[0]===PAGE;})[0][1];
  pageDraw(k); drawNav(); window.scrollTo(0,0);
- if(navigator.vibrate)navigator.vibrate(6);
+ requestAnimationFrame(function(){
+  segAll();
+  stagger(document.getElementById('dlist'));
+  stagger(document.getElementById('ulist'));
+ });
+ haptic('light');
 }
 function drawNav(){
  var due=S.later.filter(function(x){return !x.dnc&&x.wd&&x.wd<=TD;}).length
@@ -5715,12 +5830,40 @@ function defaultCopy(){navigator.clipboard.writeText(COPYTEXT).then(function(){
 }).catch(function(){prompt('Copy this',COPYTEXT);});}
 document.getElementById('tc').onclick=function(){TS.style.display='none';};
 document.getElementById('tcopy').onclick=defaultCopy;
+
+/* ================= MOTION HELPERS =================
+   The pill under a segmented control slides to the selected tab, lists arrive
+   in sequence, and a changed number ticks rather than snapping. */
+function segSync(el){
+ if(!el)return;
+ var b=el.querySelectorAll(':scope > b');
+ if(!b.length)return;
+ var on=0; for(var k=0;k<b.length;k++)if(b[k].classList.contains('on'))on=k;
+ el.style.setProperty('--n',b.length);
+ el.style.setProperty('--i',on);
+}
+function segAll(){
+ document.querySelectorAll('.cseg,.seg,.calseg').forEach(segSync);
+}
+function stagger(el){
+ if(!el)return;
+ el.classList.remove('stag'); void el.offsetWidth; el.classList.add('stag');
+}
+function tick(el){
+ if(!el)return;
+ el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick');
+}
+function haptic(kind){
+ if(!navigator.vibrate)return;
+ navigator.vibrate(kind==='heavy'?18:(kind==='light'?5:10));
+}
 function closeTool(){
  var t=document.getElementById('tsheet');
  if(t)t.style.display='none';
 }
 function openTool(title,html,copy){
  document.getElementById('t-title').textContent=title;TB.innerHTML=html;TB.id='tbody';COPYTEXT=copy||'';
+ requestAnimationFrame(segAll);
  var b=document.getElementById('tcopy');b.textContent='Copy';b.onclick=defaultCopy;
  TS.style.display='flex';TS.querySelector('.inner').scrollTop=0;
 }
@@ -6549,8 +6692,9 @@ function unitScreen(i,tab){
   '</div>';
  openTool(pvNum(u.p||'Unit'),h,'');
  document.getElementById('tcopy').textContent='Close';
+ segAll();
  document.querySelectorAll('[data-uv]').forEach(function(b){
-  b.onclick=function(){UVIEW=b.dataset.uv;unitScreen(i);};});
+  b.onclick=function(){haptic('light');UVIEW=b.dataset.uv;unitScreen(i);};});
  drawUBody(i);
 }
 function drawUBody(i){
@@ -6643,8 +6787,9 @@ function clientScreen(i,tab){
   '</div>';
  openTool(pvName(d.w),h,'');
  document.getElementById('tcopy').textContent='Close';
+ segAll();
  document.querySelectorAll('[data-cv]').forEach(function(b){
-  b.onclick=function(){CVIEW=b.dataset.cv;clientScreen(i);};});
+  b.onclick=function(){haptic('light');CVIEW=b.dataset.cv;clientScreen(i);};});
  var ed=document.querySelector('[data-ced]'); if(ed)ed.onclick=function(){closeTool();setTimeout(function(){editDeal(i);},180);};
  var mo=document.querySelector('[data-cmore]'); if(mo)mo.onclick=function(){closeTool();setTimeout(function(){editDeal(i);},180);};
  drawCBody(i);
