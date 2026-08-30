@@ -13,11 +13,21 @@ body{background:var(--navy);color:var(--ink);font-family:-apple-system,BlinkMacS
  font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 button,input,select,textarea{font-family:inherit}
 .hide{display:none!important}
-header{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);
- background:var(--card2);flex:0 0 auto}
+header{display:flex;align-items:center;gap:14px;padding:12px 18px 0;border-bottom:1px solid var(--line);
+ background:var(--card2);flex:0 0 auto;flex-wrap:wrap}
 header h1{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600;white-space:nowrap}
 header .sp{flex:1}
-.tabs{display:flex;gap:4px;background:var(--navy);border:1px solid var(--line);border-radius:11px;padding:3px}
+/* tabs sit on their own line so the buttons on the right are never pushed off */
+.tabs{display:flex;gap:4px;background:var(--navy);border:1px solid var(--line);border-radius:11px;padding:3px;
+ order:9;flex:0 0 100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none;
+ margin:10px 0 12px;cursor:grab;scroll-behavior:smooth;overscroll-behavior-x:contain}
+.tabs::-webkit-scrollbar{display:none}
+.tabs.drag{cursor:grabbing;scroll-behavior:auto}
+.tabs.drag b{pointer-events:none}
+.tabwrap{order:9;flex:0 0 100%;position:relative}
+.tabwrap:after{content:'';position:absolute;top:0;right:0;bottom:0;width:34px;pointer-events:none;
+ background:linear-gradient(90deg,rgba(11,31,51,0),var(--card2));opacity:0;transition:opacity .15s}
+.tabwrap.more:after{opacity:1}
 .tabs b{font-size:12.5px;padding:7px 15px;border-radius:8px;color:var(--dim);font-weight:600;cursor:pointer;white-space:nowrap}
 .tabs b.on{background:var(--gold);color:var(--navy)}
 .tabs b i{font-style:normal;opacity:.6;margin-left:6px}
@@ -320,7 +330,7 @@ td.idx{text-align:center}
 <body>
 <header>
   <h1>Daily Desk</h1>
-  <div class="tabs" id="tabs"></div>
+  <div class="tabwrap" id="tabwrap"><div class="tabs" id="tabs"></div></div>
   <span class="pill" id="count"></span>
   <div class="sp"></div>
   <span class="pill" id="src"></span>
@@ -629,6 +639,30 @@ var LIST={deals:function(){return S().deals;},units:function(){return S().units;
 var SEL={}; var MKT=null;
 try{var mraw=localStorage.getItem('desk-market'); if(mraw)MKT=JSON.parse(mraw);}catch(e){}
 function uniq(a){var o=[],seen={};a.forEach(function(x){if(x&&!seen[x]){seen[x]=1;o.push(x);}});return o;}
+/* the tab strip is wider than the window, so it scrolls: drag it, wheel it,
+   and the one you are on is always brought into view */
+var TABSCROLL=0;
+function wireTabs(){
+ var el=document.getElementById('tabs'), wrap=document.getElementById('tabwrap');
+ if(!el)return;
+ function fade(){ if(wrap)wrap.classList.toggle('more',el.scrollWidth-el.clientWidth-el.scrollLeft>6); }
+ el.scrollLeft=TABSCROLL;
+ var down=false,x0=0,s0=0,moved=0;
+ el.onmousedown=function(e){down=true;moved=0;x0=e.pageX;s0=el.scrollLeft;el.classList.add('drag');};
+ window.addEventListener('mousemove',function(e){
+  if(!down)return;
+  var dx=e.pageX-x0; moved=Math.abs(dx);
+  el.scrollLeft=s0-dx; TABSCROLL=el.scrollLeft; fade();});
+ window.addEventListener('mouseup',function(){
+  if(!down)return; down=false; el.classList.remove('drag');});
+ el.onwheel=function(e){
+  if(Math.abs(e.deltaX)>Math.abs(e.deltaY))return;   /* trackpad sideways already works */
+  e.preventDefault(); el.scrollLeft+=e.deltaY; TABSCROLL=el.scrollLeft; fade();};
+ el.onscroll=function(){TABSCROLL=el.scrollLeft;fade();};
+ var on=el.querySelector('b.on');
+ if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'});
+ fade();
+}
 function render(){
  document.getElementById('bar').classList.remove('hide');
  var tabs=[['deals','Clients'],['units','Inventory'],['call','Call list'],['later','Prospects'],['market','Market'],['proj','Projects'],['camp','Campaigns'],['transfer','Transfers'],['docs','Documents'],['dates','Key dates'],['people','Contacts'],['fill','Fill in'],['tools','Tools'],['review','Review']];
@@ -636,6 +670,7 @@ function render(){
   return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+(['tools','fill','transfer','docs','proj','camp'].indexOf(t[0])>=0?'':'<i>'+LIST[t[0]]().length+'</i>')+'</b>';}).join('');
  document.querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){
   TAB=b.dataset.t;Q='';F='All';document.getElementById('q').value='';render();};});
+ wireTabs();
  document.getElementById('src').textContent=BK.at?
   ('Loaded '+new Date(BK.at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})):'';
  document.getElementById('paste').classList.toggle('hide',TAB!=='units');
