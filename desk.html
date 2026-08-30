@@ -1898,7 +1898,8 @@ function parseUnitMap(rows){
   var u=num(String(pickCol(o,['unit','villa number','unit no'])).replace(/\D/g,''));
   var bd=num(pickCol(o,['beds','beds_masterplan','bedrooms']));
   if(!u||!bd)return;
-  m[u]={bd:bd,cl:pickCol(o,['cluster'])||'',bk:pickCol(o,['backs_onto'])||''};});
+  m[u]={bd:bd,cl:pickCol(o,['cluster'])||'',bk:pickCol(o,['backs_onto'])||'',
+        cm:String(pickCol(o,['community'])||'').trim().toLowerCase()};});
  return m;
 }
 function parseTxns(rows){
@@ -1914,27 +1915,70 @@ function parseTxns(rows){
   var psf=num(String(pickCol(o,['aed_per_sqft_bua','aed/sqft','psf'])).replace(/[^0-9.]/g,''));
   if(!u||!d||!pr||!bd)return;
   if(!psf&&bua)psf=Math.round(pr/bua);
-  out.push({u:u,d:d.slice(0,10),pr:pr,bd:bd,bua:bua,psf:psf,cl:pickCol(o,['cluster'])});});
+  out.push({u:u,d:d.slice(0,10),pr:pr,bd:bd,bua:bua,psf:psf,cl:pickCol(o,['cluster']),
+   com:pickCol(o,['community'])});});
  return out;
 }
 function monShort(d){var dt=new Date(d); if(isNaN(dt))return d;
  return dt.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}).replace(' ','-');}
 function ddiffD(a,b){return Math.round((new Date(b)-new Date(a))/864e5);}
+function comOf(txt){
+ var t=String(txt||'').split('\u00b7')[0].trim();
+ return t.replace(/\s*\d+\s*$/,'').trim().toLowerCase();
+}
+/* the same guard the phone uses: never show a comp that cannot be verified */
+function hookBad(x){
+ var t=String(x.n2||''); if(!t)return '';
+ var UM=S().umap||{}, mine=comOf(x.w);
+ var om=String(x.w||'').match(/(\d+)/); var own=om?om[1]:'';
+ var oe=own?UM[own]:null;
+ var ownApplies=oe&&(!oe.cm||oe.cm===mine)&&num(oe.bd);
+ var a=t.match(/Their unit\s+(\d+)\s*:\s*(\d+)BR/);
+ var b=t.match(/Unit\s+(\d+)\s+sold[^.]*?\((\d+)\s*BR\)/i);
+ var claimUnit='',claimBd=0,compUnit='';
+ if(a){claimUnit=a[1];claimBd=num(a[2]);}
+ else if(b){compUnit=b[1];claimBd=num(b[2]);}
+ if(claimUnit){
+  var e=UM[claimUnit],applies=e&&(!e.cm||e.cm===mine);
+  if(applies&&num(e.bd)&&num(e.bd)!==claimBd)
+   return 'Says '+claimBd+'BR, the masterplan says '+e.bd+'BR';}
+ if(compUnit&&ownApplies&&claimBd&&num(oe.bd)!==claimBd)
+  return 'Their villa is '+oe.bd+'BR, the comp is a '+claimBd+'BR';
+ if(compUnit&&ownApplies){
+  var ce=UM[compUnit],cA=ce&&(!ce.cm||ce.cm===mine)&&num(ce.bd);
+  if(cA&&num(ce.bd)!==num(oe.bd))
+   return 'Their villa is '+oe.bd+'BR, unit '+compUnit+' is a '+ce.bd+'BR';}
+ if(x.hkc&&x.hkc!==mine)return 'Comp came from '+x.hkc+', not '+mine;
+ var verified=ownApplies&&claimBd&&num(oe.bd)===claimBd;
+ if(!verified&&!x.hkc&&(claimUnit||compUnit)&&ownApplies)
+  return 'Cannot check this one, rebuild hooks from data';
+ return '';
+}
+function hookShow(x){return hookBad(x)?'':String(x.n2||'');}
 function rebuildHooks(txns){
  if(!txns.length)return {n:0,msg:'No usable rows in that file.'};
- var byUnit={};
- txns.forEach(function(t){if(!byUnit[t.u]||t.d>byUnit[t.u].d)byUnit[t.u]=t;});
- var UM=S().umap||{}, made=0, skipped=0, noMap=0, noComp=0;
+ /* if the file names communities, a comp must come from the owner's own one.
+    Farm Gardens and Elora are not comparable and never were. */
+ var named=txns.some(function(t){return t.com;});
+ var UM=S().umap||{}, made=0, skipped=0, noMap=0, noComp=0, wrongCom=0;
  S().later.forEach(function(x){
   if(x.dnc)return;
   var m=String(x.w||'').match(/(\d+)\s*(?:·|$)/);
   var un=m?num(m[1]):0;
   if(!un){skipped++;return;}
+  var mineCom=comOf(x.w);
+  var pool0=named
+   ? txns.filter(function(t){var c=String(t.com||'').toLowerCase();
+      return c&&mineCom&&(c===mineCom||c.indexOf(mineCom)>=0||mineCom.indexOf(c)>=0);})
+   : txns;
+  if(named&&!pool0.length){wrongCom++;return;}
+  var byUnit={};
+  pool0.forEach(function(t){if(!byUnit[t.u]||t.d>byUnit[t.u].d)byUnit[t.u]=t;});
   var me=byUnit[un], beds=0, cl='', bk='';
   if(UM[un]){beds=UM[un].bd;cl=UM[un].cl||'';bk=UM[un].bk||'';}
   if(!beds&&me){beds=me.bd;cl=me.cl;}
   if(!beds){noMap++;return;}
-  var pool=txns.filter(function(t){return t.bd===beds&&t.u!==un;});
+  var pool=pool0.filter(function(t){return t.bd===beds&&t.u!==un;});
   if(!pool.length){noComp++;return;}
   var near=cl?pool.filter(function(t){return t.cl===cl;}):[];
   var use=near.length?near:pool;
@@ -1947,6 +1991,7 @@ function rebuildHooks(txns){
    ' ('+where+', also '+beds+'BR) sold '+monShort(best.d)+' for '+money(best.pr)+
    (best.psf?' at AED '+best.psf.toLocaleString()+'/sqft':'')+
    '. Best '+beds+'BR nearby '+money(top.pr)+' (unit '+top.u+', '+monShort(top.d)+').';
+  x.hkc=mineCom; x.hkb=beds;
   var bua=(me&&me.bua)?me.bua:0;
   if(!bua){var bs=pool.filter(function(t){return t.bua;}).map(function(t){return t.bua;}).sort(function(a,b){return a-b;});
    if(bs.length)bua=bs[Math.floor(bs.length/2)];}
@@ -1957,6 +2002,8 @@ function rebuildHooks(txns){
  persist();
  return {n:made,noMap:noMap,
   msg:made+' hook'+(made===1?'':'s')+' rebuilt from '+txns.length+' transactions'+
+   (named?', matched by community':'')+
+   (wrongCom?', '+wrongCom+' had no sales in their own community':'')+
    (skipped?', '+skipped+' had no unit number':'')+
    (noMap?', '+noMap+' need the unit map loaded first':'')+
    (noComp?', '+noComp+' had no same-bed comp':'')};
@@ -2352,15 +2399,19 @@ function firstName(n){var w=String(n||'').trim().split(/\s+/)[0].replace(/[^A-Za
  if(!w)return 'there';
  return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();}
 function propName(x){return String(x.w||'').split('·')[0].trim()||'your property';}
-function cleanHook(h){return String(h||'').replace(/^#\d+\s*(HOT|WARM|COLD)\s*·\s*/i,'').trim();}
+function cleanHook(h,x){
+ /* if a record is passed and its hook cannot be verified, it does not get used
+    anywhere: not on screen, and not in a message */
+ if(x&&hookBad(x))return '';
+ return String(h||'').replace(/^#\d+\s*(HOT|WARM|COLD)\s*·\s*/i,'').trim();}
 function isDnc(x){return x.dnc||(S().dnc||[]).indexOf(digits(x.ph))>=0;}
 var PROTPL=[
-['Neighbour sold', function(x){var h=cleanHook(x.n2);
+['Neighbour sold', function(x){var h=cleanHook(x.n2,x);
  return 'Hi '+firstName(x.n)+', Mustafa here from Allegiance.\n\n'+
  (h?h+'.\n\n':'')+
  'I have buyers looking in this community and I am short of stock.\n\n'+
  'Would you take a number for '+propName(x)+', or is it not something you would consider right now?';}],
-['Reply with a number', function(x){var h=cleanHook(x.n2);
+['Reply with a number', function(x){var h=cleanHook(x.n2,x);
  return 'Hi '+firstName(x.n)+', Mustafa from Allegiance.\n\n'+
  (h?h+'.\n\n':'')+
  'Rather than a long message, just reply with a number so I know how to help:\n\n'+
@@ -2374,7 +2425,7 @@ var PROTPL=[
  'No pressure at all. If you ever want a number on '+propName(x)+', I am here.\n\n'+
  'I will leave it with you.';}]
 ];
-function pickTpl(x){return cleanHook(x.n2)?0:2;}
+function pickTpl(x){return cleanHook(x.n2,x)?0:2;}
 function proMsg(x,i){return PROTPL[(i==null?pickTpl(x):i)][1](x);}
 function addDays(d,n){var t=new Date(d);t.setDate(t.getDate()+n);
  while(t.getDay()>=5&&n>0&&n<7)t.setDate(t.getDate()+1);
@@ -2394,7 +2445,7 @@ function logOutcome(i,key){
   if(!confirm('Move '+x.n+' into your pipeline as a live deal?'))
    {x.att.pop();return;}
   S().deals.unshift({w:x.n,ph:x.ph||'',u:x.w||'',ty:'Resale',v:num(x.v)||0,r:2,s:1,
-   na:'Send the valuation',nd:TD,src:'Prospecting call',ref:'',n:cleanHook(x.n2),
+   na:'Send the valuation',nd:TD,src:'Prospecting call',ref:'',n:cleanHook(x.n2,x),
    ch:'1 cheque',rent:0,lbd:0,lmax:0,lcom:'',npd:'',npa:0,lost:'',hist:[],cAt:TD});
   L.splice(i,1);persist();drawCall();toast('Moved into your pipeline');return;}
  var days=conf[2];
@@ -2453,7 +2504,9 @@ function drawCall(){
    '<div class="mt">'+esc(x.w||'')+(x.ty?' · '+esc(x.ty):'')+'</div>'+
    '<div class="mt">'+esc(hist)+(x.parked?' · parked after 3 tries':'')+'</div></div>'+
    '<div class="when '+(dd!==null&&dd<0?'od':'')+'">'+when+'</div></div>';
-  if(cleanHook(x.n2))h+='<div class="wh">'+esc(cleanHook(x.n2))+'</div>';
+  if(cleanHook(x.n2,x))h+='<div class="wh">'+esc(cleanHook(x.n2,x))+'</div>';
+  else if(hookBad(x))h+='<div class="wh" style="color:var(--bad);border-color:rgba(212,106,94,.5)">'+
+   'Comp not usable: '+esc(hookBad(x))+'. Rebuild hooks from data before you call.</div>';
   h+='<div class="acts2">'+
    (ph?'<a class="wa" href="'+waLink(x.ph,proMsg(x))+'" target="_blank" data-ch="'+i+'">WhatsApp</a>'+
        '<a href="tel:+'+ph+'" data-cc="'+i+'">Call</a>':'<span class="mt">No number on file</span>')+
