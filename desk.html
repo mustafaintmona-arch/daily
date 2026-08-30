@@ -1459,6 +1459,70 @@ function drawCampDesk(){
 
 /* ================= BULK FILL ================= */
 /* Sixteen numbers on a phone is ten minutes of thumbs. Here it is three minutes of tabbing. */
+var QQ=[['bud','Budget','Ceiling, and cash or mortgage'],
+ ['fund','Funds','Where the money is and can it reach a Dubai escrow'],
+ ['who','Decision','Who else has to say yes'],
+ ['why','Reason','Income, growth, visa or to live in'],
+ ['when','Timing','What makes it happen in 90 days']];
+var BLOCKS=[['','Not blocked'],['money','Cannot move the money'],['notme','Someone else decides'],
+ ['price','Price is too high'],['wait','Waiting for the market'],['plan','Payment plan does not work'],
+ ['trust','Not sure about the developer'],['fee','Wants the fee cut'],
+ ['nosell','Not selling right now'],['unit','Wrong unit']];
+function blkLabel(k){var r=BLOCKS.filter(function(b){return b[0]===k;})[0];return r?r[1]:'';}
+function qScore(d){var q=d.q||{},n=0;QQ.forEach(function(x){if(String(q[x[0]]||'').trim())n++;});return n;}
+function qfRows(){
+ return S().deals.map(function(d,i){return {i:i,d:d};})
+  .filter(function(x){return num(x.d.s)<4&&num(x.d.s)!==LOST;})
+  .sort(function(a,b){return qScore(a.d)-qScore(b.d)||dealFee(b.d)-dealFee(a.d);});
+}
+var FILLMODE='contact';
+function drawQualGrid(el){
+ var L=qfRows();
+ if(!L.length){el.innerHTML='<div class="empty"><p>No live clients.</p></div>';return;}
+ var done=L.filter(function(x){return qScore(x.d)>=4;}).length;
+ var risk=L.filter(function(x){return qScore(x.d)<4;}).reduce(function(a,x){return a+dealFee(x.d);},0);
+ var h='<div class="bfbar"><div class="c"><b>'+done+'</b> of <b>'+L.length+'</b> qualified'+
+  (risk?' · <b>'+money(risk)+'</b> of fees resting on questions you have not asked':'')+'</div>'+
+  '<button class="bfsave" id="qfsave">Save all</button></div>'+
+  '<table class="bf"><thead><tr><th>Client</th>'+
+  QQ.map(function(q){return '<th>'+q[1]+'</th>';}).join('')+'<th>Blocked by</th></tr></thead><tbody>'+
+  L.map(function(x){
+   var d=x.d,q=d.q||{};
+   return '<tr><td class="who">'+esc(d.w||'')+'<small>'+qScore(d)+'/5 · '+money(dealFee(d))+'</small></td>'+
+    QQ.map(function(c){
+     return '<td><input data-qf="'+x.i+'" data-k="'+c[0]+'" value="'+esc(q[c[0]]||'')+
+      '" placeholder="'+esc(c[2])+'" class="'+(String(q[c[0]]||'').trim()?'done':'')+'"></td>';}).join('')+
+    '<td><select data-qb="'+x.i+'" class="'+(d.blk?'done':'')+'">'+
+     BLOCKS.map(function(b){return '<option value="'+b[0]+'"'+(String(d.blk||'')===b[0]?' selected':'')+'>'+esc(b[1])+'</option>';}).join('')+
+    '</select></td></tr>';}).join('')+'</tbody></table>'+
+  '<div class="bfhint">Answer what you know. A blank is more useful than a guess. Four out of five and they stop '+
+  'showing on the phone. The question you cannot answer is usually the one that kills the deal.</div>';
+ el.innerHTML='<div style="padding:18px">'+h+'</div>';
+ var ins=Array.prototype.slice.call(el.querySelectorAll('[data-qf]'));
+ ins.forEach(function(inp,n){
+  inp.oninput=function(){inp.classList.toggle('done',!!inp.value.trim());};
+  inp.onkeydown=function(e){
+   if(e.key!=='Enter')return; e.preventDefault();
+   var next=ins[n+QQ.length]; if(next){next.focus();next.select&&next.select();} else qfSave();};});
+ el.querySelectorAll('[data-qb]').forEach(function(sel){
+  sel.onchange=function(){sel.classList.toggle('done',!!sel.value);};});
+ var sv=el.querySelector('#qfsave'); if(sv)sv.onclick=qfSave;
+}
+function qfSave(){
+ var n=0;
+ document.querySelectorAll('[data-qf]').forEach(function(inp){
+  var d=S().deals[+inp.dataset.qf]; if(!d)return;
+  d.q=d.q||{};
+  var k=inp.dataset.k, v=String(inp.value||'').trim(), was=String(d.q[k]||'');
+  if(v!==was){ if(v)d.q[k]=v; else delete d.q[k]; n++; }});
+ document.querySelectorAll('[data-qb]').forEach(function(sel){
+  var d=S().deals[+sel.dataset.qb]; if(!d)return;
+  var v=sel.value, was=String(d.blk||'');
+  if(v!==was){ if(v)d.blk=v; else delete d.blk; n++; }});
+ persist();
+ toast(n?(n+' answer'+(n===1?'':'s')+' saved'):'Nothing changed');
+ drawFill();
+}
 function bfRows(){
  return S().deals.map(function(d,i){return {i:i,d:d};})
   .filter(function(x){
@@ -1467,12 +1531,38 @@ function bfRows(){
    return !(d.ph||'').trim() || !num(d.lmax) || !num(d.lbd) || !(d.lcom||'').trim();})
   .sort(function(a,b){return dealFee(b.d)-dealFee(a.d);});
 }
+function fillTabs(){
+ return '<div class="bfbar" style="margin-bottom:10px">'+
+  [['contact','Contact details'],['qual','Qualify everyone']].map(function(t){
+   return '<button class="bfsave" data-fm="'+t[0]+'" style="'+
+    (FILLMODE===t[0]?'':'background:transparent;color:var(--dim);border:1px solid var(--line)')+'">'+t[1]+'</button>';
+  }).join('')+'</div>';
+}
+function wireFillTabs(el){
+ el.querySelectorAll('[data-fm]').forEach(function(b){
+  b.onclick=function(){FILLMODE=b.dataset.fm;drawFill();};});
+}
 function drawFill(){
  var el=document.getElementById('main'); if(!el)return;
+ if(FILLMODE==='qual'){
+  var box=document.createElement('div');
+  drawQualGrid(box);
+  el.innerHTML='<div style="padding:18px 18px 0">'+fillTabs()+'</div>'+box.innerHTML;
+  wireFillTabs(el);
+  var ins=Array.prototype.slice.call(el.querySelectorAll('[data-qf]'));
+  ins.forEach(function(inp,i){
+   inp.oninput=function(){inp.classList.toggle('done',!!inp.value.trim());};
+   inp.onkeydown=function(e){if(e.key!=='Enter')return;e.preventDefault();
+    var nx=ins[i+QQ.length]; if(nx){nx.focus();nx.select&&nx.select();} else qfSave();};});
+  el.querySelectorAll('[data-qb]').forEach(function(sel){
+   sel.onchange=function(){sel.classList.toggle('done',!!sel.value);};});
+  var sv=document.getElementById('qfsave'); if(sv)sv.onclick=qfSave;
+  return;}
  var L=bfRows();
  if(!L.length){
-  el.innerHTML='<div class="empty"><p>Nothing missing. Every live client has a number, a budget, beds and areas.</p></div>';
-  return;}
+  el.innerHTML='<div style="padding:18px 18px 0">'+fillTabs()+'</div>'+
+   '<div class="empty"><p>Nothing missing. Every live client has a number, a budget, beds and areas.</p></div>';
+  wireFillTabs(el); return;}
  var missing=L.reduce(function(a,x){
   var d=x.d, n=0;
   if(!(d.ph||'').trim())n++; if(!num(d.lmax))n++; if(!num(d.lbd))n++; if(!(d.lcom||'').trim())n++;
@@ -1493,7 +1583,8 @@ function drawFill(){
   }).join('')+'</tbody></table>'+
   '<div class="bfhint">Tab moves across, Enter drops to the next client. Filling budget, beds and areas is what makes '+
   'Who fits and the project matcher work.</div>';
- el.innerHTML='<div style="padding:18px">'+h+'</div>';
+ el.innerHTML='<div style="padding:18px">'+fillTabs()+h+'</div>';
+ wireFillTabs(el);
  var ins=Array.prototype.slice.call(el.querySelectorAll('[data-bf]'));
  ins.forEach(function(inp,n){
   inp.oninput=function(){inp.classList.toggle('done',!!inp.value.trim());};
