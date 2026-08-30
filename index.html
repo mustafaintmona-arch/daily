@@ -5957,14 +5957,24 @@ function haptic(kind){
    Every set is weight and reps, so the app can tell you if you are getting stronger. */
 var GYMPLAN=[
  {n:'Chest and biceps', ex:['Bench press','Incline dumbbell press','Cable fly','Barbell curl','Incline curl']},
- {n:'Back and biceps',  ex:['Lat pulldown','Barbell row','Seated cable row','Hammer curl','Face pull']},
+ {n:'Back and triceps', ex:['Lat pulldown','Barbell row','Seated cable row','Triceps pushdown','Overhead extension']},
  {n:'Legs',             ex:['Squat','Romanian deadlift','Leg press','Leg curl','Calf raise']},
- {n:'Shoulders',        ex:['Overhead press','Lateral raise','Rear delt fly','Shrug','Triceps pushdown']},
+ {n:'Shoulders',        ex:['Overhead press','Lateral raise','Rear delt fly','Upright row','Shrug']},
  {n:'Rest',             ex:[]}
 ];
 function gym(){
  S.gym=S.gym||{};
  if(!Array.isArray(S.gym.plan)||!S.gym.plan.length)S.gym.plan=JSON.parse(JSON.stringify(GYMPLAN));
+ /* an earlier build shipped the wrong day 2. correct it unless it has been edited. */
+ if(!S.gym.v){
+  S.gym.plan.forEach(function(p2){
+   if(/^back and biceps$/i.test(p2.n)){
+    p2.n='Back and triceps';
+    if(p2.ex&&p2.ex.indexOf('Hammer curl')>=0)
+     p2.ex=['Lat pulldown','Barbell row','Seated cable row','Triceps pushdown','Overhead extension'];}});
+  (S.gym.log||[]).forEach(function(x){ if(/^back and biceps$/i.test(x.n||''))x.n='Back and triceps'; });
+  S.gym.v=2;
+ }
  if(!Array.isArray(S.gym.log))S.gym.log=[];
  if(S.gym.at===undefined){
   /* Chest and biceps was Saturday, so the cycle sits on back and biceps. */
@@ -6025,14 +6035,33 @@ function gymWeek(){
  L.forEach(function(s2){(s2.sets||[]).forEach(function(x){if(x.pb)pbs++;});});
  return {n:L.length,vol:vol,pbs:pbs};
 }
-/* biceps three days running is the thing his own split does. say so once. */
+/* A real overlap check: name the muscle worked on three consecutive sessions.
+   On an antagonist split this should never fire, which is the point. */
+var GYMGRP=[
+ ['chest',/bench|chest|fly|press(?!.*(overhead|shoulder))/i],
+ ['back',/row|pulldown|pull.?up|deadlift|lat\b/i],
+ ['biceps',/curl/i],
+ ['triceps',/triceps|pushdown|extension|dip|skull/i],
+ ['shoulders',/overhead press|lateral|delt|shrug|upright/i],
+ ['legs',/squat|leg|calf|lunge|romanian/i]
+];
+function gymGroups(sess){
+ var out={};
+ (sess.sets||[]).forEach(function(x){
+  GYMGRP.forEach(function(g){ if(g[1].test(x.e))out[g[0]]=1; });});
+ if(!(sess.sets||[]).length){
+  GYMGRP.forEach(function(g){ if(g[1].test(sess.n||''))out[g[0]]=1; });}
+ return Object.keys(out);
+}
 function gymWarn(){
- var days=gymLog().slice().sort(function(a,b){return String(b.d).localeCompare(String(a.d));}).slice(0,3);
+ var days=gymLog().filter(function(x){return !x.seed;})
+  .sort(function(a,b){return String(b.d).localeCompare(String(a.d));}).slice(0,3);
  if(days.length<3)return '';
- var hit=days.filter(function(s2){
-  return /bicep|curl/i.test(s2.n)||(s2.sets||[]).some(function(x){return /curl/i.test(x.e);});});
- if(hit.length>=3)return 'Biceps have been worked three sessions running. They need a day.';
- return '';
+ var g0=gymGroups(days[0]);
+ var run=g0.filter(function(m){
+  return gymGroups(days[1]).indexOf(m)>=0 && gymGroups(days[2]).indexOf(m)>=0;});
+ if(!run.length)return '';
+ return run.join(' and ')+' worked three sessions running. That needs a day.';
 }
 function drawGym(){
  var g=gym(), el=document.getElementById('gymtoday'); if(!el)return;
