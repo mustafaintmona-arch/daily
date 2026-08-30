@@ -5964,25 +5964,49 @@ var GYMPLAN=[
 ];
 function gym(){
  S.gym=S.gym||{};
- if(!Array.isArray(S.gym.plan)||!S.gym.plan.length)S.gym.plan=JSON.parse(JSON.stringify(GYMPLAN));
+ var g=S.gym;
+ if(!Array.isArray(g.plan)||!g.plan.length)g.plan=JSON.parse(JSON.stringify(GYMPLAN));
+ if(!Array.isArray(g.log))g.log=[];
+
  /* an earlier build shipped the wrong day 2. correct it unless it has been edited. */
- if(!S.gym.v){
-  S.gym.plan.forEach(function(p2){
+ if(!g.v){
+  g.plan.forEach(function(p2){
    if(/^back and biceps$/i.test(p2.n)){
     p2.n='Back and triceps';
     if(p2.ex&&p2.ex.indexOf('Hammer curl')>=0)
      p2.ex=['Lat pulldown','Barbell row','Seated cable row','Triceps pushdown','Overhead extension'];}});
-  (S.gym.log||[]).forEach(function(x){ if(/^back and biceps$/i.test(x.n||''))x.n='Back and triceps'; });
-  S.gym.v=2;
+  g.log.forEach(function(x){ if(x&&/^back and biceps$/i.test(x.n||''))x.n='Back and triceps'; });
+  g.v=2;
  }
- if(!Array.isArray(S.gym.log))S.gym.log=[];
- if(S.gym.at===undefined){
-  /* Chest and biceps was Saturday, so the cycle sits on back and biceps. */
-  S.gym.at=1;
+ if(g.at===undefined){
+  /* Chest and biceps was Saturday, so the cycle sits on back and triceps. */
+  g.at=1;
   var y=new Date(); y.setDate(y.getDate()-1);
-  S.gym.log.push({d:iso(y),i:0,n:'Chest and biceps',sets:[],done:1,seed:1});
+  g.log.push({d:iso(y),i:0,n:'Chest and biceps',sets:[],done:1,seed:1});
  }
- return S.gym;
+
+ /* Cheap invariants, every call. These are what stopped one bad record or a
+    shrunken plan from taking the whole tab down. */
+ g.plan=g.plan.filter(Boolean);
+ if(!g.plan.length)g.plan=JSON.parse(JSON.stringify(GYMPLAN));
+ g.plan.forEach(function(p2){ if(!Array.isArray(p2.ex))p2.ex=[]; if(!p2.n)p2.n='Day'; });
+ g.log=g.log.filter(function(x){return x&&typeof x==='object';});
+ g.at=num(g.at)||0;
+ if(g.at>=g.plan.length||g.at<0)g.at=0;
+
+ /* the heavier tidy runs once */
+ if(!g.cleaned){
+  g.log=g.log.filter(function(x){return x.seed||(Array.isArray(x.sets)&&x.sets.length)||x.d===TD;});
+  g.log.forEach(function(x){
+   if(!Array.isArray(x.sets))x.sets=[];
+   x.sets=x.sets.filter(function(y){return y&&y.e&&num(y.w)>=0&&num(y.r)>0;});
+   x.i=num(x.i)||0;
+   if(x.i>=g.plan.length)x.i=0;
+   if(!x.n)x.n=(g.plan[x.i]||{}).n||'Session';
+   if(!x.d)x.d=TD;});
+  g.cleaned=1;
+ }
+ return g;
 }
 function gymPlan(){return gym().plan;}
 function gymLog(){return gym().log;}
@@ -5999,18 +6023,20 @@ function gymStart(i){
  var idx=(i===undefined)?g.at:i;
  var p=gymPlan()[idx%gymPlan().length];
  var s2={d:TD,i:idx%gymPlan().length,n:p.n,sets:[],done:0};
- gymLog().push(s2); put(S);
+ gymLog().push(s2);
+ /* no put(S) here. an empty session is not worth saving, and saving one on
+    every glance filled the log with blanks. the first logged set writes it. */
  return s2;
 }
 function gymSets(sess,ex){
- return (sess.sets||[]).filter(function(x){return x.e===ex;});
+ return (Array.isArray(sess.sets)?sess.sets:[]).filter(function(x){return x.e===ex;});
 }
 /* the best set you have ever done on this exercise, before today */
 function gymBest(ex){
  var best=null;
  gymLog().forEach(function(s2){
   if(s2.d===TD)return;
-  (s2.sets||[]).forEach(function(x){
+  (Array.isArray(s2.sets)?s2.sets:[]).forEach(function(x){
    if(x.e!==ex)return;
    if(!best||x.w>best.w||(x.w===best.w&&x.r>best.r))best={w:x.w,r:x.r,d:s2.d};});});
  return best;
@@ -6020,19 +6046,19 @@ function gymLast(ex){
  gymLog().slice().sort(function(a,b){return String(b.d).localeCompare(String(a.d));})
   .forEach(function(s2){
    if(out||s2.d===TD)return;
-   var st=(s2.sets||[]).filter(function(x){return x.e===ex;});
+   var st=(Array.isArray(s2.sets)?s2.sets:[]).filter(function(x){return x.e===ex;});
    if(st.length)out={sets:st,d:s2.d};});
  return out;
 }
 function gymVolume(s2){
- return (s2.sets||[]).reduce(function(a,x){return a+num(x.w)*num(x.r);},0);
+ return (Array.isArray(s2.sets)?s2.sets:[]).reduce(function(a,x){return a+num(x.w)*num(x.r);},0);
 }
 function gymWeek(){
  var cut=iso(new Date(Date.now()-7*864e5));
  var L=gymLog().filter(function(x){return x.d>=cut&&(x.sets||[]).length;});
  var vol=L.reduce(function(a,x){return a+gymVolume(x);},0);
  var pbs=0;
- L.forEach(function(s2){(s2.sets||[]).forEach(function(x){if(x.pb)pbs++;});});
+ L.forEach(function(s2){(Array.isArray(s2.sets)?s2.sets:[]).forEach(function(x){if(x.pb)pbs++;});});
  return {n:L.length,vol:vol,pbs:pbs};
 }
 /* A real overlap check: name the muscle worked on three consecutive sessions.
@@ -6047,9 +6073,9 @@ var GYMGRP=[
 ];
 function gymGroups(sess){
  var out={};
- (sess.sets||[]).forEach(function(x){
+ (Array.isArray(sess.sets)?sess.sets:[]).forEach(function(x){
   GYMGRP.forEach(function(g){ if(g[1].test(x.e))out[g[0]]=1; });});
- if(!(sess.sets||[]).length){
+ if(!(Array.isArray(sess.sets)?sess.sets:[]).length){
   GYMGRP.forEach(function(g){ if(g[1].test(sess.n||''))out[g[0]]=1; });}
  return Object.keys(out);
 }
@@ -6075,13 +6101,13 @@ function gymSameDay(i,beforeDate){
 }
 function gymHeaviest(sess){
  var best=null;
- (sess.sets||[]).forEach(function(x){
+ (Array.isArray(sess.sets)?sess.sets:[]).forEach(function(x){
   if(!best||x.w>best.w||(x.w===best.w&&x.r>best.r))best=x;});
  return best;
 }
 function gymTopPerEx(sess){
  var m={};
- (sess.sets||[]).forEach(function(x){
+ (Array.isArray(sess.sets)?sess.sets:[]).forEach(function(x){
   var b=m[x.e];
   if(!b||x.w>b.w||(x.w===b.w&&x.r>b.r))m[x.e]=x;});
  return m;
@@ -6109,7 +6135,7 @@ function gymExHistory(ex,limit){
  gymLog().slice().sort(function(a,b){return String(b.d).localeCompare(String(a.d));})
   .forEach(function(s2){
    if(out.length>=(limit||6))return;
-   var st=(s2.sets||[]).filter(function(x){return x.e===ex;});
+   var st=(Array.isArray(s2.sets)?s2.sets:[]).filter(function(x){return x.e===ex;});
    if(!st.length)return;
    var top=null, vol=0;
    st.forEach(function(x){vol+=x.w*x.r; if(!top||x.w>top.w||(x.w===top.w&&x.r>top.r))top=x;});
@@ -6207,11 +6233,15 @@ function gymRecapCompare(cur){
  if(line)h+='<div class="hint" style="margin-top:8px">'+esc(line)+'</div>';
  return h;
 }
-function drawGym(){
+function drawGym(light){
  var g=gym(), el=document.getElementById('gymtoday'); if(!el)return;
  var t=gymToday();
- var idx=t?t.i:(g.at%gymPlan().length);
- var p=gymPlan()[idx];
+ var P=gymPlan();
+ /* a saved session can point at a day that has since been deleted */
+ var idx=t?num(t.i):num(g.at);
+ if(!(idx>=0)||idx>=P.length)idx=0;
+ if(t&&t.i!==idx){t.i=idx;t.n=P[idx].n;}
+ var p=P[idx];
  var doneN=t?gymPlan()[idx].ex.filter(function(e){return gymSets(t,e).length;}).length:0;
  var total=p.ex.length;
  var rest=!p.ex.length;
@@ -6241,7 +6271,7 @@ function drawGym(){
  if(sk)sk.onclick=function(){g.at=(idx+1)%gymPlan().length;put(S);drawGym();haptic();};
  var sw=document.getElementById('gymswap');
  if(sw)sw.onclick=function(){gymPick();};
- drawGymCycle(); drawGymWeek(); drawGymHist();
+ if(!light){drawGymCycle(); drawGymWeek(); drawGymHist();}
 }
 function drawGymCycle(){
  var el=document.getElementById('gymcycle'); if(!el)return;
@@ -6302,77 +6332,127 @@ function exShort(e){
 }
 function gymSession(){
  var t=gymToday()||gymStart();
- var p=gymPlan()[t.i];
+ var P=gymPlan();
+ if(!(num(t.i)>=0)||num(t.i)>=P.length){t.i=0;t.n=P[0].n;}
+ var p=P[t.i];
  if(!GEX||p.ex.indexOf(GEX)<0)GEX=p.ex.filter(function(e){return !gymSets(t,e).length;})[0]||p.ex[0]||'';
- var h='<div class="cseg" id="gxseg">'+p.ex.map(function(e){
-   var n=gymSets(t,e).length;
-   return '<b class="'+(GEX===e?'on':'')+'" data-gx="'+esc(e)+'" style="font-size:10px;line-height:1.25">'+
-    esc(exShort(e))+(n?'<br><span style="opacity:.7">'+n+'</span>':'')+'</b>';}).join('')+'</div>'+
-  '<div id="gxbody"></div>';
- openTool(p.n,h,'');
- document.getElementById('tcopy').textContent='Done';
- document.getElementById('tcopy').onclick=function(){
+ openTool(p.n,'<div class="cseg" id="gxseg"></div><div id="gxbody"></div>','');
+ var b=document.getElementById('tcopy');
+ b.textContent='Done';
+ b.onclick=function(){
   t.done=1;put(S);drawGym();haptic('heavy');
   if((t.sets||[]).length&&gymSameDay(t.i,t.d))gymRecap(gymLog().indexOf(t));
   else closeTool();};
- document.querySelectorAll('[data-gx]').forEach(function(b){
-  b.onclick=function(){GEX=b.dataset.gx;haptic('light');gymSession();};});
- drawGymEx();
+ gxTabs(); drawGymEx();
 }
-function drawGymEx(){
+/* the tab strip is redrawn on its own, so switching never reopens the sheet */
+function gxTabs(){
  var t=gymToday(); if(!t)return;
- var el=document.getElementById('gxbody'); if(!el)return;
- var sets=gymSets(t,GEX), last=gymLast(GEX), best=gymBest(GEX);
- var lastSet=sets[sets.length-1];
- var w=lastSet?lastSet.w:(last&&last.sets.length?last.sets[last.sets.length-1].w:20);
- var r=lastSet?lastSet.r:(last&&last.sets.length?last.sets[last.sets.length-1].r:10);
- var h='<div style="font-size:var(--f4);font-weight:650;letter-spacing:-.02em">'+esc(GEX)+'</div>';
- h+='<div class="tgt" style="margin-top:4px">'+
-  (last?'Last time '+last.sets.map(function(x){return x.w+'\u00d7'+x.r;}).join(', ')
-       :'First time logging this one')+
-  (best?' · best '+best.w+'\u00d7'+best.r:'')+'</div>';
- h+='<div style="display:flex;gap:8px;align-items:flex-end;margin-top:16px">'+
-  '<div style="flex:1"><label style="margin-top:0">kg</label>'+
-   '<input id="gx-w" type="number" inputmode="decimal" step="0.5" value="'+w+'" style="text-align:center;font-size:20px"></div>'+
-  '<div style="flex:1"><label style="margin-top:0">reps</label>'+
-   '<input id="gx-r" type="number" inputmode="numeric" value="'+r+'" style="text-align:center;font-size:20px"></div>'+
-  '<button class="btnfull" id="gx-log" style="flex:1.2;margin-top:0">Log set</button></div>';
- if(sets.length){
-  h+='<div class="vhead" style="margin-top:18px">Today</div><div class="card">'+
-   sets.map(function(x,k){
-    return '<div class="row"><div class="lab">Set '+(k+1)+'</div>'+
-     '<div class="v2">'+x.w+' kg \u00d7 '+x.r+
-     (x.pb?' <span style="color:var(--pos);font-size:11px">best</span>':'')+
-     ' <button data-gxd="'+k+'" style="background:none;border:0;color:var(--t3);padding:0 4px">\u00d7</button></div></div>';
-   }).join('')+'</div>';
- }
- h+=gymExCard(GEX);
- el.innerHTML=h;
- document.getElementById('gx-log').onclick=function(){
-  var W=num(document.getElementById('gx-w').value), R=num(document.getElementById('gx-r').value);
-  if(!W||!R){alert('Put a weight and a rep count in.');return;}
-  var b=gymBest(GEX);
-  var pb=(!b||W>b.w||(W===b.w&&R>b.r))?1:0;
-  t.sets.push({e:GEX,w:W,r:R,pb:pb});
-  put(S); haptic(pb?'heavy':'light');
-  drawGymEx(); drawGym();
-  if(pb)setTimeout(function(){
-   var n=document.getElementById('gxbody');
-   if(n)n.insertAdjacentHTML('afterbegin',
-    '<div class="card" style="margin-bottom:10px;border-color:rgba(79,190,139,.5)">'+
-    '<div class="tgt" style="color:var(--pos)">Best you have done on '+esc(GEX)+'.</div></div>');},60);
- };
- el.querySelectorAll('[data-gxd]').forEach(function(b){
+ var el=document.getElementById('gxseg'); if(!el)return;
+ var p=gymPlan()[t.i]; if(!p)return;
+ el.innerHTML=p.ex.map(function(e){
+  var n=gymSets(t,e).length;
+  return '<b class="'+(GEX===e?'on':'')+'" data-gx="'+esc(e)+'" style="font-size:10px;line-height:1.25">'+
+   esc(exShort(e))+(n?'<br><span style="opacity:.7">'+n+'</span>':'')+'</b>';}).join('');
+ el.style.setProperty('--n',p.ex.length||1);
+ el.style.setProperty('--i',Math.max(0,p.ex.indexOf(GEX)));
+ el.querySelectorAll('[data-gx]').forEach(function(b){
+  b.onclick=function(){
+   if(GEX===b.dataset.gx)return;
+   GEX=b.dataset.gx; haptic('light');
+   gxTabs(); drawGymEx();          /* body only, sheet stays put */
+  };});
+}
+/* the parts that change after a set, without destroying the inputs */
+function gxRefresh(){
+ var t=gymToday(); if(!t)return;
+ gxTabs();
+ var sets=gymSets(t,GEX);
+ var list=document.getElementById('gx-list');
+ if(list)list.innerHTML=gxSetRows(sets);
+ var head=document.getElementById('gx-sub');
+ if(head)head.innerHTML=gxSubLine(GEX);
+ var card=document.getElementById('gx-card');
+ if(card)card.innerHTML=gymExCard(GEX);
+ wireSetRows();
+}
+function gxSubLine(ex){
+ var last=gymLast(ex), best=gymBest(ex);
+ return (last?'Last time '+last.sets.map(function(x){return x.w+'\u00d7'+x.r;}).join(', ')
+             :'First time logging this one')+
+        (best?' \u00b7 best '+best.w+'\u00d7'+best.r:'');
+}
+function gxSetRows(sets){
+ if(!sets.length)return '';
+ return '<div class="vhead" style="margin-top:18px">Today</div><div class="card">'+
+  sets.map(function(x,k){
+   return '<div class="row"><div class="lab">Set '+(k+1)+'</div>'+
+    '<div class="v2">'+x.w+' kg \u00d7 '+x.r+
+    (x.pb?' <span style="color:var(--pos);font-size:11px">best</span>':'')+
+    ' <button data-gxd="'+k+'" style="background:none;border:0;color:var(--t3);padding:0 6px">\u00d7</button></div></div>';
+  }).join('')+'</div>';
+}
+function wireSetRows(){
+ var t=gymToday(); if(!t)return;
+ document.querySelectorAll('[data-gxd]').forEach(function(b){
   b.onclick=function(){
    var k=+b.dataset.gxd, n=0;
    for(var j=0;j<t.sets.length;j++){
     if(t.sets[j].e===GEX){ if(n===k){t.sets.splice(j,1);break;} n++; }}
-   put(S); drawGymEx(); drawGym();};});
+   put(S); gxRefresh(); haptic('light');};});
+}
+function drawGymEx(){
+ var t=gymToday(); if(!t)return;
+ var el=document.getElementById('gxbody'); if(!el)return;
+ var sets=gymSets(t,GEX), last=gymLast(GEX);
+ var lastSet=sets[sets.length-1];
+ var w=lastSet?lastSet.w:(last&&last.sets.length?last.sets[last.sets.length-1].w:20);
+ var r=lastSet?lastSet.r:(last&&last.sets.length?last.sets[last.sets.length-1].r:10);
+ el.innerHTML=
+  '<div style="font-size:var(--f4);font-weight:650;letter-spacing:-.02em">'+esc(GEX)+'</div>'+
+  '<div class="tgt" id="gx-sub" style="margin-top:4px">'+gxSubLine(GEX)+'</div>'+
+  '<div id="gx-flash"></div>'+
+  '<div style="display:flex;gap:8px;align-items:flex-end;margin-top:16px">'+
+   '<div style="flex:1"><label style="margin-top:0">kg</label>'+
+    '<input id="gx-w" type="number" inputmode="decimal" step="0.5" value="'+w+'" style="text-align:center;font-size:20px"></div>'+
+   '<div style="flex:1"><label style="margin-top:0">reps</label>'+
+    '<input id="gx-r" type="number" inputmode="numeric" value="'+r+'" style="text-align:center;font-size:20px"></div>'+
+   '<button class="btnfull" id="gx-log" style="flex:1.2;margin-top:0">Log set</button></div>'+
+  '<div id="gx-err" style="font-size:13px;color:var(--neg);margin-top:8px"></div>'+
+  '<div id="gx-list">'+gxSetRows(sets)+'</div>'+
+  '<div id="gx-card">'+gymExCard(GEX)+'</div>';
+ document.getElementById('gx-log').onclick=logSet;
+ ['gx-w','gx-r'].forEach(function(id){
+  var n=document.getElementById(id);
+  n.oninput=function(){document.getElementById('gx-err').textContent='';};
+  n.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();logSet();}};});
+ wireSetRows();
+}
+function logSet(){
+ var t=gymToday(); if(!t)return;
+ var wEl=document.getElementById('gx-w'), rEl=document.getElementById('gx-r');
+ var W2=num(wEl.value), R=num(rEl.value);
+ var err=document.getElementById('gx-err');
+ if(!W2||!R||W2<0||R<1){err.textContent='Put a weight and a rep count in.';return;}
+ err.textContent='';
+ var b=gymBest(GEX);
+ var pb=(!b||W2>b.w||(W2===b.w&&R>b.r))?1:0;
+ t.sets.push({e:GEX,w:W2,r:R,pb:pb});
+ put(S); haptic(pb?'heavy':'light');
+ gxRefresh(); drawGym(1);                       /* inputs are untouched, keyboard stays up */
+ var fl=document.getElementById('gx-flash');
+ if(fl){
+  fl.innerHTML=pb
+   ? '<div class="card" style="margin-top:10px;border-color:rgba(79,190,139,.5)">'+
+     '<div class="tgt" style="color:var(--pos)">Best you have done on '+esc(GEX)+'.</div></div>'
+   : '';
+  if(pb)setTimeout(function(){var f2=document.getElementById('gx-flash');if(f2)f2.innerHTML='';},3200);
+ }
 }
 function gymRecap(i){
  var s2=gymLog()[i]; if(!s2)return;
  var byEx={};
- (s2.sets||[]).forEach(function(x){(byEx[x.e]=byEx[x.e]||[]).push(x);});
+ (Array.isArray(s2.sets)?s2.sets:[]).forEach(function(x){(byEx[x.e]=byEx[x.e]||[]).push(x);});
  var h='<div class="hint">'+new Date(s2.d).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+
   ' · '+Math.round(gymVolume(s2)).toLocaleString()+' kg total</div><div class="card" style="margin-top:12px">'+
   Object.keys(byEx).map(function(e){
