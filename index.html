@@ -432,6 +432,9 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 .pc2 .tg.due{border-color:rgba(212,106,94,.5);color:var(--bad)}
 .pc2 .tg.pay{border-color:rgba(76,175,125,.45);color:var(--ok)}
 .pc2 .tg.blk{border-color:rgba(212,106,94,.5);color:var(--bad)}
+.mg{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:8px;
+ padding:7px 11px;font-size:11.5px;font-family:inherit;margin-left:5px;cursor:pointer}
+.mg.on{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:600}
 .pc2 .na2{font-size:14px;color:var(--ink);margin-top:11px;line-height:1.4}
 .pc2 .na2 em{font-style:normal;color:var(--dim);font-size:12.5px;display:block;margin-top:2px}
 .pc2 .acts{display:flex;gap:8px;margin-top:13px}
@@ -1038,6 +1041,7 @@ body.lite #qcsheet .inner{background:var(--card)}
       <button class="tool" id="t-impl"><span>◈</span>Import prospects</button>
       <button class="tool" id="t-cal"><span>↗</span>Follow-ups to calendar</button>
       <button class="tool" id="t-backup"><span>⇪</span>Backup data</button>
+      <button class="tool" id="t-merge"><span>⇄</span>Merge from a file</button>
       <button class="tool" id="t-restore"><span>⇩</span>Restore data</button>
       <button class="tool" id="t-undo"><span>↺</span>Undo a restore</button>
     </div></div>
@@ -5686,7 +5690,7 @@ function defaultCopy(){navigator.clipboard.writeText(COPYTEXT).then(function(){
 document.getElementById('tc').onclick=function(){TS.style.display='none';};
 document.getElementById('tcopy').onclick=defaultCopy;
 function openTool(title,html,copy){
- document.getElementById('t-title').textContent=title;TB.innerHTML=html;COPYTEXT=copy||'';
+ document.getElementById('t-title').textContent=title;TB.innerHTML=html;TB.id='tbody';COPYTEXT=copy||'';
  var b=document.getElementById('tcopy');b.textContent='Copy';b.onclick=defaultCopy;
  TS.style.display='flex';TS.querySelector('.inner').scrollTop=0;
 }
@@ -6030,6 +6034,267 @@ function diffCounts(nu){
   diaryHere:(S.diary||[]).length, diaryIn:(nu.diary||[]).length,
   dncHere:(S.dnc||[]).length, dncIn:(nu.dnc||[]).length};
 }
+/* ================= MERGE =================
+   Restore replaces everything, which is how a day of work got lost once.
+   Merge compares record by record against a baseline taken at the last sync,
+   so the app can tell what YOU changed apart from what the OTHER side changed.
+   Nothing is written until you have seen it. */
+var MCOLS=[
+ ['deals','Clients',   function(x){return low(x.w);}],
+ ['units','Units',     function(x){return low(x.p)+'|'+low(x.t)+'|'+(x.bd||'');}],
+ ['later','Prospects', function(x){return low(x.w)||dig(x.ph);}],
+ ['vw','Viewings',     function(x){return x.u+'|'+x.d+'|'+low(x.n);}],
+ ['kd','Key dates',    function(x){return x.d+'|'+low(x.w)+'|'+low(x.t);}],
+ ['cn','Contacts',     function(x){return low(x.n)+'|'+dig(x.ph);}],
+ ['nt','Notes',        function(x){return x.d+'|'+low(x.t).slice(0,40);}],
+ ['proj','Projects',   function(x){return low(x.n||x.w);}],
+ ['camp','Campaigns',  function(x){return low(x.n||x.t);}],
+ ['ledger','Commission',function(x){return x.d+'|'+(x.a||'')+'|'+low(x.w);}],
+ ['diary','Diary',     function(x){return x.d+'|'+(x.t||'')+'|'+low(x.n);}]
+];
+function low(v){return String(v==null?'':v).trim().toLowerCase();}
+function dig(v){return String(v==null?'':v).replace(/\D/g,'');}
+function hashOf(o){
+ /* stable string for a record, so two copies can be compared */
+ var s=JSON.stringify(o,Object.keys(o||{}).sort());
+ var h=5381,i=s.length;
+ while(i)h=(h*33^s.charCodeAt(--i))>>>0;
+ return h.toString(36);
+}
+function indexBy(arr,keyfn){
+ var m={};
+ (arr||[]).forEach(function(x,i){
+  var k=keyfn(x); if(!k)k='#'+i;
+  if(m[k])k=k+'#'+i;              /* genuine duplicates stay separate */
+  m[k]={x:x,i:i,h:hashOf(x)};});
+ return m;
+}
+function normFor(D){
+ /* the live state has been through repairData and has defaults filled in.
+    Normalise the incoming file the same way, or identical records look different. */
+ (D.later||[]).forEach(function(x){
+  if(x.att!==undefined&&!Array.isArray(x.att)){
+   var k=Number(x.att)||0,a=[];
+   for(var i=0;i<k;i++)a.push({d:x.lastAt||x.wd||'',ch:'call',out:x.last||'call'});
+   x.att=a;}
+  if(x.att===undefined)x.att=[];});
+ (D.deals||[]).forEach(function(d){
+  if(d.hist!==undefined&&!Array.isArray(d.hist))d.hist=[];
+  if(d.s!==undefined&&(d.s<0||d.s>5))d.s=0;});
+ return D;
+}
+function mergePlan(other){
+ var D=normFor(JSON.parse(JSON.stringify(other.S||other)));
+ var base=(S.sync&&S.sync.base)||{};
+ var tbase=(S.sync&&S.sync.tbase)||null;
+ var plan={cols:[],add:0,upd:0,conflict:0,keep:0,same:0,goneThere:0,auto:0};
+ MCOLS.forEach(function(c){
+  var key=c[0], kf=c[2];
+  var mine=indexBy(S[key],kf), theirs=indexBy(D[key],kf), b=base[key]||{};
+  var tb=tbase?(tbase[key]||{}):null;
+  var rows=[], seen={};
+  Object.keys(mine).forEach(function(k){
+   seen[k]=1;
+   var m=mine[k], t=theirs[k];
+   if(!t){
+    if(b[k]&&b[k]===m.h){rows.push({k:k,t:'goneThere',mine:m.x});plan.goneThere++;}
+    else {plan.keep++;}
+    return;}
+   if(m.h===t.h){plan.same++;return;}
+   var mChanged=!b[k]||b[k]!==m.h;
+   /* if we have their old hash, judge their side against THEIR baseline */
+   var tChanged=tb ? (!tb[k]||tb[k]!==t.h) : (!b[k]||b[k]!==t.h);
+   var mr=mergeRec(m.x,t.x);
+   /* neither side has moved since the last merge, so this was already settled */
+   if(!mChanged&&!tChanged){plan.keep++;return;}
+   if(!mChanged&&tChanged){rows.push({k:k,t:'take',mine:m.x,their:t.x,mr:mr,i:m.i});plan.upd++;}
+   else if(mChanged&&!tChanged){plan.keep++;}
+   else if(!mr.clash.length&&mr.filled.length){
+    /* both sides touched it, but nothing actually disagrees, only gaps get filled */
+    rows.push({k:k,t:'auto',mine:m.x,their:t.x,mr:mr,i:m.i});plan.auto++;}
+   else if(!mr.clash.length&&!mr.filled.length){plan.keep++;}
+   else {rows.push({k:k,t:'conflict',mine:m.x,their:t.x,mr:mr,i:m.i});plan.conflict++;}
+  });
+  Object.keys(theirs).forEach(function(k){
+   if(seen[k])return;
+   rows.push({k:k,t:'add',their:theirs[k].x}); plan.add++;});
+  if(rows.length)plan.cols.push({key:key,label:c[1],rows:rows});
+ });
+ return plan;
+}
+function fieldDiff(a,b){
+ var out=[], keys={};
+ Object.keys(a||{}).forEach(function(k){keys[k]=1;});
+ Object.keys(b||{}).forEach(function(k){keys[k]=1;});
+ Object.keys(keys).forEach(function(k){
+  if(k==='hist'||k==='att')return;                 /* long lists, not useful side by side */
+  var x=JSON.stringify(a?a[k]:undefined), y=JSON.stringify(b?b[k]:undefined);
+  if(x!==y)out.push({k:k,a:a?a[k]:undefined,b:b?b[k]:undefined});});
+ return out;
+}
+function isEmpty(v){
+ return v===undefined||v===null||v===''||v===0||
+  (Array.isArray(v)&&!v.length)||
+  (typeof v==='object'&&!Array.isArray(v)&&!Object.keys(v).length);
+}
+/* Merge two copies of one record field by field. A field only counts as a real
+   clash when both sides have something and the somethings differ. A blank on one
+   side is not a disagreement, it is a gap the other side can fill. */
+function mergeRec(mine,their){
+ var out=JSON.parse(JSON.stringify(mine||{})), filled=[], clash=[];
+ Object.keys(their||{}).forEach(function(k){
+  var a=mine?mine[k]:undefined, b=their[k];
+  if(JSON.stringify(a)===JSON.stringify(b))return;
+  if(isEmpty(a)&&!isEmpty(b)){out[k]=b;filled.push(k);return;}
+  if(isEmpty(b))return;                              /* keep mine */
+  if((k==='hist'||k==='att')&&Array.isArray(a)&&Array.isArray(b)){
+   out[k]=(a.length>=b.length)?a:b; filled.push(k); return;}
+  clash.push(k);
+ });
+ return {rec:out,filled:filled,clash:clash};
+}
+var MPLAN=null, MPICK={};
+function nameOf(col,x){
+ if(!x)return '';
+ if(col==='units')return x.p||'';
+ if(col==='vw')return 'viewing '+(x.d||'');
+ if(col==='nt')return String(x.t||'').slice(0,30);
+ return x.w||x.n||x.t||'';
+}
+function openMerge(o,fname){
+ MPLAN=mergePlan(o); MPICK={};
+ var p=MPLAN;
+ var h='<div class="hint">'+esc(fname||'That file')+'</div>'+
+  '<div class="card" style="margin-top:10px">'+
+   '<div class="row"><div class="lab">Identical on both</div><div class="v2">'+p.same+'</div></div>'+
+   '<div class="row"><div class="lab">New, will be added</div><div class="v2" style="color:var(--ok)">'+p.add+'</div></div>'+
+   '<div class="row"><div class="lab">Changed there only</div><div class="v2" style="color:var(--ok)">'+p.upd+'</div></div>'+
+   '<div class="row"><div class="lab">Gaps filled in, no disagreement</div><div class="v2" style="color:var(--ok)">'+p.auto+'</div></div>'+
+   '<div class="row"><div class="lab">Changed here only, kept</div><div class="v2">'+p.keep+'</div></div>'+
+   '<div class="row"><div class="lab">Changed on both</div><div class="v2"'+(p.conflict?' style="color:var(--bad)"':'')+'>'+p.conflict+'</div></div>'+
+   (p.goneThere?'<div class="row"><div class="lab">Deleted on the other side</div><div class="v2">'+p.goneThere+'</div></div>':'')+
+  '</div>'+
+  (!(S.sync&&S.sync.base)?'<div class="hint" style="margin-top:9px;color:var(--gold)">'+
+    'First merge, so there is no baseline yet. Anything that differs is shown as a conflict for you to decide. '+
+    'After this one it will know.</div>':'');
+ if(!p.cols.length){
+  h+='<div class="hint" style="margin-top:12px;color:var(--ok)">Nothing to merge, the two are already the same.</div>';
+  openTool('Merge',h,''); return;}
+ p.cols.forEach(function(c){
+  h+='<div class="vhead" style="margin-top:16px">'+esc(c.label)+'</div><div class="card">';
+  c.rows.forEach(function(r,j){
+   var id=c.key+':'+j;
+   var nm=esc(pvName(nameOf(c.key,r.their||r.mine)))||'(unnamed)';
+   if(r.t==='add'){
+    MPICK[id]='take';
+    h+='<div class="row big2"><div><div class="lab" style="color:var(--ok)">'+nm+'</div>'+
+     '<div class="tgt">new here, will be added</div></div>'+
+     '<div><button class="mg on" data-mg="'+id+'" data-v="take">Add</button>'+
+     '<button class="mg" data-mg="'+id+'" data-v="skip">Skip</button></div></div>';
+   } else if(r.t==='auto'){
+    MPICK[id]='take';
+    h+='<div class="row big2"><div><div class="lab" style="color:var(--ok)">'+nm+'</div>'+
+     '<div class="tgt">fills in '+esc(r.mr.filled.join(', '))+', nothing here is overwritten</div></div>'+
+     '<div><button class="mg on" data-mg="'+id+'" data-v="take">Fill in</button>'+
+     '<button class="mg" data-mg="'+id+'" data-v="skip">Skip</button></div></div>';
+   } else if(r.t==='take'){
+    MPICK[id]='take';
+    var fd=fieldDiff(r.mine,r.their).slice(0,3).map(function(f){
+     return f.k+': '+esc(pvAll(String(f.a==null?'—':f.a).slice(0,26)))+' &rarr; '+esc(pvAll(String(f.b==null?'—':f.b).slice(0,26)));}).join('<br>');
+    h+='<div class="row big2"><div><div class="lab">'+nm+'</div>'+
+     '<div class="tgt">changed on the other side<br>'+fd+'</div></div>'+
+     '<div><button class="mg on" data-mg="'+id+'" data-v="take">Take</button>'+
+     '<button class="mg" data-mg="'+id+'" data-v="skip">Keep mine</button></div></div>';
+   } else if(r.t==='conflict'){
+    MPICK[id]='mix';        /* keep my version of anything that clashes, still fill the blanks */
+    var fd2=r.mr.clash.slice(0,4).map(function(k){
+     return '<div style="margin-top:3px">'+esc(k)+'<br>here: '+esc(pvAll(String(r.mine[k]==null?'—':r.mine[k]).slice(0,34)))+
+      '<br>there: '+esc(pvAll(String(r.their[k]==null?'—':r.their[k]).slice(0,34)))+'</div>';}).join('');
+    h+='<div class="row big2" style="border-left:2px solid var(--bad);padding-left:8px"><div>'+
+     '<div class="lab" style="color:var(--bad)">'+nm+'</div>'+
+     '<div class="tgt">'+r.mr.clash.length+' field'+(r.mr.clash.length>1?'s':'')+' genuinely disagree'+fd2+
+     (r.mr.filled.length?'<br><span style="color:var(--ok)">plus '+esc(r.mr.filled.join(', '))+' only filled on one side</span>':'')+
+     '</div></div>'+
+     '<div><button class="mg" data-mg="'+id+'" data-v="take">Theirs</button>'+
+     '<button class="mg on" data-mg="'+id+'" data-v="mix">Mine + gaps</button>'+
+     '<button class="mg" data-mg="'+id+'" data-v="skip">Mine only</button></div></div>';
+   } else if(r.t==='goneThere'){
+    MPICK[id]='skip';
+    h+='<div class="row big2"><div><div class="lab">'+nm+'</div>'+
+     '<div class="tgt">deleted on the other side, kept here unless you say otherwise</div></div>'+
+     '<div><button class="mg" data-mg="'+id+'" data-v="del">Delete</button>'+
+     '<button class="mg on" data-mg="'+id+'" data-v="skip">Keep</button></div></div>';
+   }
+  });
+  h+='</div>';
+ });
+ h+='<div class="hint" style="margin-top:12px">A snapshot is saved first. If this goes wrong, '+
+    'More then Undo a restore.</div>'+
+    '<button class="btnfull" id="mggo" style="margin-top:12px">Merge</button>'+
+    '<button class="addbtn" id="mgcancel" style="margin-top:8px">Cancel</button>';
+ openTool('Merge, not replace',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ var box=document.getElementById('tbody');
+ box.querySelectorAll('[data-mg]').forEach(function(b){
+  b.onclick=function(){
+   var id=b.dataset.mg; MPICK[id]=b.dataset.v;
+   box.querySelectorAll('[data-mg="'+id+'"]').forEach(function(o){
+    o.classList.toggle('on',o===b);});};});
+ document.getElementById('mgcancel').onclick=function(){closeTool();};
+ document.getElementById('mggo').onclick=function(){applyMerge(o);};
+}
+function applyMerge(o){
+ var D=o.S||o, p=MPLAN;
+ if(!takeSnapshot('before a merge')){
+  if(!confirm('Could not save a snapshot, so this cannot be undone. Continue anyway?'))return;}
+ var n={add:0,upd:0,del:0};
+ p.cols.forEach(function(c){
+  var key=c.key;
+  S[key]=S[key]||[];
+  var dels=[];
+  c.rows.forEach(function(r,j){
+   var pick=MPICK[c.key+':'+j];
+   if(pick==='take'){
+    if(r.t==='add'){S[key].push(r.their);n.add++;}
+    else if(r.t==='auto'){S[key][r.i]=r.mr.rec;n.upd++;}
+    else {S[key][r.i]=r.their;n.upd++;}
+   } else if(pick==='mix'&&r.mr){S[key][r.i]=r.mr.rec;n.upd++;}
+   else if(pick==='del'&&r.t==='goneThere'){dels.push(r.mine);}
+  });
+  if(dels.length){
+   S[key]=S[key].filter(function(x){return dels.indexOf(x)<0;});
+   n.del+=dels.length;}
+ });
+ syncStamp(D);
+ repairData();
+ try{put(S);flushPut();}
+ catch(e){alert('Could not save the merge. Nothing changed.');return;}
+ alert('Merged. '+n.add+' added, '+n.upd+' updated'+(n.del?', '+n.del+' removed':'')+
+  '. Undo it from More then Undo a restore.');
+ location.reload();
+}
+function syncStamp(D){
+ /* Remember BOTH sides at the moment of the merge. Without their side too, a
+    decision to keep mine gets re-asked every single time you merge again. */
+ var base={}, tbase={};
+ MCOLS.forEach(function(c){
+  var m=indexBy(S[c[0]],c[2]), b={};
+  Object.keys(m).forEach(function(k){b[k]=m[k].h;});
+  base[c[0]]=b;
+  if(D){var t=indexBy(D[c[0]],c[2]), tb={};
+   Object.keys(t).forEach(function(k){tb[k]=t[k].h;});
+   tbase[c[0]]=tb;}});
+ S.sync={at:new Date().toISOString(),base:base,tbase:D?tbase:null};
+}
+function syncAge(){
+ if(!(S.sync&&S.sync.at))return '';
+ var mins=Math.round((Date.now()-new Date(S.sync.at))/60000);
+ if(mins<1)return 'just now';
+ if(mins<60)return mins+' min ago';
+ var hrs=Math.round(mins/60);
+ if(hrs<24)return hrs+' hour'+(hrs>1?'s':'')+' ago';
+ return Math.round(hrs/24)+' day'+(hrs>=48?'s':'')+' ago';
+}
 function restorePreview(o,fname){
  var D=o.S||o;
  var c=diffCounts(D);
@@ -6100,6 +6365,28 @@ function openSnapshots(){
   location.reload();};});
 }
 
+document.getElementById('t-merge').onclick=function(){
+ openTool('Merge from a file',
+  '<div class="hint">Load the other device\u2019s backup. Nothing is replaced. The app compares record by record '+
+  'and shows you exactly what changed on each side before anything is written.'+
+  (syncAge()?'<br><br>Last merged '+syncAge()+'.':'')+'</div>'+
+  '<input type="file" id="mgfile" accept="application/json,.json" style="margin-top:14px">'+
+  '<div class="hint" id="mgst" style="margin-top:10px"></div>','');
+ document.getElementById('tcopy').textContent='Close';
+ document.getElementById('mgfile').onchange=function(){
+  var f=this.files[0]; if(!f)return;
+  var st=document.getElementById('mgst'); st.textContent='Reading...';
+  var r=new FileReader();
+  r.onload=function(ev){
+   var o; try{o=JSON.parse(ev.target.result);}catch(e){st.textContent='That file is not a valid backup.';return;}
+   var D=o.S||o;
+   if(!D||(!D.deals&&!D.units&&!D.later)){st.textContent='That file is not a Daily backup.';return;}
+   openMerge(o,f.name);
+  };
+  r.onerror=function(){st.textContent='Could not read that file.';};
+  r.readAsText(f);
+ };
+};
 document.getElementById('t-restore').onclick=function(){
  openTool('Restore','<div class="hint">Choose a backup file. This replaces everything currently in the app, so take a fresh backup first if you are not sure.</div><input type="file" id="rsfile" accept="application/json,.json" style="margin-top:14px"><div class="hint" id="rsst" style="margin-top:10px"></div>','');
  document.getElementById('tcopy').textContent='Close';
@@ -6145,6 +6432,7 @@ function doRestore(o,st){
      if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.cn)S.cn=[]; if(!S.nt)S.nt=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
      repairData();
      try{
+      syncStamp(D);
       put(S);flushPut();
      }catch(e){
       alert('Could not save. Nothing has been changed, your old data is still here. Send the file to be slimmed down.');
