@@ -1172,6 +1172,7 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
 <div class="pgtitle"><span id="pgtitle">Today</span><button id="find" title="Search everything" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button><button class="sunbtn" id="sunb" title="Switch between night and daylight">Night</button><button id="eye" title="Hide names and numbers"><svg id="eyesvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg></button></div>
 
 <div id="p-today">
+  <button class="addbtn" id="capbtn" style="margin-top:10px">Capture something</button>
   <div class="hd">
     <div class="kick" id="hdkick">Today</div>
     <div class="huge" id="hdbig">0 to call</div>
@@ -1320,6 +1321,16 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
   <div class="sec" id="cal-day"><h2><span id="dayttl">Today</span> <b id="evcount"></b></h2>
     <button class="addbtn" id="addev" style="margin-bottom:9px">+ Add to diary</button>
     <div class="card" id="evlist"></div></div>
+</div>
+
+<div id="p-rent" class="hide">
+  <div class="sec"><h2>Rent roll</h2><div id="rentstats"></div></div>
+  <div class="sec"><h2>Tenancies <b id="rentn"></b></h2>
+    <div class="card" id="rentlist"></div>
+    <button class="addbtn" id="addrent" style="margin-top:9px">+ Add a tenancy</button></div>
+  <div class="sec"><h2>Commission <b id="commn"></b></h2><div id="commstats"></div>
+    <div class="card" style="margin-top:12px" id="commlist"></div>
+    <button class="addbtn" id="addcomm" style="margin-top:9px">+ Track a commission</button></div>
 </div>
 
 <div id="p-gym" class="hide">
@@ -1499,7 +1510,7 @@ const PROB=[0.10,0.25,0.50,0.80,1.00];
 const DTYPES=['Ready','Off-plan','Resale','Commercial','Rent','Land'];
 const CHEQ=['1 cheque','2 cheques','3 cheques','4 cheques','6 cheques','12 cheques'];
 const SRCS=['Referral','Repeat client','Portal lead','Walk in','Prospecting call','Social','Other'];
-const PAGES=[['today','Today','◧'],['deals','Deals','◆'],['stock','Stock','▣'],['diary','Diary','▤'],['gym','Gym','◑'],['more','More','≡']];
+const PAGES=[['today','Today','◧'],['deals','Deals','◆'],['stock','Stock','▣'],['rent','Rent','▫'],['diary','Diary','▤'],['gym','Gym','◑'],['more','More','≡']];
 const STOCKSEG=[['units','Inventory'],['proj','Projects'],['stats','Analytics'],['comps','Comps']];
 const CADENCE={0:2,1:3,2:2,3:2};
 const TEMPLATES=[
@@ -2743,6 +2754,7 @@ function pageDraw(k){
  if(DREW[k])return; DREW[k]=1;
  if(k==='stock'){drawUnits();drawComps();drawStock();drawProj();}
  if(k==='diary'){drawDiary();}
+ if(k==='rent'){drawRent();drawComm();}
  if(k==='gym'){drawGym();}
  if(k==='more'){drawMore();}
 }
@@ -3897,6 +3909,9 @@ function openSheet(i){
 f('v').oninput=calcFee;f('r').oninput=calcFee;f('rent').oninput=calcFee;f('ty').onchange=toggleRent;
 document.getElementById('adddeal').onclick=function(){openSheet(null);};
 var ge=document.getElementById('gymedit'); if(ge)ge.onclick=function(){gymEditPlan();};
+var cb=document.getElementById('capbtn'); if(cb)cb.onclick=function(){openCapture();};
+var ar=document.getElementById('addrent'); if(ar)ar.onclick=function(){openRent(null);};
+var ac=document.getElementById('addcomm'); if(ac)ac.onclick=function(){openComm(null);};
 document.getElementById('sc').onclick=function(){document.getElementById('sheet').style.display='none';};
 document.getElementById('sdel').onclick=function(){if(EDIT!==null&&confirm('Delete this deal?')){toTrash('deal',S.deals[EDIT]);S.deals.splice(EDIT,1);put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawQual();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();}};
 document.getElementById('sv').onclick=function(){
@@ -6519,6 +6534,481 @@ function gymEditPlan(){
   if(g.at>=cur.length)g.at=0;
   put(S); closeTool(); drawGym(); haptic();};
 }
+
+/* ================= RENT ROLL =================
+   Managed tenancies. Recurring income that currently lives in WhatsApp threads,
+   which is why renewals get missed. */
+function rents(){ S.rent=Array.isArray(S.rent)?S.rent:[]; return S.rent; }
+function blankRent(){
+ return {p:'',ll:'',tn:'',tph:'',amt:0,ch:'1 cheque',
+  st:'',en:'',ej:'',nx:'',note:'',status:'Live',at:TD};
+}
+function rentDays(r){ return r.en?ddiff(TD,r.en):null; }
+function rentFee(r){ return num(r.amt)*0.05; }
+function rentState(r){
+ var d=rentDays(r);
+ if(r.status==='Ended')return {k:'ended',t:'Ended',tone:'var(--t3)'};
+ if(d===null)return {k:'nodate',t:'No end date',tone:'var(--neg)'};
+ if(d<0)return {k:'over',t:Math.abs(d)+' days overdue',tone:'var(--neg)'};
+ if(d<=60)return {k:'soon',t:'Renews in '+d+' days',tone:'var(--acc)'};
+ return {k:'ok',t:d+' days left',tone:'var(--t3)'};
+}
+function rentDue(){
+ return rents().map(function(r,i){return {r:r,i:i,d:rentDays(r),st:rentState(r)};})
+  .filter(function(x){return x.r.status!=='Ended'&&(x.d===null||x.d<=60);})
+  .sort(function(a,b){ if(a.d===null)return -1; if(b.d===null)return 1; return a.d-b.d;});
+}
+function rentRoll(){
+ var live=rents().filter(function(r){return r.status!=='Ended';});
+ return {n:live.length,
+  gross:live.reduce(function(a,r){return a+num(r.amt);},0),
+  fee:live.reduce(function(a,r){return a+rentFee(r);},0)};
+}
+function drawRent(){
+ var el=document.getElementById('rentlist'); if(!el)return;
+ var R=rents(), roll=rentRoll(), due=rentDue();
+ var n=document.getElementById('rentn'); if(n)n.textContent=R.length||'';
+ var head=document.getElementById('rentstats');
+ if(head)head.innerHTML='<div class="stat3">'+
+  '<div><div class="n">'+roll.n+'</div><div class="l">managed</div></div>'+
+  '<div><div class="n">'+(roll.gross>=1000000?(roll.gross/1000000).toFixed(1)+'M':Math.round(roll.gross/1000)+'k')+
+   '</div><div class="l">rent roll</div></div>'+
+  '<div><div class="n'+(due.length?' warn':'')+'">'+due.length+'</div><div class="l">need a decision</div></div></div>'+
+  (roll.fee?'<div class="hint" style="margin-top:9px">Renewal commission at 5% is '+pmoney(roll.fee)+' a year if they all stay.</div>':'');
+ if(!R.length){
+  el.innerHTML='<div class="hint">Nothing here yet. Add the tenancies you manage and the app will tell you which ones need a decision before the landlord asks.</div>';return;}
+ var order=R.map(function(r,i){return {r:r,i:i,d:rentDays(r)};})
+  .sort(function(a,b){
+   var ae=a.r.status==='Ended', be=b.r.status==='Ended';
+   if(ae!==be)return ae?1:-1;
+   if(a.d===null)return -1; if(b.d===null)return 1; return a.d-b.d;});
+ el.innerHTML=order.map(function(x){
+  var r=x.r, st=rentState(r);
+  return '<div class="row big2" data-rt="'+x.i+'" style="cursor:pointer"><div>'+
+   '<div class="lab">'+esc(pvNum(r.p||'Unit not named'))+'</div>'+
+   '<div class="tgt">'+esc(pvName([r.ll,r.tn].filter(Boolean).join(' to ')))+
+    (r.ch?' · '+esc(r.ch):'')+'</div>'+
+   '<div class="tgt" style="color:'+st.tone+'">'+esc(st.t)+'</div></div>'+
+   '<div class="v2">'+pmoney(r.amt)+'</div></div>';}).join('');
+ el.querySelectorAll('[data-rt]').forEach(function(b){
+  b.onclick=function(){openRent(+b.dataset.rt);};});
+}
+function openRent(i){
+ var r=(i===null)?blankRent():rents()[i];
+ var st=(i===null)?null:rentState(r);
+ var h=(st?'<div class="card" style="margin-bottom:12px"><div class="row"><div class="lab">Status</div>'+
+   '<div class="v2" style="color:'+st.tone+'">'+esc(st.t)+'</div></div>'+
+   '<div class="row"><div class="lab">Your renewal fee at 5%</div><div class="v2">'+pmoney(rentFee(r))+'</div></div></div>':'')+
+  '<div class="pfields">'+
+  '<label>Property</label><input id="rt-p" value="'+esc(r.p||'')+'" placeholder="Loreto 411, DAMAC Hills">'+
+  '<div class="two"><div><label>Landlord</label><input id="rt-ll" value="'+esc(r.ll||'')+'"></div>'+
+  '<div><label>Tenant</label><input id="rt-tn" value="'+esc(r.tn||'')+'"></div></div>'+
+  '<label>Tenant mobile</label><input id="rt-tph" value="'+esc(r.tph||'')+'" placeholder="+971 50 000 0000">'+
+  '<div class="two"><div><label>Annual rent AED</label><input id="rt-amt" type="number" inputmode="numeric" value="'+(num(r.amt)||'')+'"></div>'+
+  '<div><label>Cheques</label><select id="rt-ch"></select></div></div>'+
+  '<div class="two"><div><label>Starts</label><input id="rt-st" type="date" value="'+esc(r.st||'')+'"></div>'+
+  '<div><label>Ends</label><input id="rt-en" type="date" value="'+esc(r.en||'')+'"></div></div>'+
+  '<div class="two"><div><label>Ejari number</label><input id="rt-ej" value="'+esc(r.ej||'')+'"></div>'+
+  '<div><label>Next cheque due</label><input id="rt-nx" type="date" value="'+esc(r.nx||'')+'"></div></div>'+
+  '<label>Status</label><select id="rt-status"></select>'+
+  '<label>Notes</label><textarea id="rt-note" rows="2">'+esc(r.note||'')+'</textarea>'+
+  '</div>'+
+  '<button class="btnfull" id="rt-save" style="margin-top:14px">Save</button>'+
+  (i===null?'':'<button class="addbtn" id="rt-msg" style="margin-top:8px">Message the tenant</button>'+
+   '<button class="addbtn" id="rt-del" style="margin-top:8px;border-color:rgba(224,119,106,.5);color:var(--neg)">Remove this tenancy</button>');
+ openTool(i===null?'Add a tenancy':(r.p||'Tenancy'),h,'');
+ document.getElementById('tcopy').textContent='Close';
+ fillSel(document.getElementById('rt-ch'),CHEQ); document.getElementById('rt-ch').value=r.ch||'1 cheque';
+ fillSel(document.getElementById('rt-status'),['Live','Renewing','Leaving','Ended']);
+ document.getElementById('rt-status').value=r.status||'Live';
+ document.getElementById('rt-save').onclick=function(){
+  var o=(i===null)?blankRent():rents()[i];
+  o.p=document.getElementById('rt-p').value.trim();
+  if(!o.p){alert('Give it a property name.');return;}
+  o.ll=document.getElementById('rt-ll').value.trim();
+  o.tn=document.getElementById('rt-tn').value.trim();
+  o.tph=document.getElementById('rt-tph').value.trim();
+  o.amt=num(document.getElementById('rt-amt').value);
+  o.ch=document.getElementById('rt-ch').value;
+  o.st=document.getElementById('rt-st').value;
+  o.en=document.getElementById('rt-en').value;
+  o.ej=document.getElementById('rt-ej').value.trim();
+  o.nx=document.getElementById('rt-nx').value;
+  o.status=document.getElementById('rt-status').value;
+  o.note=document.getElementById('rt-note').value.trim();
+  if(i===null)rents().unshift(o);
+  put(S); closeTool(); drawRent(); drawAtt(); haptic();};
+ var m=document.getElementById('rt-msg');
+ if(m)m.onclick=function(){
+  var ph=(r.tph||'').replace(/[^\d]/g,'');
+  var d=rentDays(r);
+  var msg='Hi'+(r.tn?' '+String(r.tn).split(' ')[0]:'')+', Mustafa here from Allegiance.\n\n'+
+   (d!==null&&d<=60&&d>=0
+    ? 'Your tenancy on '+r.p+' ends on '+new Date(r.en).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+
+      '. Let me know if you are planning to renew so I can get the paperwork moving early.'
+    : 'Quick one about '+r.p+'.');
+  if(ph)window.open('https://wa.me/'+ph+'?text='+encodeURIComponent(msg),'_blank');
+  else alert('No tenant number saved.');};
+ var del=document.getElementById('rt-del');
+ if(del)del.onclick=function(){
+  if(!confirm('Remove '+(r.p||'this tenancy')+'?'))return;
+  rents().splice(i,1); put(S); closeTool(); drawRent(); drawAtt();};
+}
+
+/* ================= COMMISSION: WON TO BANKED =================
+   A fee is not money until it lands. This tracks the gap. */
+function comms(){ S.comm=Array.isArray(S.comm)?S.comm:[]; return S.comm; }
+function blankComm(w,amt){
+ return {w:w||'',gross:num(amt)||0,vat:1,agency:0,mine:100,ref:0,
+  inv:'',due:'',got:0,gotAt:'',note:'',at:TD};
+}
+function commNet(c){
+ var g=num(c.gross);
+ var afterAgency=g*(1-num(c.agency)/100);
+ var mine=afterAgency*((num(c.mine)||100)/100);
+ return Math.max(0,mine-num(c.ref));
+}
+function commVat(c){ return c.vat?num(c.gross)*0.05:0; }
+function commOut(c){ return Math.max(0,commNet(c)-num(c.got)); }
+function commLate(c){ return (c.due&&commOut(c)>0)?ddiff(c.due,TD):0; }
+function commTotals(){
+ var C=comms();
+ return {expect:C.reduce(function(a,c){return a+commNet(c);},0),
+  got:C.reduce(function(a,c){return a+num(c.got);},0),
+  out:C.reduce(function(a,c){return a+commOut(c);},0),
+  late:C.filter(function(c){return commLate(c)>0;}).length,
+  noinv:C.filter(function(c){return !c.inv&&commOut(c)>0;}).length};
+}
+function commMissing(){
+ var have={};
+ comms().forEach(function(c){have[low(c.w)]=1;});
+ return S.deals.filter(function(d){return d.s===4&&!have[low(d.w)];});
+}
+function drawComm(){
+ var el=document.getElementById('commlist'); if(!el)return;
+ var C=comms(), t=commTotals(), miss=commMissing();
+ var n=document.getElementById('commn'); if(n)n.textContent=C.length||'';
+ var head=document.getElementById('commstats');
+ if(head)head.innerHTML='<div class="stat3">'+
+  '<div><div class="n">'+(t.expect>=1000?Math.round(t.expect/1000)+'k':Math.round(t.expect))+'</div><div class="l">expected</div></div>'+
+  '<div><div class="n good">'+(t.got>=1000?Math.round(t.got/1000)+'k':Math.round(t.got))+'</div><div class="l">received</div></div>'+
+  '<div><div class="n'+(t.out?' warn':'')+'">'+(t.out>=1000?Math.round(t.out/1000)+'k':Math.round(t.out))+'</div><div class="l">outstanding</div></div></div>'+
+  (t.noinv?'<div class="hint" style="margin-top:9px;color:var(--neg)">'+t.noinv+' with no invoice raised. Nobody pays an invoice that does not exist.</div>':'')+
+  (t.late?'<div class="hint" style="margin-top:6px;color:var(--neg)">'+t.late+' past the due date.</div>':'');
+ var h='';
+ if(miss.length){
+  h+='<div class="card" style="border-color:rgba(201,165,103,.45);margin-bottom:10px">'+
+   '<div class="lab" style="color:var(--acc);font-weight:600">Won but not tracked</div>'+
+   miss.map(function(d){
+    return '<div class="row"><div class="lab">'+esc(pvName(d.w))+'</div>'+
+     '<div class="v2">'+pmoney(dealFee(d))+' <button class="mg" data-cmadd="'+S.deals.indexOf(d)+'">Track it</button></div></div>';
+   }).join('')+'</div>';
+ }
+ h+=C.length
+  ? C.map(function(c,i){
+     var out=commOut(c), late=commLate(c);
+     return '<div class="row big2" data-cm="'+i+'" style="cursor:pointer"><div>'+
+      '<div class="lab">'+esc(pvName(c.w||'Unnamed'))+'</div>'+
+      '<div class="tgt">'+(c.inv?'Invoice '+esc(c.inv):'<span style="color:var(--neg)">no invoice</span>')+
+       (c.due?' · due '+new Date(c.due).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'')+
+       (late>0?' · <span style="color:var(--neg)">'+late+' days late</span>':'')+'</div></div>'+
+      '<div class="v2">'+(out>0?pmoney(out):'<span style="color:var(--pos)">paid</span>')+'</div></div>';}).join('')
+  : '<div class="hint">Nothing tracked yet. Every won deal should sit here until the money is in.</div>';
+ el.innerHTML=h;
+ el.querySelectorAll('[data-cm]').forEach(function(b){b.onclick=function(){openComm(+b.dataset.cm);};});
+ el.querySelectorAll('[data-cmadd]').forEach(function(b){b.onclick=function(e){
+  e.stopPropagation();
+  var d=S.deals[+b.dataset.cmadd];
+  comms().unshift(blankComm(d.w,dealFee(d))); put(S); drawComm(); openComm(0);};});
+}
+function openComm(i){
+ var c=(i===null)?blankComm():comms()[i];
+ var h='<div class="card" style="margin-bottom:12px">'+
+  '<div class="row"><div class="lab">Your share after splits</div><div class="v2">'+pmoney(commNet(c))+'</div></div>'+
+  (c.vat?'<div class="row"><div class="lab">VAT on the gross</div><div class="v2">'+pmoney(commVat(c))+'</div></div>':'')+
+  '<div class="row"><div class="lab">Received</div><div class="v2" style="color:var(--pos)">'+pmoney(c.got)+'</div></div>'+
+  '<div class="row tot"><div class="lab">Outstanding</div><div class="v2"'+(commOut(c)>0?' style="color:var(--neg)"':'')+'>'+
+   pmoney(commOut(c))+'</div></div></div>'+
+  '<div class="pfields">'+
+  '<label>Client or deal</label><input id="cm-w" value="'+esc(c.w||'')+'">'+
+  '<div class="two"><div><label>Gross fee AED</label><input id="cm-g" type="number" inputmode="numeric" value="'+(num(c.gross)||'')+'"></div>'+
+  '<div><label>Agency takes %</label><input id="cm-a" type="number" step="1" value="'+(num(c.agency)||0)+'"></div></div>'+
+  '<div class="two"><div><label>Your share %</label><input id="cm-m" type="number" step="1" value="'+(num(c.mine)||100)+'"></div>'+
+  '<div><label>Referral fee AED</label><input id="cm-r" type="number" inputmode="numeric" value="'+(num(c.ref)||'')+'"></div></div>'+
+  '<div class="two"><div><label>Invoice number</label><input id="cm-i" value="'+esc(c.inv||'')+'" placeholder="Not raised yet"></div>'+
+  '<div><label>Payment due</label><input id="cm-d" type="date" value="'+esc(c.due||'')+'"></div></div>'+
+  '<div class="two"><div><label>Amount received</label><input id="cm-got" type="number" inputmode="numeric" value="'+(num(c.got)||'')+'"></div>'+
+  '<div><label>Received on</label><input id="cm-gd" type="date" value="'+esc(c.gotAt||'')+'"></div></div>'+
+  '<label>Note</label><input id="cm-n" value="'+esc(c.note||'')+'" placeholder="Half on transfer, half on handover">'+
+  '</div>'+
+  '<button class="btnfull" id="cm-save" style="margin-top:14px">Save</button>'+
+  (i===null?'':'<button class="addbtn" id="cm-paid" style="margin-top:8px">Mark it fully paid</button>'+
+   '<button class="addbtn" id="cm-del" style="margin-top:8px;border-color:rgba(224,119,106,.5);color:var(--neg)">Remove</button>');
+ openTool('Commission',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ function grab(o){
+  o.w=document.getElementById('cm-w').value.trim();
+  o.gross=num(document.getElementById('cm-g').value);
+  o.agency=num(document.getElementById('cm-a').value);
+  o.mine=num(document.getElementById('cm-m').value)||100;
+  o.ref=num(document.getElementById('cm-r').value);
+  o.inv=document.getElementById('cm-i').value.trim();
+  o.due=document.getElementById('cm-d').value;
+  o.got=num(document.getElementById('cm-got').value);
+  o.gotAt=document.getElementById('cm-gd').value;
+  o.note=document.getElementById('cm-n').value.trim();
+  return o;}
+ document.getElementById('cm-save').onclick=function(){
+  var o=grab((i===null)?blankComm():comms()[i]);
+  if(!o.w){alert('Name the client or deal.');return;}
+  if(i===null)comms().unshift(o);
+  put(S); closeTool(); drawComm(); drawAtt(); haptic();};
+ var pd=document.getElementById('cm-paid');
+ if(pd)pd.onclick=function(){
+  var o=grab(comms()[i]);
+  o.got=commNet(o); o.gotAt=o.gotAt||TD;
+  put(S); closeTool(); drawComm(); drawAtt(); haptic('heavy');
+  if(confirm('Add '+money(o.got)+' to your banked total for the target?'))
+   {PREFILL={amt:Math.round(o.got),w:o.w}; logComm();}};
+ var del=document.getElementById('cm-del');
+ if(del)del.onclick=function(){
+  if(!confirm('Remove this commission record?'))return;
+  comms().splice(i,1); put(S); closeTool(); drawComm();};
+}
+
+/* ================= INVESTOR PORTFOLIO =================
+   For clients holding more than one thing. This is what turns an agent into
+   someone they call before they buy anywhere else. */
+function holdings(){ S.hold=Array.isArray(S.hold)?S.hold:[]; return S.hold; }
+function blankHold(w){
+ return {w:w||'',p:'',dev:'',buy:0,val:0,owed:0,mort:0,rent:0,
+  hand:'',npd:'',npa:0,note:'',at:TD};
+}
+function holdOf(w){
+ var k=low(w);
+ return holdings().map(function(h,i){return {h:h,i:i};})
+  .filter(function(x){return low(x.h.w)===k;});
+}
+function holdYield(h){ return num(h.val)?num(h.rent)/num(h.val)*100:0; }
+function holdEquity(h){ return num(h.val)-num(h.owed)-num(h.mort); }
+function holdGain(h){ return num(h.buy)?(num(h.val)-num(h.buy)):0; }
+function holdGainPct(h){ return num(h.buy)?((num(h.val)-num(h.buy))/num(h.buy)*100):0; }
+function portfolio(w){
+ var H=holdOf(w).map(function(x){return x.h;});
+ if(!H.length)return null;
+ var val=H.reduce(function(a,h){return a+num(h.val);},0);
+ var buy=H.reduce(function(a,h){return a+num(h.buy);},0);
+ var owed=H.reduce(function(a,h){return a+num(h.owed)+num(h.mort);},0);
+ var rent=H.reduce(function(a,h){return a+num(h.rent);},0);
+ var soon=H.filter(function(h){var d=h.npd?ddiff(TD,h.npd):null;return d!==null&&d>=0&&d<=90;});
+ var byDev={};
+ H.forEach(function(h){var k=h.dev||'Not set';byDev[k]=(byDev[k]||0)+num(h.val);});
+ var top=Object.keys(byDev).sort(function(a,b){return byDev[b]-byDev[a];})[0];
+ return {n:H.length,val:val,buy:buy,owed:owed,equity:val-owed,rent:rent,
+  yld:val?rent/val*100:0, gain:val-buy, gainPct:buy?((val-buy)/buy*100):0,
+  soon:soon, conc:top?{dev:top,pct:val?Math.round(byDev[top]/val*100):0}:null,
+  list:H};
+}
+function drawPortBody(w){
+ var P=portfolio(w);
+ if(!P)return '<div class="hint">Nothing recorded yet. Add what they own and the app works out equity, yield and what is coming.</div>'+
+  '<button class="addbtn" id="pf-add" style="margin-top:12px">+ Add a property they own</button>';
+ var h='<div class="card">'+
+  crow('Properties', P.n)+
+  crow('Estimated value', pmoney(P.val))+
+  crow('Paid so far', pmoney(P.buy))+
+  crow('Still owed', pmoney(P.owed), P.owed?'var(--neg)':'')+
+  crow('Equity', pmoney(P.equity), 'var(--acc)')+
+  (P.buy?crow('Gain', pmoney(P.gain)+' · '+(P.gainPct>=0?'+':'')+P.gainPct.toFixed(1)+'%',
+    P.gain>=0?'var(--pos)':'var(--neg)'):'')+
+  (P.rent?crow('Rent a year', pmoney(P.rent)):'')+
+  (P.yld?crow('Yield on value', P.yld.toFixed(1)+'%'):'')+
+  '</div>';
+ if(P.conc&&P.conc.pct>=60)
+  h+='<div class="hint" style="margin-top:9px;color:var(--acc)">'+P.conc.pct+
+   '% of the value sits with '+esc(P.conc.dev)+'. Worth naming when you talk about the next one.</div>';
+ if(P.soon.length){
+  h+='<div class="vhead" style="margin-top:16px">Payments in the next 90 days</div><div class="card">'+
+   P.soon.map(function(x){
+    return crow(esc(pvNum(x.p)), pmoney(x.npa)+' on '+
+     new Date(x.npd).toLocaleDateString('en-GB',{day:'numeric',month:'short'}),'var(--neg)');}).join('')+'</div>';
+ }
+ h+='<div class="vhead" style="margin-top:16px">What they own</div><div class="card">'+
+  holdOf(w).map(function(x){
+   var hh=x.h, eq=holdEquity(hh), y=holdYield(hh);
+   return '<div class="row big2" data-hd="'+x.i+'" style="cursor:pointer"><div>'+
+    '<div class="lab">'+esc(pvNum(hh.p||'Not named'))+'</div>'+
+    '<div class="tgt">'+esc([hh.dev,hh.hand?'handover '+hh.hand:''].filter(Boolean).join(' · '))+'</div>'+
+    (y?'<div class="tgt">'+y.toFixed(1)+'% yield · '+pmoney(hh.rent)+' rent</div>':'')+
+    '</div><div class="v2">'+pmoney(hh.val)+
+    (eq!==num(hh.val)?'<br><span style="font-size:11px;color:var(--t3)">'+pmoney(eq)+' equity</span>':'')+
+    '</div></div>';}).join('')+'</div>'+
+  '<button class="addbtn" id="pf-add" style="margin-top:12px">+ Add a property they own</button>';
+ return h;
+}
+function openHold(i,forWho){
+ var h0=(i===null)?blankHold(forWho):holdings()[i];
+ var h='<div class="pfields">'+
+  '<label>Owner</label><input id="hd-w" value="'+esc(h0.w||'')+'">'+
+  '<label>Property</label><input id="hd-p" value="'+esc(h0.p||'')+'" placeholder="Carson 3216, DAMAC Hills">'+
+  '<div class="two"><div><label>Developer</label><input id="hd-dev" value="'+esc(h0.dev||'')+'" placeholder="DAMAC"></div>'+
+  '<div><label>Handover</label><input id="hd-hand" value="'+esc(h0.hand||'')+'" placeholder="Q4 2028"></div></div>'+
+  '<div class="two"><div><label>Paid so far AED</label><input id="hd-buy" type="number" inputmode="numeric" value="'+(num(h0.buy)||'')+'"></div>'+
+  '<div><label>Value today AED</label><input id="hd-val" type="number" inputmode="numeric" value="'+(num(h0.val)||'')+'"></div></div>'+
+  '<div class="two"><div><label>Still owed to developer</label><input id="hd-owed" type="number" inputmode="numeric" value="'+(num(h0.owed)||'')+'"></div>'+
+  '<div><label>Mortgage outstanding</label><input id="hd-mort" type="number" inputmode="numeric" value="'+(num(h0.mort)||'')+'"></div></div>'+
+  '<label>Annual rent AED</label><input id="hd-rent" type="number" inputmode="numeric" value="'+(num(h0.rent)||'')+'">'+
+  '<div class="two"><div><label>Next payment due</label><input id="hd-npd" type="date" value="'+esc(h0.npd||'')+'"></div>'+
+  '<div><label>Amount AED</label><input id="hd-npa" type="number" inputmode="numeric" value="'+(num(h0.npa)||'')+'"></div></div>'+
+  '<label>Notes</label><textarea id="hd-note" rows="2">'+esc(h0.note||'')+'</textarea>'+
+  '</div><button class="btnfull" id="hd-save" style="margin-top:14px">Save</button>'+
+  (i===null?'':'<button class="addbtn" id="hd-del" style="margin-top:8px;border-color:rgba(224,119,106,.5);color:var(--neg)">Remove</button>');
+ openTool(i===null?'Add a property':(h0.p||'Property'),h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.getElementById('hd-save').onclick=function(){
+  var o=(i===null)?blankHold():holdings()[i];
+  o.w=document.getElementById('hd-w').value.trim();
+  o.p=document.getElementById('hd-p').value.trim();
+  if(!o.w||!o.p){alert('Needs an owner and a property.');return;}
+  o.dev=document.getElementById('hd-dev').value.trim();
+  o.hand=document.getElementById('hd-hand').value.trim();
+  o.buy=num(document.getElementById('hd-buy').value);
+  o.val=num(document.getElementById('hd-val').value);
+  o.owed=num(document.getElementById('hd-owed').value);
+  o.mort=num(document.getElementById('hd-mort').value);
+  o.rent=num(document.getElementById('hd-rent').value);
+  o.npd=document.getElementById('hd-npd').value;
+  o.npa=num(document.getElementById('hd-npa').value);
+  o.note=document.getElementById('hd-note').value.trim();
+  if(i===null)holdings().unshift(o);
+  put(S); closeTool(); haptic();
+  if(CIDX!==null&&S.deals[CIDX])clientScreen(CIDX,'port');};
+ var del=document.getElementById('hd-del');
+ if(del)del.onclick=function(){
+  if(!confirm('Remove this property?'))return;
+  holdings().splice(i,1); put(S); closeTool();
+  if(CIDX!==null&&S.deals[CIDX])clientScreen(CIDX,'port');};
+}
+
+/* ================= CAPTURE =================
+   Paste a WhatsApp forward, or hit the keyboard mic and talk. The app reads it
+   and proposes a record. Nothing saves until you have looked at it. */
+function capParse(t){
+ var raw=String(t||''); if(!raw.trim())return null;
+ var txt=raw.replace(/[*_~`]/g,'').replace(/ /g,' ');
+ var low2=txt.toLowerCase();
+ function money2(str){
+  var m=String(str).replace(/,/g,'').match(/([\d.]+)\s*(m|mil|million|k)?/i);
+  if(!m)return 0; var v=parseFloat(m[1]); if(!v)return 0;
+  var u=(m[2]||'').toLowerCase();
+  if(u.indexOf('m')===0)v*=1e6; else if(u==='k')v*=1e3;
+  return Math.round(v);
+ }
+ var out={raw:raw};
+ var ph=txt.match(/(\+?\d[\d\s().-]{7,}\d)/);
+ if(ph)out.ph=ph[1].replace(/[^\d+]/g,'');
+ var amt=txt.match(/(?:aed|price|budget|offer|rent|asking|around|about|up to)\D{0,12}([\d.,]+\s*(?:m|mil|million|k)?)/i);
+ if(!amt)amt=txt.match(/(?:^|[^\d.])([\d.]{1,6}\s*(?:m|mil|million)\b)/i);   /* a bare 4.5M */
+ if(amt)out.amt=money2(amt[1]);
+ var bd=txt.match(/(\d)\s*(?:bed|br\b|bhk)/i);
+ if(bd)out.bd=+bd[1];
+ var com=txt.match(/\b(the valley|farm gardens|elora|nima|rivana|talia|orania|lillia|nara|damac hills|dubai hills|creek harbour|emaar south|jvc|arabian ranches|mbr city|business bay|marina|downtown|palm|expo city|ghaf woods|siniya|safa)\b/i);
+ if(com)out.com=com[1];
+ var nm=txt.match(/(?:^|\n)\s*(?:from|client|name|caller)\s*[:\-]\s*([A-Za-z][A-Za-z' ]{1,30})/i);
+ if(nm)out.name=nm[1].trim();
+ if(!out.name){
+  /* a name usually sits at the very start, often followed by a number */
+  var head=txt.split(/\n/)[0].trim();
+  var m2=head.match(/^([A-Z][A-Za-z'\-]+(?:\s+[A-Z][A-Za-z'\-]+){0,2})\s*(?=[,+\d(]|$)/);
+  if(m2&&m2[1].length<=32)out.name=m2[1].trim();
+  else if(head.length<=32&&/^[A-Za-z][A-Za-z' ]+$/.test(head))out.name=head;
+ }
+ /* what kind of thing is this */
+ var kind='note';
+ if(/\bviewing|viewed|showed|saw the (unit|villa|apartment)/.test(low2))kind='viewing';
+ else if(/\brent|tenant|tenancy|ejari|cheque/.test(low2))kind='rent';
+ else if(/\bfor sale|listing|owner wants|selling|asking/.test(low2))kind='unit';
+ else if(out.ph||/\binterested|looking for|budget|wants a/.test(low2))kind='client';
+ else if(/\bcall|follow up|remind|chase|monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|next week/.test(low2))kind='todo';
+ out.kind=kind;
+ /* when */
+ var when=0;
+ if(/tomorrow/.test(low2))when=1;
+ else if(/next week/.test(low2))when=7;
+ else if(/monday/.test(low2))when=((8-new Date(TD).getDay())%7)||7;
+ out.when=when;
+ return out;
+}
+function openCapture(){
+ openTool('Capture',
+  '<div class="hint">Paste a WhatsApp forward, or tap the microphone on your keyboard and talk. '+
+  'Nothing is saved until you have checked it.</div>'+
+  '<textarea id="cp-x" rows="6" placeholder="Ahmed +971 50 123 4567, looking for a 4 bed in The Valley around 4.5M, wants to view Saturday" style="margin-top:12px"></textarea>'+
+  '<button class="btnfull" id="cp-go" style="margin-top:10px">Read it</button>'+
+  '<div id="cp-out"></div>','');
+ document.getElementById('tcopy').textContent='Close';
+ document.getElementById('cp-go').onclick=function(){
+  var R=capParse(document.getElementById('cp-x').value);
+  var o=document.getElementById('cp-out');
+  if(!R){o.innerHTML='<div class="hint" style="margin-top:12px;color:var(--neg)">Paste something first.</div>';return;}
+  var KIND=[['client','New client'],['todo','A follow up'],['viewing','A viewing'],
+            ['unit','A unit'],['rent','A tenancy'],['note','Just a note']];
+  o.innerHTML='<div class="hint" style="margin-top:12px;color:var(--ok)">'+
+   'Read it as: '+esc((KIND.filter(function(k){return k[0]===R.kind;})[0]||['','a note'])[1])+
+   (R.name?' · '+esc(R.name):'')+(R.ph?' · '+esc(R.ph):'')+
+   (R.amt?' · '+money(R.amt):'')+(R.bd?' · '+R.bd+' bed':'')+
+   (R.com?' · '+esc(R.com):'')+'</div>'+
+   '<div class="pfields">'+
+   '<label>Save it as</label><div class="oacts" id="cp-kind">'+
+    KIND.map(function(k){return '<button data-ck="'+k[0]+'"'+(R.kind===k[0]?' class="val"':'')+'>'+k[1]+'</button>';}).join('')+
+   '</div>'+
+   '<label>Name</label><input id="cp-n" value="'+esc(R.name||'')+'">'+
+   '<div class="two"><div><label>Mobile</label><input id="cp-ph" value="'+esc(R.ph||'')+'"></div>'+
+   '<div><label>Amount AED</label><input id="cp-amt" type="number" value="'+(R.amt||'')+'"></div></div>'+
+   '<div class="two"><div><label>Beds</label><input id="cp-bd" type="number" value="'+(R.bd||'')+'"></div>'+
+   '<div><label>Area</label><input id="cp-com" value="'+esc(R.com||'')+'"></div></div>'+
+   '<label>What to do next</label><input id="cp-na" placeholder="Call and qualify">'+
+   '<label>When</label><input id="cp-nd" type="date" value="'+autoDate(R.when||0)+'">'+
+   '<label>The note itself</label><textarea id="cp-note" rows="3">'+esc(R.raw)+'</textarea>'+
+   '</div><button class="btnfull" id="cp-save" style="margin-top:14px">Save it</button>';
+  var kind=R.kind;
+  document.getElementById('cp-kind').querySelectorAll('[data-ck]').forEach(function(b){
+   b.onclick=function(){
+    kind=b.dataset.ck;
+    document.getElementById('cp-kind').querySelectorAll('[data-ck]').forEach(function(x){
+     x.className=(x.dataset.ck===kind)?'val':'';});};});
+  document.getElementById('cp-save').onclick=function(){
+   var nm=document.getElementById('cp-n').value.trim();
+   var note=document.getElementById('cp-note').value.trim();
+   var ph2=document.getElementById('cp-ph').value.trim();
+   var amt=num(document.getElementById('cp-amt').value);
+   var bd=num(document.getElementById('cp-bd').value);
+   var com=document.getElementById('cp-com').value.trim();
+   var na=document.getElementById('cp-na').value.trim();
+   var nd=document.getElementById('cp-nd').value;
+   if(kind==='note'){
+    S.nt=Array.isArray(S.nt)?S.nt:[];
+    S.nt.unshift({d:TD,t:note||nm});
+   } else if(kind==='unit'){
+    S.units.unshift({p:nm||com||'New unit',t:(bd?bd+'BR':''),bd:bd,pr:amt,n:note,lt:'Sale'});
+   } else if(kind==='rent'){
+    rents().unshift(Object.assign(blankRent(),{p:nm||com||'New tenancy',tn:'',amt:amt,note:note}));
+   } else if(kind==='viewing'){
+    S.vw=Array.isArray(S.vw)?S.vw:[];
+    S.vw.unshift({u:0,d:TD,n:nm,w:note,pr:'',nx:''});
+   } else if(kind==='todo'){
+    S.diary=Array.isArray(S.diary)?S.diary:[];
+    S.diary.unshift({d:nd||TD,t:'09:00',n:na||nm||'Follow up',w:com,ty:'Call',ph:ph2});
+   } else {
+    if(!nm){alert('Give the client a name.');return;}
+    S.deals.unshift({w:nm,ph:ph2,u:com?(bd?bd+'BR ':'')+com:'',v:amt,r:2,s:0,
+     na:na||'Call and qualify',nd:nd||TD,src:'Captured',n:note,hist:[],lbd:bd,lmax:amt,lcom:com});
+   }
+   put(S); closeTool(); redrawAll(); drawRent&&drawRent(); haptic('heavy');
+   alert('Saved.');
+  };
+ };
+}
 function closeTool(){
  var t=document.getElementById('tsheet');
  if(t)t.style.display='none';
@@ -7438,6 +7928,7 @@ function clientScreen(i,tab){
  CIDX=i; if(tab)CVIEW=tab;
  var ph=(d.ph||'').replace(/[^\d+]/g,'');
  var TABS=[['brief','Brief'],['deal','Deal'],['money','Money'],['hist','History']];
+ if(holdOf(d.w).length)TABS.splice(3,0,['port','Portfolio']);
  var h='<div class="cseg">'+TABS.map(function(t){
    return '<b class="'+(CVIEW===t[0]?'on':'')+'" data-cv="'+t[0]+'">'+t[1]+'</b>';}).join('')+'</div>'+
   '<div id="cbody"></div>'+
@@ -7467,6 +7958,7 @@ function drawCBody(i){
  if(CVIEW==='brief')h=cvBrief(d,i);
  else if(CVIEW==='deal')h=cvDeal(d,i);
  else if(CVIEW==='money')h=cvMoney(d,i);
+ else if(CVIEW==='port')h=drawPortBody(d.w);
  else h=cvHist(d,i);
  el.innerHTML=h;
  /* every action inside the screen */
@@ -7479,7 +7971,12 @@ function drawCBody(i){
    else if(k==='docs')openDocs('deal',i);
    else if(k==='adv')advance(i);
    else if(k==='later')snoozeDeal(i);
+   else if(k==='port'){ if(holdOf(d.w).length){CVIEW='port';clientScreen(i);} else openHold(null,d.w); }
   };});
+ var pa=el.querySelector('#pf-add');
+ if(pa)pa.onclick=function(){openHold(null,d.w);};
+ el.querySelectorAll('[data-hd]').forEach(function(r){
+  r.onclick=function(){openHold(+r.dataset.hd);};});
  el.querySelectorAll('[data-cchk]').forEach(function(r){
   r.onclick=function(){
    var c=chkOf(d); var k=r.dataset.cchk;
@@ -7560,7 +8057,9 @@ function cvMoney(d,i){
   (d.npd?crow('Developer payment', pmoney(d.npa)+' on '+
     new Date(d.npd).toLocaleDateString('en-GB',{day:'numeric',month:'short'})):'')+
   (d.hh?crow('Same wallet as', esc(d.hh)):'')+
-  '</div>';
+  '</div>'+
+  '<div class="oacts" style="margin-top:12px"><button data-cx="port">'+
+   (holdOf(d.w).length?'Portfolio ('+holdOf(d.w).length+')':'Add what they own')+'</button></div>';
  var kds=kdAll().filter(function(k){return low(k.w).indexOf(low(d.w))>=0||(d.u&&low(k.w).indexOf(low(d.u))>=0);});
  if(kds.length)h+='<div class="vhead" style="margin-top:14px">Dates</div><div class="card">'+
   kds.slice(0,6).map(function(k){var dd=kdDays(k);
