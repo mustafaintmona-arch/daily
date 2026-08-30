@@ -1014,10 +1014,10 @@ label{margin-top:var(--x4);margin-bottom:var(--x1)}
  --ease:cubic-bezier(.4,0,.2,1);
  --exit:cubic-bezier(.4,0,1,1);
  --snap:cubic-bezier(.2,.9,.3,1.2);   /* slight overshoot, for things that land */
- --d1:120ms;   /* press */
- --d2:200ms;   /* small moves */
- --d3:320ms;   /* sheets, pages */
- --d4:480ms;   /* the long settle */
+ --d1:80ms;    /* press: has to feel instant */
+ --d2:140ms;   /* small moves */
+ --d3:220ms;   /* sheets, pages */
+ --d4:340ms;   /* bars filling */
 }
 
 /* ---------- taps: instant down, springy release ---------- */
@@ -1054,29 +1054,26 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
  animation:sheetIn var(--d3) var(--spring) both;
  will-change:transform}
 @keyframes sheetIn{
- from{transform:translate3d(0,32px,0)}
+ from{transform:translate3d(0,24px,0)}
  to{transform:translate3d(0,0,0)}}
 
 /* the content inside a sheet arrives just after the sheet itself */
-#tsheet .inner > *{animation:riseIn var(--d3) var(--spring) both;animation-delay:60ms}
-@keyframes riseIn{from{opacity:0;transform:translate3d(0,10px,0)}to{opacity:1;transform:none}}
+#tsheet .inner > *{animation:riseIn 180ms var(--spring) both;animation-delay:30ms}
+@keyframes riseIn{from{opacity:0;transform:translate3d(0,6px,0)}to{opacity:1;transform:none}}
 
 /* ---------- pages: cross-fade with a hint of travel ---------- */
 .fade{animation:pageIn var(--d3) var(--spring) both}
 @keyframes pageIn{
- from{opacity:0;transform:translate3d(0,8px,0)}
+ from{opacity:0;transform:translate3d(0,5px,0)}
  to{opacity:1;transform:none}}
 
 /* ---------- lists: choreography, not a wall of content ---------- */
-.stag > *{animation:riseIn var(--d3) var(--spring) both}
+.stag > *{animation:riseIn 180ms var(--spring) both}
 .stag > *:nth-child(1){animation-delay:0ms}
-.stag > *:nth-child(2){animation-delay:26ms}
-.stag > *:nth-child(3){animation-delay:52ms}
-.stag > *:nth-child(4){animation-delay:78ms}
-.stag > *:nth-child(5){animation-delay:104ms}
-.stag > *:nth-child(6){animation-delay:130ms}
-.stag > *:nth-child(7){animation-delay:150ms}
-.stag > *:nth-child(n+8){animation-delay:165ms}
+.stag > *:nth-child(2){animation-delay:14ms}
+.stag > *:nth-child(3){animation-delay:28ms}
+.stag > *:nth-child(4){animation-delay:40ms}
+.stag > *:nth-child(n+5){animation-delay:50ms}
 
 /* ---------- segmented control: the pill slides, it does not blink ---------- */
 .cseg,.seg,.calseg{position:relative;isolation:isolate}
@@ -1101,6 +1098,10 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
 /* ---------- scrolling feels native ---------- */
 .vwrap,.qbody,.sched,#tsheet .inner,#sheet .inner,.chips,.slists{
  -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+/* animation must never block a scroll or a tap */
+.stag > *,.fade,#tsheet .inner > *{pointer-events:auto}
+*{-webkit-touch-callout:none}
+.pc2,.unit,.card,.upn{content-visibility:auto;contain-intrinsic-size:auto 120px}
 
 /* ---------- the up-next card swipe ---------- */
 .upn.slide{transition:transform var(--d2) var(--exit),opacity var(--d2) var(--exit)}
@@ -4265,6 +4266,7 @@ function drawStock(){
 }
 
 function drawUnits(){
+ if(typeof warmImages==='function')setTimeout(warmImages,0);
  drawUnitSeg();drawUnitFilters();drawUnitSort();
  var list=[];S.units.forEach(function(u,i){if(unitPass(u))list.push([u,i]);});
  list.sort(function(a,b){
@@ -4297,6 +4299,9 @@ function drawUnits(){
    (!isR&&u.op?'<b style="color:var(--ink)">Original price:</b> '+pmoney(u.op)+' · uplift '+pmoney(u.pr-u.op)+'<br>':'')+
    (u.h?'<b style="color:var(--ink)">Handover:</b> '+esc(pvNum(u.h))+'<br>':'')+
    (u.pl?'<b style="color:var(--ink)">Plan:</b> '+esc(pvNum(u.pl))+'<br>':'')+esc(pvNum(pvName(u.n)))+
+   '<div class="ubtns"><button class="ub" data-plan="'+i+'">'+(u.img?'Masterplan':'+ Masterplan')+'</button>'+
+    '<button class="ub" data-fp="'+i+'">'+(u.fp?'Floorplan':'+ Floorplan')+'</button>'+
+    '<button class="ub" data-gal="'+i+'">Photos'+(picCount(u)?' ('+picCount(u)+')':'')+'</button></div>'+
    '<div class="ubtns"><button class="ub gold" data-uopen="'+i+'">Open</button>'+
     '<button class="ub" data-offer="'+i+'">'+(isR?'Rental offer':'Sales offer')+'</button>'+
     '<button class="ub" data-fit="'+i+'">Who fits this</button></div>'+
@@ -4336,12 +4341,33 @@ function drawUnits(){
 }
 function openImg(i,kind){
  var u=S.units[i];
+ if(!u){return;}
  if(u[kind]){
+  var lb=document.getElementById('lightbox'),
+      im=document.getElementById('lbimg'),
+      cap=document.getElementById('lbcap');
+  /* show the frame straight away, then drop the picture in. Waiting on the
+     database before anything appears is what made this feel broken. */
+  cap.textContent=u.p+' · '+(kind==='fp'?'floorplan':'masterplan');
+  var cached=(String(u[kind]).indexOf('data:')===0)?u[kind]:IMGC[u[kind]];
+  im.src=cached||'';
+  lb.style.display='flex';
+  if(cached)return;
+  cap.textContent='Loading…';
+  var done=false;
+  var giveUp=setTimeout(function(){
+   if(done)return; done=true;
+   cap.textContent='Could not load that image. Tap to close and try adding it again.';
+  },4000);
   loadImg(u,i,kind).then(function(src){
-   if(!src){alert('That image could not be found. Add it again.');u[kind]='';put(S);drawUnits();return;}
-   document.getElementById('lbimg').src=src;
-   document.getElementById('lbcap').textContent=u.p+' · '+(kind==='fp'?'floorplan':'masterplan');
-   document.getElementById('lightbox').style.display='flex';});
+   if(done)return; done=true; clearTimeout(giveUp);
+   if(!src){lb.style.display='none';
+    alert('That image could not be found. Add it again.');u[kind]='';put(S);drawUnits();return;}
+   im.src=src;
+   cap.textContent=u.p+' · '+(kind==='fp'?'floorplan':'masterplan');
+  }).catch(function(){
+   if(done)return; done=true; clearTimeout(giveUp);
+   cap.textContent='Could not load that image.';});
   return;}
  var pf=document.getElementById('planfile');pf.dataset.i=i;pf.dataset.kind=kind;pf.click();
 }
@@ -5686,7 +5712,7 @@ document.getElementById('qc-save').onclick=qcSave;
 document.getElementById('qcsheet').onclick=function(e){if(e.target===this)closeQc();};
 document.getElementById('qc-p').onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();qcSave();}};
 document.getElementById('sunb').onclick=toggleTheme;
-applyTheme();
+applyTheme(); try{warmImages();}catch(e){}
 document.getElementById('qstart').onclick=openQueue;
 document.getElementById('qexit').onclick=closeQueue;
 window.addEventListener('popstate',function(){
@@ -5748,7 +5774,7 @@ function drawComps(){
 }
 fetch('comps.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&j.communities){COMPS=j;drawComps();}}).catch(function(){});
 
-var APPVER='v40 · 23 Aug 2026 · prospecting engine';
+var APPVER='v41 · 30 Aug 2026 · one screen per client, merge sync, new design';
 function drawObj(){
  var L=S.deals.filter(function(d){return d.s===LOST&&d.lost;});
  var el=document.getElementById('objbox');
@@ -5810,7 +5836,28 @@ function idbOpen(){return new Promise(function(res,rej){
 function idbSet(k,v){return idbOpen().then(function(db){return new Promise(function(res,rej){
  var t=db.transaction('img','readwrite');t.objectStore('img').put(v,k);
  t.oncomplete=function(){res(true);};t.onerror=function(){rej(t.error);};});});}
-function idbGet(k){return idbOpen().then(function(db){return new Promise(function(res){
+var IMGC={};                 /* image cache, so a tap never waits on the database */
+function warmImages(){
+ /* Only the units you can actually see, a few at a time, and only when the
+    browser is idle. Loading the whole library at boot would cost megabytes
+    of memory for images you may never open. */
+ var keys=[];
+ (S.units||[]).slice(0,10).forEach(function(u){
+  ['img','fp'].forEach(function(k){
+   var v=u[k];
+   if(v&&String(v).indexOf('data:')!==0&&!IMGC[v])keys.push(v);});});
+ if(!keys.length)return;
+ var go=function(){
+  keys.slice(0,6).forEach(function(k){
+   idbGetRaw(k).then(function(v){if(v)IMGC[k]=v;}).catch(function(){});});
+ };
+ if(window.requestIdleCallback)requestIdleCallback(go,{timeout:2500}); else setTimeout(go,900);
+}
+function idbGet(k){
+ if(IMGC[k])return Promise.resolve(IMGC[k]);
+ return idbGetRaw(k).then(function(v){ if(v)IMGC[k]=v; return v; });
+}
+function idbGetRaw(k){return idbOpen().then(function(db){return new Promise(function(res){
  var t=db.transaction('img','readonly'),q=t.objectStore('img').get(k);
  q.onsuccess=function(){res(q.result||'');};q.onerror=function(){res('');};});});}
 function idbDel(k){return idbOpen().then(function(db){return new Promise(function(res){
