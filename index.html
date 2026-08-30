@@ -2183,18 +2183,43 @@ function waLink(phone,text){
    the unit map it does not get shown and it never goes into a message. */
 function hookBad(x){
  var t=String(x.n2||''); if(!t)return '';
- var m=t.match(/Their unit\s+(\d+)\s*:\s*(\d+)BR/);
- if(!m)return '';
- var UM=S.umap||{}, u=m[1], said=num(m[2]), mine=comOf(x.w);
- /* unit numbers repeat across communities, so a map row only applies
-    to the community it came from */
- var e=UM[u], applies=e&&(!e.cm||e.cm===mine);
- if(applies&&num(e.bd)&&num(e.bd)!==said)
-  return 'Says '+said+'BR, the masterplan says '+e.bd+'BR';
+ var UM=S.umap||{}, mine=comOf(x.w);
+ /* the owner's own unit number comes from the record, not the text, so this
+    works whatever wording the hook was written in */
+ var om=String(x.w||'').match(/(\d+)/);
+ var own=om?om[1]:'';
+ var oe=own?UM[own]:null;
+ var ownApplies=oe&&(!oe.cm||oe.cm===mine)&&num(oe.bd);
+
+ /* format A: "Their unit 109: 5BR."   format B: "Unit 111 sold ... (5BR)" */
+ var a=t.match(/Their unit\s+(\d+)\s*:\s*(\d+)BR/);
+ var b=t.match(/Unit\s+(\d+)\s+sold[^.]*?\((\d+)\s*BR\)/i);
+ var claimUnit='', claimBd=0, compUnit='';
+ if(a){claimUnit=a[1];claimBd=num(a[2]);}
+ else if(b){compUnit=b[1];claimBd=num(b[2]);}
+
+ /* the claim about the owner's own villa */
+ if(claimUnit){
+  var e=UM[claimUnit], applies=e&&(!e.cm||e.cm===mine);
+  if(applies&&num(e.bd)&&num(e.bd)!==claimBd)
+   return 'Says '+claimBd+'BR, the masterplan says '+e.bd+'BR';
+ }
+ /* the comparable that got quoted: it has to be the same size as their villa */
+ if(compUnit&&ownApplies&&claimBd&&num(oe.bd)!==claimBd)
+  return 'Their villa is '+oe.bd+'BR, the comp is a '+claimBd+'BR';
+ if(compUnit&&ownApplies){
+  var ce=UM[compUnit], cApplies=ce&&(!ce.cm||ce.cm===mine)&&num(ce.bd);
+  if(cApplies&&num(ce.bd)!==num(oe.bd))
+   return 'Their villa is '+oe.bd+'BR, unit '+compUnit+' is a '+ce.bd+'BR';
+ }
  if(x.hkc&&x.hkc!==mine)
   return 'Comp came from '+x.hkc+', not '+mine;
- if(!x.hkc&&applies)
-  return 'Built before the community check';
+ /* If the bed counts have been checked against the masterplan above and agree,
+    the hook is fine whatever it was built by. Only warn when nothing could be
+    verified at all, because then it really is an unknown. */
+ var verified = ownApplies && claimBd && num(oe.bd)===claimBd;
+ if(!verified && !x.hkc && (claimUnit||compUnit) && ownApplies)
+  return 'Cannot check this one, rebuild hooks from data';
  return '';
 }
 function hookShow(x){var b=hookBad(x);return b?'':String(x.n2||'');}
