@@ -435,6 +435,18 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
 .mg{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:8px;
  padding:7px 11px;font-size:11.5px;font-family:inherit;margin-left:5px;cursor:pointer}
 .mg.on{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:600}
+/* ---- the client screen ---- */
+.cseg{display:flex;gap:4px;background:var(--card2);border:1px solid var(--line);border-radius:12px;
+ padding:4px;margin-bottom:14px;position:sticky;top:0;z-index:3}
+.cseg b{flex:1;text-align:center;font-size:12.5px;padding:9px 4px;border-radius:9px;color:var(--dim);
+ font-weight:600;cursor:pointer;transition:background .12s,color .12s}
+.cseg b.on{background:var(--gold);color:var(--navy)}
+.cbar{display:flex;gap:8px;margin-top:16px;position:sticky;bottom:0;padding-top:10px;
+ background:linear-gradient(180deg,rgba(11,31,51,0),var(--card) 30%)}
+.cb{flex:1;text-align:center;border:1px solid var(--line);background:transparent;color:var(--ink);
+ border-radius:12px;padding:13px 10px;font-size:14px;font-family:inherit;text-decoration:none;cursor:pointer}
+.cb.g{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700}
+.acts .sm.gold{border-color:rgba(185,151,91,.55);color:var(--gold)}
 .pc2 .na2{font-size:14px;color:var(--ink);margin-top:11px;line-height:1.4}
 .pc2 .na2 em{font-style:normal;color:var(--dim);font-size:12.5px;display:block;margin-top:2px}
 .pc2 .acts{display:flex;gap:8px;margin-top:13px}
@@ -616,6 +628,66 @@ label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--
  --edge:rgba(255,255,255,.07);
  --edge2:rgba(255,255,255,.11);
  --lift:0 1px 0 rgba(255,255,255,.04), 0 8px 24px rgba(0,0,0,.28);
+}
+
+/* ---- v3: one radius, one border, one rhythm ---- */
+.card,.pc2,.upn,.brief,.cal,.tplbox,.jbox,.hhb,.nag,.nobar,.focus,.dcard,.move{
+ border-radius:var(--r);border-color:var(--edge)}
+.card,.pc2,.upn{box-shadow:var(--lift)}
+.sec{margin-top:26px}
+.sec h2{letter-spacing:.16em;margin-bottom:11px}
+
+/* headings breathe, numbers stay tight */
+.hd .huge{letter-spacing:-.03em}
+.pc2 .nm2,.qwho,.vname,.upn .nm{letter-spacing:-.02em}
+.fee2,.dfee,.pr,.vprice,.big{font-variant-numeric:tabular-nums}
+
+/* every tappable thing answers back */
+button,.ub,.cb,.tool,.qbtn,.addbtn,.btnfull,.acts a,.acts button,.oacts button,
+.cseg b,.seg b,.chips b,.pick b,.stage b,.mg{
+ transition:transform .09s ease,background .12s ease,border-color .12s ease,color .12s ease;
+ -webkit-tap-highlight-color:transparent}
+button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
+.btnfull:active,.acts a:active,.acts button:active,.oacts button:active{transform:scale(.97)}
+.pc2:active,.unit:active{transform:scale(.995)}
+
+/* the sheet arrives instead of appearing */
+#sheet .inner,#tsheet .inner,#usheet .inner{
+ animation:sheetup .22s cubic-bezier(.22,.9,.3,1);
+ border-radius:20px 20px 0 0;border-color:var(--edge2)}
+@keyframes sheetup{from{transform:translateY(22px);opacity:.6}to{transform:none;opacity:1}}
+#tsheet,#sheet,#usheet{animation:fadein .16s ease}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+
+/* the two segmented controls behave the same way */
+.cseg,.seg{background:rgba(255,255,255,.04);border-color:var(--edge);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.cseg b.on,.seg b.on{box-shadow:0 2px 8px rgba(185,151,91,.28)}
+
+/* rows: quieter dividers, more air */
+.row{padding:13px 0;border-bottom-color:var(--edge)}
+.lab{font-size:14px;line-height:1.35}
+.v2{font-variant-numeric:tabular-nums}
+
+/* pills all match */
+.pill,.tg,.rwp,.stp,.dom,.dft,.npchip{letter-spacing:.04em;font-weight:600}
+
+/* the bottom bar floats rather than sits */
+.nav{background:rgba(8,22,36,.88);backdrop-filter:blur(18px) saturate(1.2);
+ -webkit-backdrop-filter:blur(18px) saturate(1.2);border-top-color:var(--edge)}
+
+/* inputs feel like one family */
+input,textarea,select{border-radius:12px;border-color:var(--edge2);
+ transition:border-color .12s ease,background .12s ease}
+input:focus,textarea:focus,select:focus{background:#0b2131}
+
+/* long lists get a soft end instead of a hard stop */
+.sched,.vwrap,.qbody{scrollbar-width:none}
+.sched::-webkit-scrollbar,.vwrap::-webkit-scrollbar,.qbody::-webkit-scrollbar{display:none}
+
+@media (prefers-reduced-motion:reduce){
+ *{animation:none!important;transition:none!important}
+ button:active,.ub:active,.cb:active{transform:none}
 }
 body{-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
 /* one type scale instead of thirty sizes */
@@ -975,24 +1047,12 @@ body.lite #qcsheet .inner{background:var(--card)}
     <div class="card" style="margin-top:9px" id="ulist"></div>
     <button class="addbtn" id="addunit">+ Add a unit</button></div>
 </div>
-<div id="s-offplan" class="hide" style="display:none!important">
-  <div class="sec"><h2>Off-plan projects <b id="opcount"></b></h2>
-    <div class="card" id="oplist"></div>
-    <button class="addbtn" id="addop">+ Add an off-plan project</button>
-    <div class="hint" style="margin-top:9px">Enter the plan once. The app dates every payment, works out the cash you actually need before handover, and builds the client one pager.</div></div>
-</div>
 <div id="s-proj" class="hide">
   <div class="sec"><h2>Projects <b id="pcount"></b></h2>
     <div id="plist"></div>
     <button class="addbtn" id="pasteproj">Paste a launch</button>
     <button class="addbtn" id="addproj">+ Add a project</button>
     <div class="hint" style="margin-top:9px">Write the argument once. Then it is two taps to send it, and your team gets it when you send them a backup.</div></div>
-</div>
-<div id="s-camp" class="hide">
-  <div class="sec"><h2>Campaigns <b id="campcount"></b></h2>
-    <div id="camplist"></div>
-    <button class="addbtn" id="addcamp">+ Log a campaign</button>
-    <div class="hint" style="margin-top:9px">Every lead you add with the + button and source Campaign counts against the most recent send.</div></div>
 </div>
 <div id="s-stats" class="hide">
   <div class="sec"><h2>Stock analytics</h2><div id="slist"></div></div>
@@ -1052,11 +1112,6 @@ body.lite #qcsheet .inner{background:var(--card)}
     <textarea id="ntbox" rows="3" placeholder="What did you hear? Use #hashtags so you can find it later."></textarea>
     <button class="addbtn" id="ntsave" style="margin-top:8px">Save note</button>
     <div class="card" style="margin-top:10px" id="ntlist"></div></div>
-  <div class="sec"><h2>Contacts <b id="cncount"></b></h2>
-    <div class="cnk" id="cnkinds"></div>
-    <div class="card" id="cnlist"></div>
-    <button class="addbtn" id="addcn">+ Add a contact</button>
-    <div class="hint" style="margin-top:9px">Everyone who is not a buyer or an owner but decides whether your deal closes on time.</div></div>
   <div class="sec"><h2>All key dates</h2>
     <div class="card" id="kdfull"></div>
     <button class="addbtn" id="addkd">+ Add a key date</button></div>
@@ -1195,7 +1250,7 @@ const DTYPES=['Ready','Off-plan','Resale','Commercial','Rent','Land'];
 const CHEQ=['1 cheque','2 cheques','3 cheques','4 cheques','6 cheques','12 cheques'];
 const SRCS=['Referral','Repeat client','Portal lead','Walk in','Prospecting call','Social','Other'];
 const PAGES=[['today','Today','◧'],['deals','Deals','◆'],['stock','Stock','▣'],['diary','Diary','▤'],['more','More','≡']];
-const STOCKSEG=[['units','Inventory'],['proj','Projects'],['camp','Campaigns'],['stats','Analytics'],['comps','Comps']];
+const STOCKSEG=[['units','Inventory'],['proj','Projects'],['stats','Analytics'],['comps','Comps']];
 const CADENCE={0:2,1:3,2:2,3:2};
 const TEMPLATES=[
 ['Neighbour sold','{name}, quick one about your {unit}.\n\nA villa a few doors from you just traded. Prices in the community are well up since launch, but the last few quarters have flattened.\n\nYour neighbours are taking profit. The window is still open, it is just not widening anymore.\n\nWant me to send what your unit would fetch today? No obligation.'],
@@ -1299,165 +1354,6 @@ const OPLANS=[
  ['50 / 50',20,6,3,50],
  ['40 / 60 post handover',10,6,3,60],
  ['1% monthly',20,40,1,40]];
-function opDefaults(){var d=new Date();d.setFullYear(d.getFullYear()+3);
- return {n:'',dev:'',t:'',bd:0,bua:0,pr:0,disc:0,dld:1,h:d.toISOString().slice(0,7),dp:20,ic:8,gap:3,ho:40,rent:0,gr:6,sc:0,note:''};}
-function opNet(o){return num(o.pr)*(1-num(o.disc)/100);}
-function opDLD(o){return num(o.dld)?0:opNet(o)*0.04;}
-function opInstPct(o){var left=100-num(o.dp)-num(o.ho);return num(o.ic)>0?left/num(o.ic):0;}
-function opYears(o){var h=new Date(o.h+'-01');return Math.max(.25,(h-new Date())/31557600000);}
-function opSched(o){
- var net=opNet(o), rows=[], d=new Date();
- rows.push({l:'Booking today',pct:num(o.dp),amt:net*num(o.dp)/100,d:new Date(d)});
- if(!num(o.dld))rows.push({l:'DLD registration 4%',pct:0,amt:net*0.04,d:new Date(d)});
- var ip=opInstPct(o), c=new Date(d);
- for(var i=1;i<=num(o.ic);i++){c=new Date(c);c.setMonth(c.getMonth()+num(o.gap));
-  rows.push({l:'Instalment '+i,pct:ip,amt:net*ip/100,d:new Date(c)});}
- rows.push({l:'On handover',pct:num(o.ho),amt:net*num(o.ho)/100,d:new Date(o.h+'-01'),ho:1});
- return rows;}
-function opCash(o){var r=opSched(o),h=new Date(o.h+'-01'),t=0;
- r.forEach(function(x){if(!x.ho&&x.d<=h)t+=x.amt;});return t;}
-function opTotal(o){return opNet(o)+opDLD(o);}
-function opValue(o){return opNet(o)*Math.pow(1+num(o.gr)/100,opYears(o));}
-function fmtM(d){return d.toLocaleDateString('en-GB',{month:'short',year:'numeric'});}
-
-function drawOp(){
- document.getElementById('opcount').textContent=S.op.length?S.op.length+' saved':'';
- document.getElementById('oplist').innerHTML=S.op.length?S.op.map(function(o,i){
-  var net=opNet(o), cash=opCash(o), yrs=opYears(o), val=opValue(o);
-  var gain=val-net, mult=cash>0?gain/cash:0;
-  return '<div class="unit"><div class="h uhead" data-oi="'+i+'"><div><div class="p">'+esc(pvNum(o.n||'Untitled project'))+'</div>'+
-   '<div class="m">'+esc([o.dev,o.t,(o.bua?'BUA '+num(o.bua).toLocaleString():'')].filter(Boolean).join(' · '))+'</div></div>'+
-   '<div style="text-align:right"><div class="pr">'+pmoney(net)+'</div><div class="m">'+num(o.dp)+'% down · handover '+esc(pvNum(o.h))+'</div></div></div>'+
-   '<div class="d" id="opd-'+i+'" style="display:none">'+
-   '<div class="row"><div><div class="lab">Cash needed before handover</div><div class="tgt">Everything except the final payment</div></div><div class="val hit">'+money(cash)+'</div></div>'+
-   '<div class="row"><div><div class="lab">Due on handover</div><div class="tgt">'+num(o.ho)+'% · '+esc(o.h)+'</div></div><div class="val">'+money(net*num(o.ho)/100)+'</div></div>'+
-   '<div class="row"><div><div class="lab">Total including DLD</div><div class="tgt">'+(num(o.dld)?'DLD waived':'4% DLD payable')+'</div></div><div class="val">'+money(opTotal(o))+'</div></div>'+
-   (num(o.rent)?'<div class="row"><div><div class="lab">Gross yield on handover</div><div class="tgt">Rent '+money(o.rent)+'</div></div><div class="val">'+(opTotal(o)?(num(o.rent)/opTotal(o)*100).toFixed(1):'0')+'%</div></div>':'')+
-   '<div class="row"><div><div class="lab">Value at handover</div><div class="tgt">At '+num(o.gr)+'% a year over '+yrs.toFixed(1)+' years</div></div><div class="val">'+money(val)+'</div></div>'+
-   '<div class="row"><div><div class="lab">Return on cash in</div><div class="tgt">If sold at handover</div></div><div class="val '+(mult>0?'hit':'')+'">'+(mult*100).toFixed(0)+'%</div></div>'+
-   (o.note?'<div style="margin-top:8px">'+esc(pvNum(pvName(o.note)))+'</div>':'')+
-   '<div class="ubtns"><button class="ub gold" data-oppdf="'+i+'">Client one pager</button><button class="ub" data-opsch="'+i+'">Full schedule</button></div>'+
-   '<div class="ubtns"><button class="ub" data-opwa="'+i+'">WhatsApp</button><button class="ub" data-opvs="'+i+'">Versus ready</button><button class="ub" data-ope="'+i+'">Edit</button><button class="ub" data-opd="'+i+'">Delete</button></div>'+
-   '</div></div>';}).join(''):'<div class="hint">No projects yet. Add one and the app does the rest.</div>';
- document.querySelectorAll('[data-oi]').forEach(function(h){h.onclick=function(){var d=document.getElementById('opd-'+h.dataset.oi);d.style.display=d.style.display==='none'?'block':'none';};});
- document.querySelectorAll('[data-oppdf]').forEach(function(b){b.onclick=function(e){e.stopPropagation();opPDF(+b.dataset.oppdf);};});
- document.querySelectorAll('[data-opsch]').forEach(function(b){b.onclick=function(e){e.stopPropagation();opSchedule(+b.dataset.opsch);};});
- document.querySelectorAll('[data-opwa]').forEach(function(b){b.onclick=function(e){e.stopPropagation();opWhats(+b.dataset.opwa);};});
- document.querySelectorAll('[data-opvs]').forEach(function(b){b.onclick=function(e){e.stopPropagation();opVersus(+b.dataset.opvs);};});
- document.querySelectorAll('[data-ope]').forEach(function(b){b.onclick=function(e){e.stopPropagation();opEdit(+b.dataset.ope);};});
- document.querySelectorAll('[data-opd]').forEach(function(b){b.onclick=function(e){e.stopPropagation();
-  if(confirm('Delete this project?')){toTrash('op',S.op[+b.dataset.opd]);S.op.splice(+b.dataset.opd,1);put(S);drawOp();}};});
-}
-
-function opEdit(i){
- var o=(i>=0?JSON.parse(JSON.stringify(S.op[i])):opDefaults());
- var h='<label>Project name</label><input id="o-n" value="'+esc(o.n)+'" placeholder="Elora 3, The Valley">'+
- '<div class="two"><div><label>Developer</label><input id="o-dev" value="'+esc(o.dev)+'" placeholder="Emaar"></div>'+
- '<div><label>Unit type</label><input id="o-t" value="'+esc(o.t)+'" placeholder="3BR townhouse"></div></div>'+
- '<div class="two"><div><label>Beds</label><input id="o-bd" type="number" value="'+num(o.bd)+'"></div>'+
- '<div><label>BUA sqft</label><input id="o-bua" type="number" value="'+num(o.bua)+'"></div></div>'+
- '<label>List price AED</label><input id="o-pr" type="number" inputmode="numeric" value="'+num(o.pr)+'">'+
- '<div class="two"><div><label>Discount %</label><input id="o-disc" type="number" step="0.5" value="'+num(o.disc)+'"></div>'+
- '<div><label>DLD</label><select id="o-dld"><option value="1"'+(num(o.dld)?' selected':'')+'>Waived</option><option value="0"'+(num(o.dld)?'':' selected')+'>4% payable</option></select></div></div>'+
- '<label>Payment plan preset</label><select id="o-pre"><option value="">Choose a preset to fill below</option>'+
-  OPLANS.map(function(p,k){return '<option value="'+k+'">'+p[0]+'</option>';}).join('')+'</select>'+
- '<div class="two"><div><label>Down payment %</label><input id="o-dp" type="number" step="0.5" value="'+num(o.dp)+'"></div>'+
- '<div><label>Handover %</label><input id="o-ho" type="number" step="0.5" value="'+num(o.ho)+'"></div></div>'+
- '<div class="two"><div><label>Instalments</label><input id="o-ic" type="number" value="'+num(o.ic)+'"></div>'+
- '<div><label>Every N months</label><input id="o-gap" type="number" value="'+num(o.gap)+'"></div></div>'+
- '<label>Handover month</label><input id="o-h" type="month" value="'+esc(o.h)+'">'+
- '<div class="two"><div><label>Expected annual rent</label><input id="o-rent" type="number" value="'+num(o.rent)+'"></div>'+
- '<div><label>Growth % a year</label><input id="o-gr" type="number" step="0.5" value="'+num(o.gr)+'"></div></div>'+
- '<label>Note for you, not the client</label><textarea id="o-note" rows="2">'+esc(o.note)+'</textarea>'+
- '<div class="hint" id="o-live" style="margin-top:10px"></div>'+
- '<button class="btnfull" id="o-save" style="margin-top:12px">Save project</button>';
- openTool(i>=0?'Edit project':'New off-plan project',h,'');
- document.getElementById('tcopy').textContent='Close';
- var F=function(id){return document.getElementById(id);};
- function collect(){return {n:F('o-n').value.trim(),dev:F('o-dev').value.trim(),t:F('o-t').value.trim(),
-  bd:num(F('o-bd').value),bua:num(F('o-bua').value),pr:num(F('o-pr').value),disc:num(F('o-disc').value),
-  dld:num(F('o-dld').value),dp:num(F('o-dp').value),ho:num(F('o-ho').value),ic:num(F('o-ic').value),
-  gap:num(F('o-gap').value),h:F('o-h').value||opDefaults().h,rent:num(F('o-rent').value),
-  gr:num(F('o-gr').value),note:F('o-note').value.trim(),sc:0};}
- function live(){var o=collect(),ip=opInstPct(o);
-  var warn=(num(o.dp)+num(o.ho)>100)?'<br><b style="color:var(--bad)">Down payment plus handover is over 100%. Fix that first.</b>':'';
-  F('o-live').innerHTML='Each instalment works out at '+ip.toFixed(2)+'% of price, about '+money(opNet(o)*ip/100)+'.<br>'+
-   'Cash needed before handover: <b style="color:var(--gold)">'+money(opCash(o))+'</b>.'+warn;}
- ['o-pr','o-disc','o-dp','o-ho','o-ic','o-gap','o-h','o-dld','o-gr'].forEach(function(id){F(id).oninput=live;F(id).onchange=live;});
- F('o-pre').onchange=function(){var k=this.value;if(k==='')return;var p=OPLANS[+k];
-  F('o-dp').value=p[1];F('o-ic').value=p[2];F('o-gap').value=p[3];F('o-ho').value=p[4];live();};
- live();
- F('o-save').onclick=function(){var o=collect();
-  if(!o.n){alert('Give the project a name.');return;}
-  if(num(o.dp)+num(o.ho)>100){alert('Down payment plus handover cannot be more than 100%.');return;}
-  if(i>=0)S.op[i]=o; else S.op.push(o);
-  put(S);drawOp();TS.style.display='none';};
-}
-
-function opSchedule(i){
- var o=S.op[i], r=opSched(o), tot=0;
- var h=r.map(function(x){tot+=x.amt;
-  return '<div class="row'+(x.ho?' big2':'')+'"><div><div class="lab">'+esc(x.l)+'</div><div class="tgt">'+fmtM(x.d)+'</div></div><div class="v2">'+(x.pct?x.pct.toFixed(2)+'% · ':'')+money(x.amt)+'</div></div>';}).join('');
- h='<div class="sched">'+h+'<div class="row big2"><div><div class="lab">Total</div></div><div class="v2">'+money(tot)+'</div></div></div>';
- var txt=o.n+'\n\n'+r.map(function(x){return fmtM(x.d)+' — '+x.l+' — '+money(x.amt);}).join('\n')+'\n\nTotal '+money(tot);
- openTool(o.n+' schedule',h,txt);
-}
-
-function opWhats(i){
- var o=S.op[i], net=opNet(o), r=opSched(o), cash=opCash(o), val=opValue(o);
- var first=r[0], inst=r.filter(function(x){return x.l.indexOf('Instalment')===0;});
- var t=o.n+(o.t?', '+o.t:'')+'\n\n'+
- 'Price '+money(net)+(num(o.disc)?' after '+num(o.disc)+'% off list':'')+'\n'+
- (num(o.dld)?'DLD 4% waived by the developer\n':'DLD 4% payable, '+money(opDLD(o))+'\n')+
- '\nTo secure it today: '+money(first.amt)+' ('+num(o.dp)+'%)\n'+
- (inst.length?'Then '+inst.length+' payments of about '+money(inst[0].amt)+', one every '+num(o.gap)+' month'+(num(o.gap)>1?'s':'')+'\n':'')+
- 'Final '+num(o.ho)+'%, '+money(net*num(o.ho)/100)+', only when you get the keys in '+o.h+'\n\n'+
- 'So before handover you are in for '+money(cash)+', not the full price.\n'+
- (num(o.rent)?'Expected rent on handover '+money(o.rent)+', about '+(opTotal(o)?(num(o.rent)/opTotal(o)*100).toFixed(1):'0')+'% gross.\n':'')+
- '\nWant the full dated schedule?';
- openTool('WhatsApp message','<div class="hint" style="white-space:pre-wrap;line-height:1.7">'+esc(t)+'</div>',t);
-}
-
-function opVersus(i){
- var o=S.op[i], net=opNet(o), cash=opCash(o), yrs=opYears(o), val=opValue(o);
- var ready=net, readyCost=ready*1.06, rent=num(o.rent);
- var rentEarned=rent*yrs, readyVal=ready*Math.pow(1+num(o.gr)/100,yrs);
- var offGain=val-net, readyGain=readyVal-ready+rentEarned-(readyCost-ready);
- var offROC=cash>0?offGain/cash*100:0, readyROC=readyCost>0?readyGain/readyCost*100:0;
- var h='<div class="sched">'+
- '<div class="row"><div><div class="lab">Cash in today</div><div class="tgt">Off-plan vs ready</div></div><div class="v2">'+money(opSched(o)[0].amt)+' vs '+money(readyCost)+'</div></div>'+
- '<div class="row"><div><div class="lab">Cash in by '+esc(o.h)+'</div></div><div class="v2">'+money(cash)+' vs '+money(readyCost)+'</div></div>'+
- '<div class="row"><div><div class="lab">Rent collected meanwhile</div><div class="tgt">Off-plan earns nothing until keys</div></div><div class="v2">0 vs '+money(rentEarned)+'</div></div>'+
- '<div class="row"><div><div class="lab">Value in '+yrs.toFixed(1)+' years</div><div class="tgt">Both at '+num(o.gr)+'% a year</div></div><div class="v2">'+money(val)+' vs '+money(readyVal)+'</div></div>'+
- '<div class="row big2"><div><div class="lab">Return on the cash you put in</div></div><div class="v2">'+offROC.toFixed(0)+'% vs '+readyROC.toFixed(0)+'%</div></div>'+
- '</div><div class="hint" style="margin-top:12px">Off-plan wins on leverage because your money is spread out. Ready wins on rent, because it pays you from day one. If the client needs income now, ready is the honest answer. If they want the biggest return on a limited amount of cash, off-plan is. Say which one you think fits them.</div>';
- openTool('Off-plan vs ready',h,'');
-}
-
-function opPDF(i){
- var o=S.op[i], net=opNet(o), r=opSched(o), cash=opCash(o), yrs=opYears(o);
- var lo=net*Math.pow(1.03,yrs), mid=opValue(o), hi=net*Math.pow(1+(num(o.gr)+3)/100,yrs);
- var h='<div class="ph"><h1>'+esc(o.n)+'</h1><div class="sub2">'+esc([o.dev,o.t,(o.bua?num(o.bua).toLocaleString()+' sqft':'')].filter(Boolean).join(' &middot; '))+' &middot; handover '+esc(o.h)+'</div></div>';
- h+='<h3>The price</h3><table>';
- if(num(o.disc))h+='<tr><td>List price</td><td class="r">'+money(o.pr)+'</td></tr><tr><td>Discount '+num(o.disc)+'%</td><td class="r">-'+money(num(o.pr)-net)+'</td></tr>';
- h+='<tr><td>Purchase price</td><td class="r">'+money(net)+'</td></tr>';
- h+='<tr><td>DLD registration 4%</td><td class="r">'+(num(o.dld)?'Waived by the developer':money(opDLD(o)))+'</td></tr>';
- h+='<tr class="tot"><td>Total cost</td><td class="r">'+money(opTotal(o))+'</td></tr></table>';
- h+='<h3>What you pay and when</h3><table>';
- r.forEach(function(x){h+='<tr><td>'+esc(x.l)+' &middot; '+fmtM(x.d)+'</td><td class="r">'+(x.pct?x.pct.toFixed(2)+'% &middot; ':'')+money(x.amt)+'</td></tr>';});
- h+='<tr class="tot"><td>Paid before handover</td><td class="r">'+money(cash)+'</td></tr></table>';
- h+='<h3>What it could be worth</h3><table>'+
- '<tr><td>Cautious, 3% a year</td><td class="r">'+money(lo)+'</td></tr>'+
- '<tr><td>Base case, '+num(o.gr)+'% a year</td><td class="r">'+money(mid)+'</td></tr>'+
- '<tr><td>Strong, '+(num(o.gr)+3)+'% a year</td><td class="r">'+money(hi)+'</td></tr>'+
- (num(o.rent)?'<tr><td>Expected annual rent on handover</td><td class="r">'+money(o.rent)+'</td></tr><tr><td>Gross yield on total cost</td><td class="r">'+(opTotal(o)?(num(o.rent)/opTotal(o)*100).toFixed(1):'0')+'%</td></tr>':'')+
- '</table>';
- h+='<h3>In plain terms</h3><div class="note2">You put in '+money(r[0].amt)+' today. Between now and '+esc(o.h)+' you pay a further '+money(cash-r[0].amt)+' in stages. The largest part, '+money(net*num(o.ho)/100)+', is due only when the property is handed to you. Growth figures are scenarios, not promises, and the market can fall as well as rise.</div>';
- h+='<div class="foot2">Prepared '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'. Figures are indicative and confirmed by the developer at the point of booking.<br><b>Mustafa Saleh</b> &middot; Allegiance Real Estate &middot; Dubai</div>';
- document.getElementById('printwrap').innerHTML=h;
- setTimeout(function(){window.print();},200);
-}
-document.getElementById('addop').onclick=function(){opEdit(-1);};
 function searchAll(q){
  q=q.toLowerCase().trim(); if(q.length<2)return [];
  var r=[], hit=function(t){return String(t||'').toLowerCase().indexOf(q)>=0;};
@@ -1467,8 +1363,6 @@ function searchAll(q){
   r.push({k:'Unit',t:u.p,s:u.t+' · '+money((u.lt||'Sale')==='Rent'?u.rent:u.pr),go:'stock',seg:'units'});});
  (S.proj||[]).forEach(function(o){if(hit(o.n)||hit(o.dev)||hit(o.loc)||hit(o.th)||hit(o.note))
   r.push({k:'Project',t:o.n,s:[o.dev,o.loc].filter(Boolean).join(' · '),go:'stock',seg:'proj'});});
- (S.camp||[]).forEach(function(c){if(hit(c.n)||hit(c.what))
-  r.push({k:'Campaign',t:c.n,s:num(c.sent)+' sent · '+c.d,go:'stock',seg:'camp'});});
  (S.kd||[]).forEach(function(x){if(hit(x.w)||hit(x.t)||hit(x.n))
   r.push({k:'Key date',t:x.w||x.t,s:x.t+' · '+x.d,go:'more'});});
  (S.cn||[]).forEach(function(c){if(hit(c.n)||hit(c.org)||hit(c.k)||hit(c.n2))
@@ -1481,7 +1375,7 @@ function searchAll(q){
   r.push({k:'Diary',t:e.n,s:(e.w||'')+' · '+new Date(e.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'}),go:'diary',day:e.d});});
  return r.slice(0,25);}
 document.getElementById('find').onclick=function(){
- openTool('Search','<input id="fx-q" placeholder="Client, unit, community, note" autocomplete="off"><div class="card" id="fx-r" style="margin-top:12px"><div class="hint">Type at least two letters. It looks through clients, units, projects, campaigns, key dates, prospects and the diary.</div></div>','');
+ openTool('Search','<input id="fx-q" placeholder="Client, unit, community, note" autocomplete="off"><div class="card" id="fx-r" style="margin-top:12px"><div class="hint">Type at least two letters. It looks through clients, units, projects, key dates, prospects and the diary.</div></div>','');
  document.getElementById('tcopy').textContent='Close';
  var q=document.getElementById('fx-q'); setTimeout(function(){q.focus();},120);
  q.oninput=function(){
@@ -1501,7 +1395,7 @@ document.getElementById('nav').addEventListener('click',function(e){
  var b=e.target.closest('b[data-p]'); if(b)goPage(b.dataset.p);});
 document.getElementById('sseg').addEventListener('click',function(e){
  var b=e.target.closest('b[data-ss]'); if(!b)return;
- SSEG=b.dataset.ss; drawStockSeg(); if(SSEG==='stats')drawStock(); if(SSEG==='proj')drawProj(); if(SSEG==='camp')drawCamp(); window.scrollTo(0,0);});
+ SSEG=b.dataset.ss; drawStockSeg(); if(SSEG==='stats')drawStock(); if(SSEG==='proj')drawProj(); window.scrollTo(0,0);});
 
 
 
@@ -1770,9 +1664,7 @@ function pasteUnit(){
 
 /* ================= FLIP BEFORE HANDOVER ================= */
 function flipCalc(){
- var opts=S.op.map(function(o,i){return '<option value="'+i+'">'+esc(o.n)+'</option>';}).join('');
  var h='<div class="seg" id="fl-seg"><b class="on" data-fs="sell">Seller</b><b data-fs="buy">New buyer</b></div>'+
- (opts?'<label>Pull the plan from an off-plan project</label><select id="fl-src"><option value="">Enter it manually</option>'+opts+'</select>':'')+
  '<label>Original purchase price AED</label><input id="fl-op" type="number" inputmode="numeric" placeholder="2640000">'+
  '<div class="two"><div><label>Paid to developer %</label><input id="fl-pd" type="number" step="1" value="40"></div>'+
  '<div><label>Resale price AED</label><input id="fl-rp" type="number" inputmode="numeric" placeholder="3100000"></div></div>'+
@@ -1859,10 +1751,6 @@ function flipCalc(){
   run();};
  ['op','pd','rp','ic','gap','ho','h','tr','ag','dld'].forEach(function(i){
   F(i).oninput=run;F(i).onchange=run;});
- if(document.getElementById('fl-src'))document.getElementById('fl-src').onchange=function(){
-  if(this.value==='')return; var o=S.op[+this.value];
-  F('op').value=Math.round(opNet(o));F('ic').value=o.ic;F('gap').value=o.gap;
-  F('ho').value=o.ho;F('h').value=o.h;run();};
  run();
  document.getElementById('fl-pdf').onclick=function(){flipPDF(grab(),SIDE,model(grab()));};
 }
@@ -2603,7 +2491,7 @@ let PAGE='today';
 var SSEG='units', DREW={};
 function pageDraw(k){
  if(DREW[k])return; DREW[k]=1;
- if(k==='stock'){drawUnits();drawOp();drawComps();drawStock();drawProj();drawCamp();}
+ if(k==='stock'){drawUnits();drawComps();drawStock();drawProj();}
  if(k==='diary'){drawDiary();}
  if(k==='more'){drawMore();}
 }
@@ -3649,19 +3537,7 @@ function drawDeals(){
    '<div class="na2">'+esc(pvName(d.na||'No next step set'))+'</div>'+
    '<div class="acts">'+prim+
      (ph&&!S.priv?'<a class="sm" href="https://wa.me/'+ph.replace('+','')+'" target="_blank">WhatsApp</a>':'')+
-     '<button class="sm" data-sz="'+i+'">Later</button>'+
-     '<button class="sm" data-mx="'+i+'">&#8943;</button></div>'+
-   '<div class="more2">'+
-     (num(d.s)>=3?'<button data-chk="'+i+'">Transaction steps</button>':'')+
-     (d.s<4?'<button class="adv" data-adv="'+i+'">'+(d.s===3?'Mark as won':'Move to '+STAGES[d.s+1])+'</button>':'')+
-     (d.s===LOST?'<button data-bk="'+i+'">Reopen</button>':'')+
-     '<button data-tp="'+i+'">Message</button>'+
-     '<button data-br="'+i+'">Briefing</button>'+
-     '<button data-dr="'+i+'">Deal room</button>'+
-     '<button data-ql="'+i+'">'+(qScore(d)>=4?'Qualified':'Qualify '+qScore(d)+'/5')+'</button>'+
-     '<button data-blk="'+i+'">'+(d.blk?'Blocked: '+esc((blkDef(d.blk)||[])[1]||''):'Blocked by')+'</button>'+
-     '<button data-ed="'+i+'">Edit</button>'+
-     (d.s>0&&d.s<4?'<button data-bk="'+i+'">Step back</button>':'')+
+     '<button class="sm gold" data-open="'+i+'">Open</button></div>'+
    '</div></div>';
  }
  var H=[];
@@ -3698,6 +3574,8 @@ function drawDeals(){
   var d=S.deals[+b.dataset.bk]; if(d.s<=0)return; d.s=(d.s===LOST?2:d.s-1);
   put(S);drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawQual();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();};});
  document.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(){openSheet(+b.dataset.ed);};});
+ document.querySelectorAll('[data-open]').forEach(function(b){b.onclick=function(e){
+  e.stopPropagation(); CVIEW='brief'; clientScreen(+b.dataset.open);};});
  document.querySelectorAll('[data-tp]').forEach(function(b){b.onclick=function(){pickTemplate(+b.dataset.tp);};});
  document.querySelectorAll('[data-ql]').forEach(function(b){b.onclick=function(){openQual(+b.dataset.ql);};});
  document.querySelectorAll('[data-br]').forEach(function(b){b.onclick=function(){openBrief(+b.dataset.br);};});
@@ -4210,25 +4088,14 @@ function drawUnits(){
    (!isR&&u.op?'<b style="color:var(--ink)">Original price:</b> '+pmoney(u.op)+' · uplift '+pmoney(u.pr-u.op)+'<br>':'')+
    (u.h?'<b style="color:var(--ink)">Handover:</b> '+esc(pvNum(u.h))+'<br>':'')+
    (u.pl?'<b style="color:var(--ink)">Plan:</b> '+esc(pvNum(u.pl))+'<br>':'')+esc(pvNum(pvName(u.n)))+
-   '<div class="ubtns"><button class="ub" data-plan="'+i+'">'+(u.img?'Masterplan':'+ Masterplan')+'</button>'+
-    '<button class="ub" data-fp="'+i+'">'+(u.fp?'Floorplan':'+ Floorplan')+'</button>'+
-    '<button class="ub" data-gal="'+i+'">Photos ('+picCount(u)+')</button></div>'+
-   '<div class="ubtns"><button class="ub gold" data-offer="'+i+'">'+(isR?'Rental offer':'Sales offer')+'</button>'+
+   '<div class="ubtns"><button class="ub gold" data-uopen="'+i+'">Open</button>'+
+    '<button class="ub" data-offer="'+i+'">'+(isR?'Rental offer':'Sales offer')+'</button>'+
     '<button class="ub" data-fit="'+i+'">Who fits this</button></div>'+
-   '<div class="ubtns"><button class="ub" data-vw="'+i+'">Viewings'+(vwOf(i).length?' ('+vwOf(i).length+')':'')+'</button>'+
-    '<button class="ub" data-lu="'+i+'">Landlord update</button></div>'+
-   '<div class="ubtns"><button class="ub" data-pos="'+i+'">Unit position</button>'+
-    '<button class="ub" data-lic="'+i+'">Paperwork</button>'+
-    '<button class="ub" data-val="'+i+'">Valuation</button>'+
-    '<button class="ub" data-umore="'+i+'">More &#8943;</button>'+
-    '<button class="ub" data-eu="'+i+'">Edit</button></div>'+
-   '<div class="ubtns umore hide" id="um-'+i+'"><a class="ub" href="'+mapLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Map</a>'+
-    '<a class="ub" href="'+pfLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Listings</a>'+
-    '<button class="ub" data-sh="'+i+'">Share</button>'+
-    '<button class="ub" data-du="'+i+'" style="color:var(--bad)">Delete</button></div>'+
    '</div></div>';}).join(''):'<div class="hint">Nothing matches that filter.</div>';
  document.querySelectorAll('.uhead').forEach(function(h){h.onclick=function(){var d=document.getElementById('det-'+h.dataset.i);d.style.display=d.style.display==='none'?'block':'none';};});
  document.querySelectorAll('[data-offer]').forEach(function(b){b.onclick=function(e){e.stopPropagation();salesOffer(+b.dataset.offer);};});
+ document.querySelectorAll('[data-uopen]').forEach(function(b){b.onclick=function(e){
+  e.stopPropagation(); UVIEW='unit'; unitScreen(+b.dataset.uopen);};});
  document.querySelectorAll('[data-vw]').forEach(function(b){b.onclick=function(e){e.stopPropagation();openVw(+b.dataset.vw);};});
  document.querySelectorAll('[data-lu]').forEach(function(b){b.onclick=function(e){e.stopPropagation();landlordUpdate(+b.dataset.lu);};});
  document.querySelectorAll('[data-fit]').forEach(function(b){b.onclick=function(e){e.stopPropagation();whoFits(+b.dataset.fit);};});
@@ -4920,73 +4787,6 @@ function saveNote(){
 /* Not buyers, not owners. The people you need to get a deal over the line. */
 var CNKINDS=['Developer','Mortgage','Conveyancing','Trustee','Photographer','Handyman','Agent','Other'];
 var CNFILT='All';
-function contacts(){ S.cn=Array.isArray(S.cn)?S.cn:[]; return S.cn; }
-function cnPass(c){
- if(CNFILT==='All')return true;
- return (c.k||'Other')===CNFILT;
-}
-function drawContacts(){
- var el=document.getElementById('cnlist'); if(!el)return;
- var C=contacts();
- document.getElementById('cncount').textContent=C.length?C.length:'';
- var kinds=['All'].concat(CNKINDS.filter(function(k){return C.some(function(c){return (c.k||'Other')===k;});}));
- document.getElementById('cnkinds').innerHTML=kinds.map(function(k){
-  return '<b class="'+(CNFILT===k?'on':'')+'" data-cnk="'+esc(k)+'">'+esc(k)+'</b>';}).join('');
- document.querySelectorAll('[data-cnk]').forEach(function(b){b.onclick=function(){
-  CNFILT=b.dataset.cnk; drawContacts();};});
- var L=C.map(function(c,i){return {c:c,i:i};}).filter(function(x){return cnPass(x.c);});
- L.sort(function(a,b){return String(a.c.n||'').localeCompare(String(b.c.n||''));});
- if(!L.length){
-  el.innerHTML='<div class="hint">Nobody yet. Add the people you always end up hunting for in WhatsApp: '+
-   'your Emaar contact, the mortgage broker, the trustee office.</div>';
-  return;}
- el.innerHTML=L.map(function(x){
-  var c=x.c, ph=(c.ph||'').replace(/[^\d+]/g,'');
-  return '<div class="cn"><div class="cb2"><b>'+esc(pvName(c.n||''))+'</b>'+
-   '<span>'+esc([c.k,c.org,c.n2].filter(Boolean).join(' · '))+'</span></div>'+
-   (ph&&!S.priv?'<a href="tel:'+ph+'">Call</a>'+
-     '<a href="https://wa.me/'+ph.replace(/\D/g,'')+'" target="_blank">WA</a>':'')+
-   '<button data-cned="'+x.i+'">Edit</button></div>';}).join('');
- el.querySelectorAll('[data-cned]').forEach(function(b){b.onclick=function(){openContact(+b.dataset.cned);};});
-}
-var CNK='Developer';
-function openContact(i){
- var c=(i===null)?{n:'',ph:'',k:'Developer',org:'',n2:''}:contacts()[i];
- CNK=c.k||'Developer';
- var h='<div class="pfields">'+
-  '<label>Name</label><input id="cn-n" value="'+esc(c.n||'')+'" placeholder="Who they are">'+
-  '<label>What they do</label><div class="cnk" id="cn-k"></div>'+
-  '<div class="two"><div><label>Mobile</label><input id="cn-ph" type="tel" value="'+esc(c.ph||'')+'"></div>'+
-  '<div><label>Company</label><input id="cn-org" value="'+esc(c.org||'')+'" placeholder="Emaar"></div></div>'+
-  '<label>What they are good for</label><input id="cn-n2" value="'+esc(c.n2||'')+'" placeholder="Handles promotions and rebates, slow on Fridays">'+
-  '</div>'+
-  '<button class="btnfull" id="cn-save" style="margin-top:14px">Save</button>'+
-  (i===null?'':'<button class="addbtn" id="cn-del" style="margin-top:8px;border-color:rgba(212,106,94,.5);color:#D46A5E">Delete</button>');
- openTool(i===null?'Add a contact':'Edit contact',h,'');
- document.getElementById('tcopy').textContent='Close';
- function pick(){
-  document.getElementById('cn-k').innerHTML=CNKINDS.map(function(o){
-   return '<b class="'+(CNK===o?'on':'')+'" data-cnp="'+o+'">'+o+'</b>';}).join('');
-  document.querySelectorAll('[data-cnp]').forEach(function(b){b.onclick=function(){CNK=b.dataset.cnp;pick();};});
- }
- pick();
- document.getElementById('cn-save').onclick=function(){
-  var nm=String(document.getElementById('cn-n').value||'').trim();
-  if(!nm){alert('Give them a name.');return;}
-  var o=(i===null)?{}:contacts()[i];
-  o.n=nm; o.k=CNK;
-  o.ph=tidyPhone(document.getElementById('cn-ph').value);
-  o.org=document.getElementById('cn-org').value.trim();
-  o.n2=document.getElementById('cn-n2').value.trim();
-  if(i===null)contacts().push(o);
-  put(S); document.getElementById('tsheet').style.display='none'; drawContacts();
- };
- var d=document.getElementById('cn-del');
- if(d)d.onclick=function(){
-  if(!confirm('Delete '+(c.n||'this contact')+'?'))return;
-  contacts().splice(i,1); put(S);
-  document.getElementById('tsheet').style.display='none'; drawContacts();};
-}
 
 /* ================= DOCUMENTS ================= */
 /* A photo of the contract, the cheque, the passport page. Kept with the record. */
@@ -5135,90 +4935,6 @@ function openKd(i){
 
 /* ================= CAMPAIGNS ================= */
 /* You send once. Weeks later you need to know whether it was worth doing. */
-function campaigns(){ S.camp=Array.isArray(S.camp)?S.camp:[]; return S.camp; }
-function campStats(c){
- /* anyone captured as a campaign lead on or after the send date */
- var got=S.deals.filter(function(d){
-  if(String(d.src||'')!=='Campaign')return false;
-  var when=d.cAt||'';
-  return when && when>=c.d && (!c.until || when<=c.until);
- });
- var met=got.filter(function(d){
-  return (d.hist||[]).some(function(h){return /viewing done|meeting done|meeting booked/i.test(h.a||'');});});
- var won=got.filter(function(d){return d.s===4;});
- var fee=won.reduce(function(a,d){return a+dealFee(d);},0);
- var rate=c.sent?got.length/c.sent*100:0;
- return {leads:got,met:met,won:won,fee:fee,rate:rate};
-}
-function drawCamp(){
- var el=document.getElementById('camplist'); if(!el)return;
- var C=campaigns();
- document.getElementById('campcount').textContent=C.length?C.length:'';
- if(!C.length){
-  el.innerHTML='<div class="hint">Log a send here and every reply you capture afterwards counts against it, '+
-   'so in a month you know whether it was worth doing.</div>';
-  return;}
- el.innerHTML=C.map(function(c,i){
-  var t=campStats(c);
-  return '<div class="cmp"><div class="ct"><b>'+esc(pvName(c.n||'Untitled'))+'</b>'+
-   '<span>'+esc(new Date(c.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'}))+'</span></div>'+
-   (c.what?'<div class="rate" style="margin-top:3px">'+esc(pvNum(c.what))+'</div>':'')+
-   '<div class="cs">'+
-    '<div><div class="n">'+num(c.sent)+'</div><div class="l">Sent</div></div>'+
-    '<div><div class="n'+(t.leads.length?' g':'')+'">'+t.leads.length+'</div><div class="l">Replied</div></div>'+
-    '<div><div class="n'+(t.met.length?' g':'')+'">'+t.met.length+'</div><div class="l">Met</div></div>'+
-    '<div><div class="n'+(t.won.length?' g':'')+'">'+t.won.length+'</div><div class="l">Won</div></div>'+
-   '</div>'+
-   '<div class="rate">Reply rate <b>'+t.rate.toFixed(1)+'%</b>'+
-    (t.fee?' · '+pmoney(t.fee)+' banked':'')+
-    (t.leads.length&&!t.met.length?' · nobody has been met yet':'')+'</div>'+
-   '<div class="cb"><button data-cw="'+i+'">Who replied</button>'+
-    '<button data-ced="'+i+'">Edit</button></div>'+
-   '</div>';}).join('');
- el.querySelectorAll('[data-ced]').forEach(function(b){b.onclick=function(){openCamp(+b.dataset.ced);};});
- el.querySelectorAll('[data-cw]').forEach(function(b){b.onclick=function(){campWho(+b.dataset.cw);};});
-}
-function openCamp(i){
- var c=(i===null)?{n:'',d:TD,sent:0,what:'',until:''}:campaigns()[i];
- var h='<div class="pfields">'+
-  '<label>What was it</label><input id="cf-n" value="'+esc(c.n||'')+'" placeholder="Lunaya blast, old off-plan leads">'+
-  '<div class="two"><div><label>Date sent</label><input id="cf-d" type="date" value="'+esc(c.d||TD)+'"></div>'+
-  '<div><label>How many</label><input id="cf-sent" type="number" inputmode="numeric" value="'+(num(c.sent)||'')+'"></div></div>'+
-  '<label>Notes</label><input id="cf-what" value="'+esc(c.what||'')+'" placeholder="Salesforce, aged pool leads">'+
-  '</div>'+
-  '<button class="btnfull" id="cf-save" style="margin-top:14px">Save</button>'+
-  (i===null?'':'<button class="addbtn" id="cf-del" style="margin-top:8px;border-color:rgba(212,106,94,.5);color:#D46A5E">Delete</button>');
- openTool(i===null?'Log a campaign':'Edit campaign',h,'');
- document.getElementById('tcopy').textContent='Close';
- document.getElementById('cf-save').onclick=function(){
-  var nm=String(document.getElementById('cf-n').value||'').trim();
-  if(!nm){alert('Give it a name.');return;}
-  var o=(i===null)?{}:campaigns()[i];
-  o.n=nm; o.d=document.getElementById('cf-d').value||TD;
-  o.sent=num(document.getElementById('cf-sent').value);
-  o.what=document.getElementById('cf-what').value.trim();
-  if(i===null)campaigns().unshift(o);
-  put(S); document.getElementById('tsheet').style.display='none'; drawCamp();
- };
- var d=document.getElementById('cf-del');
- if(d)d.onclick=function(){
-  if(!confirm('Delete this campaign? The leads stay in your book.'))return;
-  campaigns().splice(i,1); put(S);
-  document.getElementById('tsheet').style.display='none'; drawCamp();};
-}
-function campWho(i){
- var c=campaigns()[i], t=campStats(c);
- var h=t.leads.length
-  ? '<div class="hint">Captured as campaign leads since '+esc(c.d)+'.</div><div class="card" style="margin-top:10px">'+
-    t.leads.map(function(d){
-     var ph=(d.ph||'').replace(/[^\d+]/g,'');
-     return '<div class="qi"><div class="qib"><b>'+esc(pvName(d.w))+'</b>'+
-      '<span>'+STAGES[d.s]+(d.u?' · '+esc(pvNum(d.u)):'')+'</span></div>'+
-      (ph&&!S.priv?'<a class="qic" href="tel:'+ph+'">Call</a>':'')+'</div>';}).join('')+'</div>'
-  : '<div class="hint">Nothing captured against this yet. Use the + button when replies come in and they will land here.</div>';
- openTool(c.n||'Campaign',h,'');
- document.getElementById('tcopy').textContent='Close';
-}
 
 /* ================= PROJECTS ================= */
 /* A launch you pitch again and again. Written once, sendable in two taps. */
@@ -5738,10 +5454,8 @@ document.getElementById('t-hooks').onclick=openHookTool;
 document.getElementById('addproj').onclick=function(){openProj(null);};
 document.getElementById('pasteproj').onclick=function(){openPasteProj();};
 document.getElementById('addkd').onclick=function(){openKd(null);};
-document.getElementById('addcn').onclick=function(){openContact(null);};
 document.getElementById('ntsave').onclick=saveNote;
 document.getElementById('t-val').onclick=function(){openVal(null);};
-document.getElementById('addcamp').onclick=function(){openCamp(null);};
 
 /* the quick-add button hides while you scroll down so it never covers a figure */
 (function(){
@@ -5854,7 +5568,7 @@ function drawStore(){
   el.innerHTML+='<div class="row"><div><div class="lab">Total on device</div><div class="tgt">Including images</div></div><div class="val">'+mb+' MB / '+q+' MB</div></div>';});}
 }
 function drawMore(){
- drawRefs();drawKdAll();drawContacts();drawNotes();drawStore();drawObj();
+ drawRefs();drawKdAll();drawNotes();drawStore();drawObj();
  var due=[];S.deals.forEach(function(d,i){if(d.s<4&&d.nd&&d.nd<=TD)due.push(d);});
  due.sort(function(a,b){return dealFee(b)-dealFee(a);});
  document.getElementById('duelist').innerHTML=due.length?due.map(function(d){
@@ -6270,7 +5984,6 @@ var MCOLS=[
  ['cn','Contacts',     function(x){return low(x.n)+'|'+dig(x.ph);}],
  ['nt','Notes',        function(x){return x.d+'|'+low(x.t).slice(0,40);}],
  ['proj','Projects',   function(x){return low(x.n||x.w);}],
- ['camp','Campaigns',  function(x){return low(x.n||x.t);}],
  ['ledger','Commission',function(x){return x.d+'|'+(x.a||'')+'|'+low(x.w);}],
  ['diary','Diary',     function(x){return x.d+'|'+(x.t||'')+'|'+low(x.n);}]
 ];
@@ -6724,6 +6437,293 @@ function salesOffer(i){
  go();
 }
 
+/* ================= THE UNIT SCREEN =================
+   One place per unit. The card carries three actions, the rest lives here. */
+var UVIEW='unit', UIDX=null;
+function unitScreen(i,tab){
+ var u=S.units[i]; if(!u)return;
+ UIDX=i; if(tab)UVIEW=tab;
+ var isR=(u.lt||'Sale')==='Rent';
+ var TABS=[['unit','Unit'],['plans','Plans'],['market','Market'],['work','Paperwork']];
+ var h='<div class="cseg">'+TABS.map(function(t){
+   return '<b class="'+(UVIEW===t[0]?'on':'')+'" data-uv="'+t[0]+'">'+t[1]+'</b>';}).join('')+'</div>'+
+  '<div id="ubody"></div>'+
+  '<div class="cbar">'+
+   '<button class="cb g" data-ux="offer">'+(isR?'Rental offer':'Sales offer')+'</button>'+
+   '<button class="cb" data-ux="fit">Who fits</button>'+
+   '<button class="cb" data-ux="edit">Edit</button>'+
+  '</div>';
+ openTool(pvNum(u.p||'Unit'),h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.querySelectorAll('[data-uv]').forEach(function(b){
+  b.onclick=function(){UVIEW=b.dataset.uv;unitScreen(i);};});
+ drawUBody(i);
+}
+function drawUBody(i){
+ var u=S.units[i], el=document.getElementById('ubody'); if(!el)return;
+ var isR=(u.lt||'Sale')==='Rent';
+ var h='';
+ if(UVIEW==='unit'){
+  h='<div class="card">'+
+   crow('Type', esc(pvNum(u.t||'')))+
+   crow('Bedrooms', u.bd||'')+
+   crow('BUA', u.bua?pvNum(u.bua.toLocaleString())+' sqft':'')+
+   crow('Plot', u.plot?pvNum(u.plot.toLocaleString())+' sqft':'')+
+   crow(isR?'Annual rent':'Price', isR?pmoney(u.rent):pmoney(u.pr))+
+   (psf(u)?crow('Per sqft','AED '+(S.priv?'\u2022\u2022\u2022':psf(u).toLocaleString())):'')+
+   (!isR&&u.op?crow('Original', pmoney(u.op)+' · '+(u.pr>=u.op?'+':'')+Math.round((u.pr-u.op)/u.op*100)+'%'):'')+
+   (u.rw?crow('Position', esc(u.rw)):'')+
+   '</div>';
+  if(posLine(u))h+='<div class="hint" style="margin-top:9px;color:var(--gold)">'+esc(pvNum(posLine(u)))+'</div>';
+  if(String(u.n||'').trim())h+='<div class="tplbox" style="margin-top:12px"><p style="white-space:pre-wrap">'+esc(pvAll(u.n))+'</p></div>';
+  h+='<div class="oacts" style="margin-top:12px">'+
+   '<button data-ux="plan">'+(u.img?'Masterplan':'+ Masterplan')+'</button>'+
+   '<button data-ux="fp">'+(u.fp?'Floorplan':'+ Floorplan')+'</button>'+
+   '<button data-ux="gal">Photos ('+picCount(u)+')</button>'+
+   '<button data-ux="pos">Position</button></div>';
+ } else if(UVIEW==='plans'){
+  h='<div class="card">'+
+   crow('Payment plan', esc(pvNum(u.pl||'')))+
+   crow('Handover', esc(pvNum(u.h||'')))+
+   (u.ch?crow('Cheques', esc(u.ch)):'')+
+   '</div>'+
+   '<div class="hint" style="margin-top:10px">The offer sheet turns this into a full cost breakdown for the buyer.</div>';
+ } else if(UVIEW==='market'){
+  var st=vwStats(i);
+  h='<div class="card">'+
+   crow('Status', esc(u.st||'Live'))+
+   crow('Days on market', (function(){var p=domPill(u);return p?p.replace(/<[^>]+>/g,''):'';})())+
+   crow('Viewings', st?st.n:0)+
+   (st?crow('Said too high', st.low+' of '+st.n, st.lowPct>=60?'var(--bad)':''):'')+
+   (st&&st.off?crow('Offers', st.off,'var(--ok)'):'')+
+   '</div>';
+  var dp=driftPill(u);
+  if(dp)h+='<div style="margin-top:10px">'+dp+'</div>';
+  h+='<div class="oacts" style="margin-top:12px">'+
+   '<button data-ux="vw">Log a viewing</button>'+
+   '<button data-ux="lu">Landlord update</button>'+
+   '<button data-ux="val">Valuation</button></div>';
+ } else {
+  h='<div class="card">'+
+   crow('Form A signed', esc(u.faTo?('expires '+u.faTo):''), u.faTo?'':'var(--bad)')+
+   crow('Trakheesi permit', esc(u.tkNo||''), u.tkNo?'':'var(--bad)')+
+   crow('Permit expires', esc(u.tkTo||''), u.tkTo?'':'var(--bad)')+
+   crow('Listed on', esc(u.listed||''))+
+   '</div>';
+  if(licLine(u))h+='<div class="hint" style="margin-top:9px">'+esc(pvNum(licLine(u)))+'</div>';
+  h+='<div class="oacts" style="margin-top:12px">'+
+   '<button data-ux="lic">Paperwork</button>'+
+   '<a class="ub" href="'+mapLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Map</a>'+
+   '<a class="ub" href="'+pfLink(u)+'" target="_blank" style="text-align:center;text-decoration:none">Listings</a>'+
+   '<button data-ux="share">Share</button></div>';
+ }
+ el.innerHTML=h;
+ document.querySelectorAll('[data-ux]').forEach(function(b){
+  b.onclick=function(){
+   var k=b.dataset.ux;
+   if(k==='offer')salesOffer(i); else if(k==='fit')whoFits(i);
+   else if(k==='edit')editUnit(i); else if(k==='plan')openImg(i,'img');
+   else if(k==='fp')openImg(i,'fp'); else if(k==='gal')openGallery(i);
+   else if(k==='pos')openPos(i); else if(k==='vw')openVw(i);
+   else if(k==='lu')landlordUpdate(i); else if(k==='val')openVal(i);
+   else if(k==='lic')openLic(i); else if(k==='share')shareUnit(i);
+  };});
+}
+/* ================= THE CLIENT SCREEN =================
+   One place for everything about one person. The card carries three actions;
+   the rest lives here behind four tabs, so nothing is hunted for. */
+var CVIEW='brief', CIDX=null;
+function clientScreen(i,tab){
+ var d=S.deals[i]; if(!d)return;
+ CIDX=i; if(tab)CVIEW=tab;
+ var ph=(d.ph||'').replace(/[^\d+]/g,'');
+ var TABS=[['brief','Brief'],['deal','Deal'],['money','Money'],['hist','History']];
+ var h='<div class="cseg">'+TABS.map(function(t){
+   return '<b class="'+(CVIEW===t[0]?'on':'')+'" data-cv="'+t[0]+'">'+t[1]+'</b>';}).join('')+'</div>'+
+  '<div id="cbody"></div>'+
+  '<div class="cbar">'+
+   (ph&&!S.priv?'<a class="cb g" href="tel:'+ph+'">Call</a>'+
+     '<a class="cb" href="https://wa.me/'+ph.replace('+','')+'" target="_blank">WhatsApp</a>'
+    :'<button class="cb g" data-ced="'+i+'">Add a number</button>')+
+   '<button class="cb" data-cmore="'+i+'">Edit</button>'+
+  '</div>';
+ openTool(pvName(d.w),h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.querySelectorAll('[data-cv]').forEach(function(b){
+  b.onclick=function(){CVIEW=b.dataset.cv;clientScreen(i);};});
+ var ed=document.querySelector('[data-ced]'); if(ed)ed.onclick=function(){closeTool();setTimeout(function(){editDeal(i);},180);};
+ var mo=document.querySelector('[data-cmore]'); if(mo)mo.onclick=function(){closeTool();setTimeout(function(){editDeal(i);},180);};
+ drawCBody(i);
+}
+function crow(l,v,tone){
+ return '<div class="row"><div class="lab">'+esc(l)+'</div>'+
+  '<div class="v2" style="font-size:13px;text-align:right;max-width:62%'+(tone?';color:'+tone:'')+'">'+
+  (v==null||v===''?'&mdash;':v)+'</div></div>';
+}
+function drawCBody(i){
+ var d=S.deals[i], el=document.getElementById('cbody'); if(!el)return;
+ var h='';
+ if(CVIEW==='brief')h=cvBrief(d,i);
+ else if(CVIEW==='deal')h=cvDeal(d,i);
+ else if(CVIEW==='money')h=cvMoney(d,i);
+ else h=cvHist(d,i);
+ el.innerHTML=h;
+ /* every action inside the screen */
+ el.querySelectorAll('[data-cx]').forEach(function(b){
+  b.onclick=function(){
+   var k=b.dataset.cx;
+   if(k==='qual')openQual(i);
+   else if(k==='blk')openBlk(i);
+   else if(k==='msg')pickTemplate(i);
+   else if(k==='docs')openDocs('deal',i);
+   else if(k==='adv')advance(i);
+   else if(k==='later')snoozeDeal(i);
+  };});
+ el.querySelectorAll('[data-cchk]').forEach(function(r){
+  r.onclick=function(){
+   var c=chkOf(d); var k=r.dataset.cchk;
+   c[k]=c[k]?0:1; put(S); drawDeals(); drawAtt(); drawCBody(i);};});
+}
+function cvBrief(d,i){
+ var B=briefOf(i), q=d.q||{};
+ var h='<div class="card">'+
+  crow('They want', esc(pvAll(B.want.length?B.want.join(' · '):'not written down')), B.want.length?'':'var(--bad)')+
+  crow('Budget', esc(pvAll(q.bud||(num(d.lmax)?money(d.lmax):''))), q.bud?'':'var(--bad)')+
+  crow('Funds', esc(pvAll(q.fund||'')), q.fund?'':'var(--bad)')+
+  crow('Who decides', esc(pvAll(q.who||'')), q.who?'':'var(--bad)')+
+  crow('Why', esc(pvAll(q.why||'')))+
+  crow('Timing', esc(pvAll(q.when||'')))+
+  '</div>';
+ if(B.blk)h+='<div class="card" style="margin-top:10px;border-color:rgba(212,106,94,.5)">'+
+  '<div class="lab" style="color:var(--bad);font-weight:600">'+esc(B.blk[1])+'</div>'+
+  '<div class="tgt" style="margin-top:5px">'+esc(blkAns(d.blk))+'</div></div>';
+ if(B.vws.length){
+  h+='<div class="vhead" style="margin-top:14px">Shown '+B.vws.length+'</div><div class="card">'+
+   B.vws.slice(0,4).map(function(v){
+    var u=S.units[v.u];
+    return crow(esc(pvNum(u?u.p:'a unit')), '<span style="font-size:11.5px'+(v.nx==='no'?';color:var(--bad)':'')+'">'+
+     (v.nx==='no'?'rejected':(v.nx==='offer'?'offered':'thinking'))+'</span>');}).join('')+'</div>';
+  var low=B.rejected.filter(function(v){return v.pr==='low';}).length;
+  if(low>=2)h+='<div class="hint" style="margin-top:7px;color:var(--bad)">'+low+
+   ' called too expensive. Bring the budget conversation forward.</div>';
+ }
+ if(String(d.n||'').trim())
+  h+='<div class="vhead" style="margin-top:14px">What you know</div>'+
+   '<div class="tplbox"><p style="white-space:pre-wrap">'+esc(pvAll(d.n))+'</p></div>';
+ h+='<div class="oacts" style="margin-top:12px">'+
+   '<button data-cx="qual">Qualify '+qScore(d)+'/5</button>'+
+   '<button data-cx="blk">'+(d.blk?'Blocker':'Blocked by')+'</button>'+
+   '<button data-cx="msg">Message</button></div>';
+ return h;
+}
+function cvDeal(d,i){
+ var isR=(d.ty==='Rent'||num(d.rent));
+ var L=chkListFor(d), c=chkOf(d), pr=chkProgress(d);
+ var next=L.filter(function(x){return !c[x[0]];})[0];
+ var h='<div class="card">'+
+  crow('Property', esc(pvNum(d.u||'')), d.u?'':'var(--bad)')+
+  crow('Stage', STAGES[d.s]||'')+
+  crow(isR?'Annual rent':'Price', isR?pmoney(d.rent):pmoney(d.v), (isR?num(d.rent):num(d.v))?'':'var(--bad)')+
+  crow('Next step', esc(pvAll(d.na||'')), d.na?'':'var(--bad)')+
+  crow('Due', d.nd?(new Date(d.nd).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+
+    (dueIn(d.nd)<0?' · '+Math.abs(dueIn(d.nd))+'d late':'')):'', dueIn(d.nd)<0?'var(--bad)':'')+
+  '</div>';
+ h+='<div class="vhead" style="margin-top:14px">Transfer '+pr.done+' of '+pr.total+'</div><div class="card">'+
+  '<div style="height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:10px">'+
+  '<div style="height:100%;width:'+pr.pct+'%;background:var(--ok)"></div></div>'+
+  L.map(function(x){
+   var on=!!c[x[0]];
+   return '<div class="row" data-cchk="'+x[0]+'" style="cursor:pointer">'+
+    '<div class="lab" style="font-size:13px'+(on?';color:var(--dim);text-decoration:line-through':'')+'">'+esc(x[1])+'</div>'+
+    '<div class="v2" style="color:'+(on?'var(--ok)':'var(--dim)')+'">'+(on?'done':'&mdash;')+'</div></div>';}).join('')+
+  '</div>';
+ if(next)h+='<div class="hint" style="margin-top:7px;color:var(--gold)">Next: '+esc(next[1])+'</div>';
+ var risks=dealRisks(d,i);
+ if(risks.length)h+='<div class="vhead" style="margin-top:14px">What could go wrong</div>'+
+  '<div class="card" style="border-color:rgba(212,106,94,.45)">'+risks.map(function(r){
+   return '<div class="tgt" style="margin-bottom:5px;color:var(--bad)">&bull; '+esc(pvAll(r))+'</div>';}).join('')+'</div>';
+ h+='<div class="oacts" style="margin-top:12px">'+
+  (d.s<4?'<button class="val" data-cx="adv">'+(d.s===3?'Mark as won':'Move to '+STAGES[d.s+1])+'</button>':'')+
+  '<button data-cx="later">Later</button>'+
+  '<button data-cx="docs">Documents</button></div>';
+ return h;
+}
+function cvMoney(d,i){
+ var isR=(d.ty==='Rent'||num(d.rent));
+ var fee=dealFee(d), vat=fee*0.05;
+ var h='<div class="card">'+
+  crow(isR?'Annual rent':'Price', isR?pmoney(d.rent):pmoney(d.v))+
+  crow('Your rate', (d.r||0)+'%')+
+  crow('Your fee', pmoney(fee), 'var(--gold)')+
+  crow('Plus VAT', pmoney(fee+vat))+
+  (d.npd?crow('Developer payment', pmoney(d.npa)+' on '+
+    new Date(d.npd).toLocaleDateString('en-GB',{day:'numeric',month:'short'})):'')+
+  (d.hh?crow('Same wallet as', esc(d.hh)):'')+
+  '</div>';
+ var kds=kdAll().filter(function(k){return low(k.w).indexOf(low(d.w))>=0||(d.u&&low(k.w).indexOf(low(d.u))>=0);});
+ if(kds.length)h+='<div class="vhead" style="margin-top:14px">Dates</div><div class="card">'+
+  kds.slice(0,6).map(function(k){var dd=kdDays(k);
+   return crow(esc(k.t), new Date(k.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+
+    ' · '+(dd<0?Math.abs(dd)+'d ago':dd+'d'), dd>=0&&dd<=30?'var(--bad)':'');}).join('')+'</div>';
+ var pr=chkProgress(d);
+ h+='<div class="hint" style="margin-top:12px">'+
+  (d.s===4?(chkOf(d).paid?'Commission received.':'Won but the commission is not logged as received yet.')
+          :'This is what the fee is worth if it closes, not what is banked.')+'</div>';
+ return h;
+}
+function cvHist(d,i){
+ var H=(d.hist||[]).slice().reverse();
+ var lt=lastTouch(d), q=lt?ddiff(lt,TD):null;
+ var h='<div class="card">'+
+  crow('Last contact', lt?(q===0?'today':q+' days ago'):'never logged', (q!==null&&q>=14)?'var(--bad)':'')+
+  crow('In the book', dealAge(d)?dealAge(d)+' days':'')+
+  crow('At this stage', stageAge(d)?stageAge(d)+' days':'')+
+  crow('Came from', esc(d.src||''))+
+  (d.ref?crow('Referred by', esc(pvName(d.ref))):'')+
+  '</div>';
+ h+=H.length
+  ? '<div class="vhead" style="margin-top:14px">Everything logged</div><div class="card">'+
+    H.map(function(x){return '<div class="row"><div class="lab" style="font-size:12.5px">'+esc(pvAll(x.a||''))+'</div>'+
+     '<div class="v2" style="font-size:11.5px">'+(x.d?new Date(x.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'')+'</div></div>';}).join('')+'</div>'
+  : '<div class="hint" style="margin-top:12px">Nothing logged yet. Every outcome you tap in the call queue lands here.</div>';
+ return h;
+}
+function redrawAll(){
+ ['drawDeals','drawHero','drawHead','drawQuiet','drawCash','drawUnbanked','drawNoPhone','drawHouseholds',
+  'drawStuck','drawBlk','drawQual','drawCommit','drawPrep','drawDupes','drawKdToday','drawNav','drawMoves',
+  'drawMore','drawMap','drawAtt'].forEach(function(f){ if(typeof window[f]==='function')try{window[f]();}catch(e){} });
+}
+function editDeal(i){openSheet(i);}
+function snoozeDeal(i){
+ var d=S.deals[i], n=new Date(); n.setDate(n.getDate()+3);
+ d.nd=iso(n); put(S); redrawAll();
+ if(navigator.vibrate)navigator.vibrate(8);
+ if(CIDX===i&&document.getElementById('cbody'))drawCBody(i);
+}
+function advance(i){
+ var d=S.deals[i]; if(!d||d.s>=4)return;
+ var ns=d.s+1;
+ if(ns<4&&CADENCE[ns]!==undefined)d.nd=autoDate(CADENCE[ns]);
+ if(ns===4)d.nd='';
+ d.s=ns; d.sAt=TD; put(S); redrawAll();
+ if(navigator.vibrate)navigator.vibrate(12);
+ if(CIDX===i&&document.getElementById('cbody'))drawCBody(i);
+ if(ns===4)setTimeout(function(){if(confirm('Nice one. Log the commission now?'))logComm();},120);
+}
+function dealRisks(d,i){
+ var risks=[], isR=(d.ty==='Rent'||num(d.rent)), pr=chkProgress(d);
+ if(!d.ph)risks.push('No phone number, you cannot chase this');
+ if(!d.nd)risks.push('No next date set');
+ else if(dueIn(d.nd)<0)risks.push('Next step is '+Math.abs(dueIn(d.nd))+' days late');
+ var lt=lastTouch(d), q=lt?ddiff(lt,TD):999;
+ if(q>=14)risks.push('Nothing logged for '+(lt?q+' days':'ever'));
+ if(d.blk)risks.push('Blocked: '+(blkDef(d.blk)||[])[1]);
+ if(qScore(d)<4)risks.push('Only '+qScore(d)+' of 5 qualifying questions answered');
+ if(num(d.s)>=3&&!pr.done)risks.push('Agreed but the transfer checklist has not been started');
+ if(!isR&&!num(d.v))risks.push('No value, so the fee is a guess');
+ return risks;
+}
+
 /* ================= PRE-CALL BRIEFING =================
    Ten seconds before you dial. Everything you would be embarrassed to have
    forgotten, and nothing else. */
@@ -6827,7 +6827,6 @@ function dealRoom(i){
  var kds=kdAll().filter(function(k){return low(k.w).indexOf(low(d.w))>=0||
    (d.u&&low(k.w).indexOf(low(d.u))>=0);});
  var docs=docsOf(d);
- var cn=contacts();
  function row(l,v,tone){
   return '<div class="row"><div class="lab">'+esc(l)+'</div><div class="v2" style="font-size:13px'+
    (tone?';color:'+tone:'')+'">'+(v==null?'—':v)+'</div></div>';}
@@ -6884,7 +6883,6 @@ function dealRoom(i){
 
  h+='<div class="vhead" style="margin-top:14px">Paperwork</div><div class="card">'+
   row('Documents attached', docs.length||'<span style="color:var(--bad)">none</span>')+
-  row('Contacts in the book', cn.length||'<span style="color:var(--bad)">none</span>')+
   '</div>';
 
  var hist=(d.hist||[]).slice().reverse();

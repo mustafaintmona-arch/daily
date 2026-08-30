@@ -561,7 +561,6 @@ var MCOLS=[
  ['cn','Contacts',     function(x){return low(x.n)+'|'+dig(x.ph);}],
  ['nt','Notes',        function(x){return x.d+'|'+low(x.t).slice(0,40);}],
  ['proj','Projects',   function(x){return low(x.n||x.w);}],
- ['camp','Campaigns',  function(x){return low(x.n||x.t);}],
  ['ledger','Commission',function(x){return x.d+'|'+(x.a||'')+'|'+low(x.w);}],
  ['diary','Diary',     function(x){return x.d+'|'+(x.t||'')+'|'+low(x.n);}]
 ];
@@ -825,7 +824,7 @@ function wireTabs(){
 }
 function render(){
  document.getElementById('bar').classList.remove('hide');
- var tabs=[['deals','Clients'],['units','Inventory'],['call','Call list'],['later','Prospects'],['market','Market'],['proj','Projects'],['camp','Campaigns'],['transfer','Transfers'],['docs','Documents'],['dates','Key dates'],['people','Contacts'],['fill','Fill in'],['tools','Tools'],['review','Review']];
+ var tabs=[['deals','Clients'],['units','Inventory'],['call','Call list'],['later','Prospects'],['market','Market'],['proj','Projects'],['transfer','Transfers'],['docs','Documents'],['dates','Key dates'],['fill','Fill in'],['tools','Tools'],['review','Review']];
  document.getElementById('tabs').innerHTML=tabs.map(function(t){
   return '<b class="'+(TAB===t[0]?'on':'')+'" data-t="'+t[0]+'">'+t[1]+(['tools','fill','transfer','docs','proj','camp'].indexOf(t[0])>=0?'':'<i>'+LIST[t[0]]().length+'</i>')+'</b>';}).join('');
  document.querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){
@@ -850,8 +849,6 @@ function render(){
   document.getElementById('count').innerHTML='';drawFill();return;}
  if(TAB==='proj'){document.getElementById('bar').classList.add('hide');
   document.getElementById('count').innerHTML='';drawProjDesk();return;}
- if(TAB==='camp'){document.getElementById('bar').classList.add('hide');
-  document.getElementById('count').innerHTML='';drawCampDesk();return;}
  if(TAB==='transfer'){document.getElementById('bar').classList.add('hide');
   document.getElementById('count').innerHTML='';drawTransfers();return;}
  if(TAB==='docs'){document.getElementById('bar').classList.add('hide');
@@ -865,8 +862,6 @@ function drawFilter(){
  if(TAB==='dates')opts=opts.concat(['Next 90 days','Already gone'])
   .concat(['Tenancy ends','Developer payment','Licence','Emirates ID','Passport','Visa','Handover','Other']
    .filter(function(t){return LIST.dates().some(function(x){return x.t===t;});}));
- if(TAB==='people')opts=opts.concat(['Developer','Mortgage','Conveyancing','Trustee','Photographer','Handyman','Agent','Other']
-  .filter(function(t){return LIST.people().some(function(x){return (x.k||'Other')===t;});}));
  if(TAB==='units')opts=opts.concat(['Live only','Permit expiring or gone','No paperwork','For sale','For rent','No price','No original price'])
   .concat(uniq(rows.map(function(u){return u.com;})));
  if(TAB==='later')opts=opts.concat(['Due now']).concat(uniq(rows.map(function(x){return x.ty;})));
@@ -900,7 +895,6 @@ function pass(r){
   if(F==='Next 90 days'){var n=r.d?dayd(r.d,TD):null; return n!==null&&n<=90&&n>=-30;}
   if(F==='Already gone'){var g=r.d?dayd(r.d,TD):null; return g!==null&&g<0;}
   return r.t===F;}
- if(TAB==='people')return (r.k||'Other')===F;
  return true;
 }
 function drawTable(){
@@ -1632,40 +1626,16 @@ function dCampStats(c){
  return {leads:got,met:met,won:won,fee:won.reduce(function(a,d){return a+dealFee(d);},0),
   rate:num(c.sent)?got.length/num(c.sent)*100:0};
 }
-function drawCampDesk(){
- var C=dCamps();
- var h='<div class="pgrid">'+C.map(function(c,i){
-  var t=dCampStats(c);
-  return '<div class="pcard"><h4>'+esc(c.n||'Untitled')+'</h4>'+
-   '<div class="sub">'+esc([c.d,c.what].filter(Boolean).join(' · '))+'</div>'+
-   '<div class="cstats">'+
-    '<div><div class="n">'+num(c.sent)+'</div><div class="l">Sent</div></div>'+
-    '<div><div class="n'+(t.leads.length?' g':'')+'">'+t.leads.length+'</div><div class="l">Replied</div></div>'+
-    '<div><div class="n'+(t.met.length?' g':'')+'">'+t.met.length+'</div><div class="l">Met</div></div>'+
-    '<div><div class="n'+(t.won.length?' g':'')+'">'+t.won.length+'</div><div class="l">Won</div></div>'+
-   '</div>'+
-   '<div class="sub" style="margin-top:10px">Reply rate <b style="color:var(--gold)">'+t.rate.toFixed(1)+'%</b>'+
-    (t.fee?' · '+money(t.fee)+' banked':'')+'</div>'+
-   (t.leads.length?'<div class="pitchbox" style="margin-top:10px">'+
-     esc(t.leads.map(function(d){return d.w+'  ·  '+STAGES[num(d.s)];}).join('\n'))+'</div>':'')+
-   '</div>';}).join('')+'</div>';
- if(!C.length)h='<div class="empty"><p>No campaigns logged. Log one on the phone before you send, and every reply counts against it.</p></div>';
- document.getElementById('main').innerHTML=h;
- document.getElementById('hint').textContent='Was it worth doing? This is the only honest answer.';
-}
-
-/* ================= BULK FILL ================= */
-/* Sixteen numbers on a phone is ten minutes of thumbs. Here it is three minutes of tabbing. */
-var QQ=[['bud','Budget','Ceiling, and cash or mortgage'],
- ['fund','Funds','Where the money is and can it reach a Dubai escrow'],
- ['who','Decision','Who else has to say yes'],
- ['why','Reason','Income, growth, visa or to live in'],
- ['when','Timing','What makes it happen in 90 days']];
 var BLOCKS=[['','Not blocked'],['money','Cannot move the money'],['notme','Someone else decides'],
  ['price','Price is too high'],['wait','Waiting for the market'],['plan','Payment plan does not work'],
  ['trust','Not sure about the developer'],['fee','Wants the fee cut'],
  ['nosell','Not selling right now'],['unit','Wrong unit']];
 function blkLabel(k){var r=BLOCKS.filter(function(b){return b[0]===k;})[0];return r?r[1]:'';}
+var QQ=[['bud','Budget','Ceiling, and cash or mortgage'],
+ ['fund','Funds','Where the money is and can it reach a Dubai escrow'],
+ ['who','Decision','Who else has to say yes'],
+ ['why','Reason','Income, growth, visa or to live in'],
+ ['when','Timing','What makes it happen in 90 days']];
 function qScore(d){var q=d.q||{},n=0;QQ.forEach(function(x){if(String(q[x[0]]||'').trim())n++;});return n;}
 function qfRows(){
  return S().deals.map(function(d,i){return {i:i,d:d};})
