@@ -4167,7 +4167,7 @@ function drawUnits(){
      '<div class="pr">'+pmoney(u.rent)+'</div><div class="m">per year · '+esc(u.ch||'')+'</div>'
     :'<div class="pr">'+pmoney(u.pr)+'</div>'+(psf(u)?'<div class="m">'+(S.priv?'••••':psf(u).toLocaleString())+' /sqft</div>':'')+
      (up!==null?'<div class="m '+(up>=0?'up':'down')+'">'+(S.priv?'••% on OP':(up>=0?'+':'')+up+'% on OP')+'</div>':''))+'</div></div>'+
-   (u.tag?'<span class="pill">'+esc(u.tag)+'</span>':'')+statPill(u)+domPill(u)+licPill(u)+rowPill(u)+driftPill(u)+
+   (u.tag?'<span class="pill">'+esc(u.tag)+'</span>':'')+statPill(u)+domPill(u)+licPill(u)+rowPill(u)+driftPill(u)+vwPill(i)+
    (posLine(u)?'<div class="m" style="margin-top:6px;color:var(--gold);opacity:.85">'+esc(pvNum(posLine(u)))+'</div>':'')+
    (licLine(u)?'<div class="m" style="margin-top:3px">'+esc(pvNum(licLine(u)))+(u.excl?' · '+esc(u.excl):'')+'</div>':'')+
    '<div class="d" id="det-'+i+'" style="display:none">'+
@@ -4180,6 +4180,8 @@ function drawUnits(){
     '<button class="ub" data-gal="'+i+'">Photos ('+picCount(u)+')</button></div>'+
    '<div class="ubtns"><button class="ub gold" data-offer="'+i+'">'+(isR?'Rental offer':'Sales offer')+'</button>'+
     '<button class="ub" data-fit="'+i+'">Who fits this</button></div>'+
+   '<div class="ubtns"><button class="ub" data-vw="'+i+'">Viewings'+(vwOf(i).length?' ('+vwOf(i).length+')':'')+'</button>'+
+    '<button class="ub" data-lu="'+i+'">Landlord update</button></div>'+
    '<div class="ubtns"><button class="ub" data-pos="'+i+'">Unit position</button>'+
     '<button class="ub" data-lic="'+i+'">Paperwork</button>'+
     '<button class="ub" data-val="'+i+'">Valuation</button>'+
@@ -4192,6 +4194,8 @@ function drawUnits(){
    '</div></div>';}).join(''):'<div class="hint">Nothing matches that filter.</div>';
  document.querySelectorAll('.uhead').forEach(function(h){h.onclick=function(){var d=document.getElementById('det-'+h.dataset.i);d.style.display=d.style.display==='none'?'block':'none';};});
  document.querySelectorAll('[data-offer]').forEach(function(b){b.onclick=function(e){e.stopPropagation();salesOffer(+b.dataset.offer);};});
+ document.querySelectorAll('[data-vw]').forEach(function(b){b.onclick=function(e){e.stopPropagation();openVw(+b.dataset.vw);};});
+ document.querySelectorAll('[data-lu]').forEach(function(b){b.onclick=function(e){e.stopPropagation();landlordUpdate(+b.dataset.lu);};});
  document.querySelectorAll('[data-fit]').forEach(function(b){b.onclick=function(e){e.stopPropagation();whoFits(+b.dataset.fit);};});
  document.querySelectorAll('[data-umore]').forEach(function(b){b.onclick=function(e){e.stopPropagation();
   var a=document.getElementById('um-'+b.dataset.umore);
@@ -6207,6 +6211,135 @@ function salesOffer(i){
    setTimeout(function(){window.print();},250);});
  };
  go();
+}
+
+/* ================= VIEWINGS AND FEEDBACK =================
+   What people actually said after they walked through it. This is the only
+   honest argument for a price reduction, and it is worthless if it is not written down. */
+var VREACT=[['low','Priced too high','r2'],['fair','Price about right',''],['keen','Would pay it','g2']];
+var VNEXT=[['offer','Making an offer','g2'],['think','Thinking about it',''],['no','Not for them','r2']];
+function vwOf(ui){return (S.vw||[]).filter(function(v){return v.u===ui;})
+ .sort(function(a,b){return String(b.d).localeCompare(String(a.d));});}
+function vwStats(ui){
+ var V=vwOf(ui), n=V.length;
+ if(!n)return null;
+ var low=V.filter(function(v){return v.pr==='low';}).length;
+ var off=V.filter(function(v){return v.nx==='offer';}).length;
+ var last=V[0].d, first=V[n-1].d;
+ return {n:n,low:low,off:off,last:last,first:first,
+  lowPct:Math.round(low/n*100),
+  said:V.filter(function(v){return String(v.w||'').trim();})};
+}
+function vwPill(i){
+ var st=vwStats(i); if(!st)return '';
+ var tone=st.lowPct>=60?' style="color:var(--bad);border-color:rgba(212,106,94,.5)"':'';
+ return '<span class="pill"'+tone+'>'+st.n+' viewing'+(st.n>1?'s':'')+
+  (st.low?' · '+st.low+' said too high':'')+(st.off?' · '+st.off+' offer'+(st.off>1?'s':''):'')+'</span>';
+}
+function openVw(i){
+ var u=S.units[i]; if(!u)return;
+ var st=vwStats(i), V=vwOf(i);
+ openTool('Viewings · '+pvName(u.p),
+  '<div class="hint">Log it while you are still in the car. Thirty seconds now is what wins the price conversation later.</div>'+
+  (st?'<div class="card" style="margin-top:12px">'+
+    '<div class="row"><div class="lab">Viewings</div><div class="v2">'+st.n+'</div></div>'+
+    '<div class="row"><div class="lab">Said it is priced too high</div><div class="v2"'+
+     (st.lowPct>=60?' style="color:var(--bad)"':'')+'>'+st.low+' of '+st.n+'</div></div>'+
+    '<div class="row"><div class="lab">Offers</div><div class="v2">'+st.off+'</div></div>'+
+    '<div class="row"><div class="lab">Last one</div><div class="v2">'+
+     new Date(st.last).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</div></div>'+
+   '</div>':'')+
+  '<label style="margin-top:14px">Who came</label>'+
+  '<input id="vw-n" placeholder="Name, or the agent who brought them">'+
+  '<label>What they actually said</label>'+
+  '<textarea id="vw-w" rows="3" placeholder="Loved the layout, said the second bedroom is small for the money"></textarea>'+
+  '<label>Their read on the price</label>'+
+  '<div class="oacts" id="vw-p">'+VREACT.map(function(r){
+   return '<button class="'+r[2]+'" data-vp="'+r[0]+'">'+r[1]+'</button>';}).join('')+'</div>'+
+  '<label style="margin-top:10px">Where it goes</label>'+
+  '<div class="oacts" id="vw-x">'+VNEXT.map(function(r){
+   return '<button class="'+r[2]+'" data-vx="'+r[0]+'">'+r[1]+'</button>';}).join('')+'</div>'+
+  '<button class="addbtn" id="vw-s" style="margin-top:12px">Save this viewing</button>'+
+  (V.length?'<div class="vhead" style="margin-top:16px">Every viewing so far</div><div class="card">'+
+   V.map(function(v,j){
+    var pr=VREACT.filter(function(r){return r[0]===v.pr;})[0];
+    return '<div class="row big2"><div><div class="lab">'+esc(pvName(v.n||'Someone'))+' · '+
+     new Date(v.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</div>'+
+     (v.w?'<div class="tgt">'+esc(pvAll(v.w))+'</div>':'')+'</div>'+
+     '<div class="v2" style="font-size:12px'+(v.pr==='low'?';color:var(--bad)':'')+'">'+
+      esc(pr?pr[1]:'')+'</div></div>';}).join('')+'</div>':''),'');
+ var pk={pr:'',nx:''};
+ function seg(box,key,attr){
+  var el=document.getElementById(box);
+  el.querySelectorAll('['+attr+']').forEach(function(b){
+   b.onclick=function(){
+    pk[key]=b.dataset[attr.replace('data-','')];
+    el.querySelectorAll('['+attr+']').forEach(function(o){
+     o.classList.toggle('val',o===b);});};});
+ }
+ seg('vw-p','pr','data-vp'); seg('vw-x','nx','data-vx');
+ document.getElementById('vw-s').onclick=function(){
+  var w=document.getElementById('vw-w').value.trim();
+  var n=document.getElementById('vw-n').value.trim();
+  if(!w&&!pk.pr){alert('Write what they said, or at least tap their read on the price.');return;}
+  S.vw=S.vw||[];
+  S.vw.push({u:i,d:TD,n:n,w:w,pr:pk.pr,nx:pk.nx});
+  put(S); drawUnits(); closeTool();
+ };
+}
+function landlordUpdate(i){
+ var u=S.units[i]; if(!u)return;
+ var st=vwStats(i), V=vwOf(i);
+ var dom=u.listed?ddiff(u.listed,TD):0;
+ var L=['Weekly update','',esc(u.p)+(u.t?' · '+u.t:''),
+  new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}),''];
+ var txt=(u.p||'Your property')+(u.t?' · '+u.t:'')+'\n'+
+  new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'\n\n';
+ txt+='ACTIVITY\n';
+ if(dom)txt+='On the market '+dom+' days\n';
+ txt+='Viewings so far: '+(st?st.n:0)+'\n';
+ if(st&&st.off)txt+='Offers: '+st.off+'\n';
+ if(u.pr)txt+='Currently asking '+money(u.pr)+'\n';
+ if(st&&st.said.length){
+  txt+='\nWHAT PEOPLE SAID\n';
+  st.said.slice(0,6).forEach(function(v){
+   txt+='· '+new Date(v.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+': '+v.w+'\n';});
+ }
+ /* the honest part, and the reason this document is worth sending */
+ txt+='\nMY READ\n';
+ if(!st||!st.n){
+  txt+='No viewings yet'+(dom>21?' after '+dom+' days, which tells us the price is stopping people before they even ask':
+   '. Too early to draw a conclusion, let us give it another two weeks')+'.\n';
+ } else if(st.lowPct>=60){
+  txt+=st.low+' of the '+st.n+' people who saw it told me the same thing, that it is priced above what they '+
+   'would pay. When that many separate buyers say one thing, they are usually right. My honest advice is to '+
+   'adjust the asking price rather than keep waiting.\n';
+ } else if(st.off){
+  txt+='We have '+st.off+' offer'+(st.off>1?'s':'')+' on the table and the feedback is broadly positive. '+
+   'The price is in the right area.\n';
+ } else {
+  txt+='Feedback has been reasonable and nobody has pushed back hard on price. '+
+   'We need more people through the door rather than a change to the number.\n';
+ }
+ var mk=(S.mkt||[]).length?valueIt(u.com||String(u.p||'').split(',')[0],num(u.bd),num(u.bua),num(u.pr)):null;
+ if(mk&&mk.n){
+  txt+='\nTHE MARKET\n'+mk.n+' comparable sales in the last 12 months, median AED '+
+   mk.med.toLocaleString()+' per sqft. ';
+  if(num(u.pr)&&num(u.bua)){
+   var g=Math.round(mk.gap);
+   txt+='You are asking AED '+Math.round(num(u.pr)/num(u.bua)).toLocaleString()+', which is '+
+    (g>=0?g+'% above':Math.abs(g)+'% below')+' that median.\n';
+  }
+ }
+ txt+='\nMustafa Saleh\nAllegiance Real Estate';
+ openTool('Landlord update',
+  '<div class="hint">Straight from the viewings you logged. Nothing here is invented, including the parts they '+
+  'will not enjoy reading.</div>'+
+  '<div class="tplbox" style="margin-top:12px"><p style="white-space:pre-wrap">'+esc(pvAll(txt))+'</p></div>'+
+  '<button class="addbtn" id="lu-w" style="margin-top:10px;border-style:solid;border-color:var(--gold);color:var(--gold)">Send on WhatsApp</button>','');
+ COPYTEXT=txt;
+ document.getElementById('lu-w').onclick=function(){
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');};
 }
 
 /* ================= LISTING PITCH =================
