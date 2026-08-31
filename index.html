@@ -6050,6 +6050,12 @@ function gym(){
  if(!g.plan.length)g.plan=JSON.parse(JSON.stringify(GYMPLAN));
  g.plan.forEach(function(p2){ if(!Array.isArray(p2.ex))p2.ex=[]; if(!p2.n)p2.n='Day'; });
  g.log=g.log.filter(function(x){return x&&typeof x==='object';});
+ /* an earlier build timed from when the screen opened, so some sessions carry
+    hours of standing-still time. Anything absurd gets thrown away rather than lied about. */
+ g.log.forEach(function(x){
+  if(num(x.mins)>300){delete x.mins;delete x.secs;}
+  if(num(x.secs)>18000){delete x.secs;}
+  if(x.startAt)delete x.startAt;});
  g.at=num(g.at)||0;
  if(g.at>=g.plan.length||g.at<0)g.at=0;
 
@@ -6301,12 +6307,50 @@ function drawGym(light){
  if(!(idx>=0)||idx>=P.length)idx=0;
  if(t&&t.i!==idx){t.i=idx;t.n=P[idx].n;}
  var p=P[idx];
- var doneN=t?gymPlan()[idx].ex.filter(function(e){return gymSets(t,e).length;}).length:0;
+ var doneN=t?P[idx].ex.filter(function(e){return gymSets(t,e).length;}).length:0;
  var total=p.ex.length;
  var rest=!p.ex.length;
+ var finished=!!(t&&t.done&&(t.sets||[]).length);
+ var nextI=(idx+1)%P.length, nextP=P[nextI];
+ /* have you already moved the cycle on past today */
+ var movedOn=finished&&num(g.at)!==idx;
+ if(movedOn){nextI=num(g.at)%P.length;nextP=P[nextI];}
+
+ if(finished){
+  /* the work is done. show what happened and point at tomorrow. */
+  var v=gymVolume(t), pbs=(t.sets||[]).filter(function(x){return x.pb;}).length;
+  el.innerHTML='<div class="card" style="border-color:rgba(79,190,139,.45)">'+
+   '<div class="hint" style="color:var(--pos)">'+
+    new Date(TD).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+' · done</div>'+
+   '<div style="font-size:var(--f5);font-weight:650;letter-spacing:-.03em;margin-top:6px">'+esc(p.n)+'</div>'+
+   '<div class="stat3" style="margin-top:14px">'+
+    '<div><div class="n">'+(num(t.mins)||0)+'</div><div class="l">minutes</div></div>'+
+    '<div><div class="n">'+(v>=1000?(v/1000).toFixed(1)+'t':Math.round(v))+'</div><div class="l">lifted</div></div>'+
+    '<div><div class="n'+(pbs?' good':'')+'">'+pbs+'</div><div class="l">best lifts</div></div>'+
+   '</div></div>'+
+   '<div class="card" style="margin-top:10px">'+
+    '<div class="hint">'+(movedOn?'Ready when you are':'Up next')+'</div>'+
+    '<div style="font-size:var(--f4);font-weight:650;letter-spacing:-.02em;margin-top:4px">'+
+     esc(nextP.n)+'</div>'+
+    '<div class="tgt" style="margin-top:4px">'+
+     (nextP.ex.length?nextP.ex.length+' exercise'+(nextP.ex.length===1?'':'s')+' · '+
+      esc(nextP.ex.slice(0,3).join(', '))+(nextP.ex.length>3?' and more':'')
+      :'A rest day. Take it.')+'</div></div>'+
+   (movedOn?'':'<button class="btnfull" id="gymnext" style="margin-top:12px">Move on to '+esc(nextP.n)+'</button>')+
+   '<button class="addbtn" id="gymgo" style="margin-top:'+(movedOn?'12':'8')+'px">Back to today\u2019s workout</button>';
+  var nx=document.getElementById('gymnext');
+  if(nx)nx.onclick=function(){
+   if(!confirm('Move the cycle on to '+nextP.n+'? Today stays in your history.'))return;
+   g.at=nextI; put(S); drawGym(); haptic('heavy');};
+  var g2=document.getElementById('gymgo');
+  if(g2)g2.onclick=function(){t.done=0;put(S);gymSession();};
+  if(!light){drawGymCycle(); drawGymWeek(); drawGymHist();}
+  return;
+ }
+
  el.innerHTML='<div class="card">'+
   '<div class="hint">'+new Date(TD).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+
-   ' · day '+(idx+1)+' of '+gymPlan().length+'</div>'+
+   ' · day '+(idx+1)+' of '+P.length+'</div>'+
   '<div style="font-size:var(--f5);font-weight:650;letter-spacing:-.03em;margin-top:6px">'+esc(p.n)+'</div>'+
   (rest?'<div class="tgt" style="margin-top:5px">Nothing today. Take it.</div>'
        :'<div class="tgt" style="margin-top:5px">'+doneN+' of '+total+' done'+
@@ -6317,7 +6361,7 @@ function drawGym(light){
       ((t&&gymSets(t,e).length)?'var(--acc)':'var(--s3)')+'"></div>';}).join('')+'</div>')+
   '</div>'+
   (rest
-   ? '<button class="btnfull" id="gymskip" style="margin-top:12px">Move on to '+esc(gymDayName(idx+1))+'</button>'
+   ? '<button class="btnfull" id="gymskip" style="margin-top:12px">Move on to '+esc(nextP.n)+'</button>'
    : '<button class="btnfull" id="gymgo" style="margin-top:12px">'+
      (t&&(t.sets||[]).length?'Back to the workout':'Start workout')+'</button>'+
      '<button class="addbtn" id="gymswap" style="margin-top:8px">Do a different day</button>');
@@ -6411,23 +6455,37 @@ function prevSet(ex,n){
  if(!l||!l.sets[n])return null;
  return l.sets[n];
 }
-function sessMins(t){
- if(!t||!t.startAt)return 0;
- return Math.max(0,Math.round((Date.now()-t.startAt)/60000));
+/* Time spent training, not time since you first opened the screen. The old
+   version counted the hours the app sat closed in your pocket. */
+var SESST=null, RUNFROM=0;
+function sessSecs(t){
+ var banked=Math.max(0,num(t&&t.secs));
+ var run=RUNFROM?Math.floor((Date.now()-RUNFROM)/1000):0;
+ return banked+run;
 }
-var SESST=null;
+function sessMins(t){ return Math.round(sessSecs(t)/60); }
+function sessBank(){
+ var t=gymToday();
+ if(t&&RUNFROM){
+  t.secs=Math.max(0,num(t.secs))+Math.floor((Date.now()-RUNFROM)/1000);
+  RUNFROM=0; put(S);
+ }
+ if(SESST)clearInterval(SESST); SESST=null;
+}
 function sessTick(){
  var el=document.getElementById('ss-clock');
- if(!el){if(SESST)clearInterval(SESST);SESST=null;return;}
+ if(!el){sessBank();return;}
  var t=gymToday(); if(!t)return;
- var s=t.startAt?Math.floor((Date.now()-t.startAt)/1000):0;
- el.textContent=Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);
+ var s=sessSecs(t);
+ var h=Math.floor(s/3600);
+ el.textContent=(h?h+':'+('0'+Math.floor(s/60)%60).slice(-2):Math.floor(s/60))+
+  ':'+('0'+(s%60)).slice(-2);
 }
 function gymSession(){
  var t=gymToday()||gymStart();
  var P=gymPlan();
  if(!(num(t.i)>=0)||num(t.i)>=P.length){t.i=0;t.n=P[0].n;}
- if(!t.startAt){t.startAt=Date.now();put(S);}
+ RUNFROM=Date.now();
  openTool(P[t.i].n,
   '<div class="sshead"><span class="ssc" id="ss-clock">0:00</span>'+
    '<span class="ssl" id="ss-sum"></span></div>'+
@@ -6548,8 +6606,9 @@ function finishSession(){
  if(!(t.sets||[]).length){
   if(!confirm('Nothing logged. Close anyway?'))return;
   closeTool(); return;}
+ sessBank();
  t.done=1; t.mins=sessMins(t); put(S);
- if(SESST)clearInterval(SESST); SESST=null; restStop();
+ restStop();
  var v=gymVolume(t), pbs=(t.sets||[]).filter(function(x){return x.pb;});
  var best=gymHeaviest(t);
  var cmp=gymRecapCompare(t);
@@ -7429,6 +7488,7 @@ function closeTool(){
  var t=document.getElementById('tsheet');
  if(t)t.style.display='none';
  if(typeof restStop==='function')restStop();
+ if(typeof sessBank==='function')sessBank();
 }
 function openTool(title,html,copy){
  document.getElementById('t-title').textContent=title;TB.innerHTML=html;TB.id='tbody';COPYTEXT=copy||'';
