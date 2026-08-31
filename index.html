@@ -1041,6 +1041,33 @@ label{margin-top:var(--x4);margin-bottom:var(--x1)}
 
 
 
+.sshead{display:flex;align-items:baseline;gap:12px;padding-bottom:12px;
+ border-bottom:1px solid var(--hair);margin-bottom:4px;position:sticky;top:0;
+ background:var(--s1);z-index:3}
+.ssc{font-size:var(--f4);font-weight:650;color:var(--acc);font-variant-numeric:tabular-nums;min-width:56px}
+.ssl{font-size:var(--f1);color:var(--t3);flex:1;text-align:right}
+.ssl.pbflash{color:var(--pos)}
+.ssx{margin-top:20px}
+.ssxh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.ssxn{flex:1;font-size:var(--f3);font-weight:650;color:var(--t1);letter-spacing:-.01em;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ssh,.ssr{display:grid;grid-template-columns:30px 60px 1fr 1fr 44px;gap:6px;align-items:center}
+.ssh{padding:0 0 6px;font-size:var(--f0);letter-spacing:.12em;text-transform:uppercase;color:var(--t3)}
+.ssh .ssi2{text-align:center}
+.ssr{padding:4px 0}
+.ssn{font-size:var(--f1);color:var(--t3);text-align:center;font-variant-numeric:tabular-nums}
+.ssp{font-size:var(--f1);color:var(--t3);text-align:center;font-variant-numeric:tabular-nums}
+.ssi{background:var(--s2);border:1px solid var(--hair2);border-radius:var(--r1);
+ color:var(--t1);padding:11px 6px;font-size:var(--f3);text-align:center;font-family:inherit;
+ margin-top:0;width:100%;font-variant-numeric:tabular-nums}
+.ssi:focus{border-color:var(--acc);background:var(--s3);outline:0}
+.ssi.bad{border-color:var(--neg);background:var(--neg-w)}
+.sst{width:44px;height:44px;border-radius:var(--r1);border:1px solid var(--hair2);
+ background:transparent;color:var(--t3);font-size:17px;font-family:inherit;padding:0}
+.sst.on{background:var(--pos);border-color:var(--pos);color:#0A2418;font-weight:700}
+.ssr.on .ssi{opacity:.62;background:transparent;border-color:transparent}
+.ssr.on .ssn{color:var(--pos)}
+.ssb{display:flex;gap:8px;margin-top:8px}
 .rt{position:relative;background:var(--s2);border:1px solid var(--hair);border-radius:var(--r2);
  overflow:hidden;margin-top:12px;height:52px}
 .rtfill{position:absolute;inset:0 auto 0 0;background:var(--acc-w);
@@ -6362,137 +6389,192 @@ function exShort(e){
  if(a.length<=6)return a+' '+b.slice(0,6);
  return a.slice(0,6)+' '+b.slice(0,5);
 }
+/* ================= THE SESSION SCREEN =================
+   Every exercise on one page, sets already laid out, tick to complete.
+   You should be able to see the whole session without hunting. */
+
+/* how many sets and reps you are aiming for on this exercise */
+function exTarget(ex){
+ var g=gym(); g.tgt=g.tgt||{};
+ if(g.tgt[ex])return g.tgt[ex];
+ var last=gymLast(ex);
+ if(last&&last.sets.length)return {s:last.sets.length,r:last.sets[last.sets.length-1].r};
+ return {s:3,r:10};
+}
+function setTarget(ex,sets,reps){
+ var g=gym(); g.tgt=g.tgt||{}; g.tgt[ex]={s:num(sets)||3,r:num(reps)||10}; put(S);
+}
+/* what you did on this exact set number last time */
+function prevSet(ex,n){
+ var l=gymLast(ex);
+ if(!l||!l.sets[n])return null;
+ return l.sets[n];
+}
+function sessMins(t){
+ if(!t||!t.startAt)return 0;
+ return Math.max(0,Math.round((Date.now()-t.startAt)/60000));
+}
+var SESST=null;
+function sessTick(){
+ var el=document.getElementById('ss-clock');
+ if(!el){if(SESST)clearInterval(SESST);SESST=null;return;}
+ var t=gymToday(); if(!t)return;
+ var s=t.startAt?Math.floor((Date.now()-t.startAt)/1000):0;
+ el.textContent=Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);
+}
 function gymSession(){
  var t=gymToday()||gymStart();
  var P=gymPlan();
  if(!(num(t.i)>=0)||num(t.i)>=P.length){t.i=0;t.n=P[0].n;}
- var p=P[t.i];
- if(!GEX||p.ex.indexOf(GEX)<0)GEX=p.ex.filter(function(e){return !gymSets(t,e).length;})[0]||p.ex[0]||'';
- openTool(p.n,'<div class="cseg" id="gxseg"></div><div id="gxbody"></div>','');
- var b=document.getElementById('tcopy');
- b.textContent='Done';
- b.onclick=function(){
-  t.done=1;put(S);drawGym();haptic('heavy');
-  if((t.sets||[]).length&&gymSameDay(t.i,t.d))gymRecap(gymLog().indexOf(t));
-  else closeTool();};
- gxTabs(); drawGymEx();
-}
-/* the tab strip is redrawn on its own, so switching never reopens the sheet */
-function gxTabs(){
- var t=gymToday(); if(!t)return;
- var el=document.getElementById('gxseg'); if(!el)return;
- var p=gymPlan()[t.i]; if(!p)return;
- el.innerHTML=p.ex.map(function(e){
-  var n=gymSets(t,e).length;
-  return '<b class="'+(GEX===e?'on':'')+'" data-gx="'+esc(e)+'" style="font-size:10px;line-height:1.25">'+
-   esc(exShort(e))+(n?'<br><span style="opacity:.7">'+n+'</span>':'')+'</b>';}).join('');
- el.style.setProperty('--n',p.ex.length||1);
- el.style.setProperty('--i',Math.max(0,p.ex.indexOf(GEX)));
- el.querySelectorAll('[data-gx]').forEach(function(b){
-  b.onclick=function(){
-   if(GEX===b.dataset.gx)return;
-   GEX=b.dataset.gx; haptic('light');
-   gxTabs(); drawGymEx();          /* body only, sheet stays put */
-  };});
-}
-/* the parts that change after a set, without destroying the inputs */
-function gxRefresh(){
- var t=gymToday(); if(!t)return;
- gxTabs();
- var sets=gymSets(t,GEX);
- var list=document.getElementById('gx-list');
- if(list)list.innerHTML=gxSetRows(sets);
- var head=document.getElementById('gx-sub');
- if(head)head.innerHTML=gxSubLine(GEX);
- var card=document.getElementById('gx-card');
- if(card)card.innerHTML=gymExCard(GEX);
- wireSetRows();
-}
-function gxSubLine(ex){
- var last=gymLast(ex), best=gymBest(ex);
- return (last?'Last time '+last.sets.map(function(x){return x.w+'\u00d7'+x.r;}).join(', ')
-             :'First time logging this one')+
-        (best?' \u00b7 best '+best.w+'\u00d7'+best.r:'');
-}
-function gxSetRows(sets){
- if(!sets.length)return '';
- return '<div class="vhead" style="margin-top:18px">Today</div><div class="card">'+
-  sets.map(function(x,k){
-   return '<div class="row"><div class="lab">Set '+(k+1)+'</div>'+
-    '<div class="v2">'+x.w+' kg \u00d7 '+x.r+
-    (x.pb?' <span style="color:var(--pos);font-size:11px">best</span>':'')+
-    ' <button data-gxd="'+k+'" style="background:none;border:0;color:var(--t3);padding:0 6px">\u00d7</button></div></div>';
-  }).join('')+'</div>';
-}
-function wireSetRows(){
- var t=gymToday(); if(!t)return;
- document.querySelectorAll('[data-gxd]').forEach(function(b){
-  b.onclick=function(){
-   var k=+b.dataset.gxd, n=0;
-   for(var j=0;j<t.sets.length;j++){
-    if(t.sets[j].e===GEX){ if(n===k){t.sets.splice(j,1);break;} n++; }}
-   put(S); gxRefresh(); haptic('light');};});
-}
-function drawGymEx(){
- var t=gymToday(); if(!t)return;
- var el=document.getElementById('gxbody'); if(!el)return;
- var sets=gymSets(t,GEX), last=gymLast(GEX);
- var lastSet=sets[sets.length-1];
- var w=lastSet?lastSet.w:(last&&last.sets.length?last.sets[last.sets.length-1].w:20);
- var r=lastSet?lastSet.r:(last&&last.sets.length?last.sets[last.sets.length-1].r:10);
- el.innerHTML=
-  '<div style="font-size:var(--f4);font-weight:650;letter-spacing:-.02em">'+esc(GEX)+'</div>'+
-  '<div class="tgt" id="gx-sub" style="margin-top:4px">'+gxSubLine(GEX)+
-   ' <button class="mg" data-rsopen style="margin-left:0">Rest '+restFmt(restLen(GEX))+'</button></div>'+
-  '<div id="gx-flash"></div>'+
-  '<div style="display:flex;gap:8px;align-items:flex-end;margin-top:16px">'+
-   '<div style="flex:1"><label style="margin-top:0">kg</label>'+
-    '<input id="gx-w" type="number" inputmode="decimal" step="0.5" value="'+w+'" style="text-align:center;font-size:20px"></div>'+
-   '<div style="flex:1"><label style="margin-top:0">reps</label>'+
-    '<input id="gx-r" type="number" inputmode="numeric" value="'+r+'" style="text-align:center;font-size:20px"></div>'+
-   '<button class="btnfull" id="gx-log" style="flex:1.2;margin-top:0">Log set</button></div>'+
-  '<div id="gx-err" style="font-size:13px;color:var(--neg);margin-top:8px"></div>'+
+ if(!t.startAt){t.startAt=Date.now();put(S);}
+ openTool(P[t.i].n,
+  '<div class="sshead"><span class="ssc" id="ss-clock">0:00</span>'+
+   '<span class="ssl" id="ss-sum"></span></div>'+
   '<div id="rt-bar"></div>'+
-  '<div id="gx-list">'+gxSetRows(sets)+'</div>'+
-  gymTools(GEX)+
-  '<div id="gx-card">'+gymExCard(GEX)+'</div>';
- if(RT.on)restPaint();
- var pl=el.querySelector('[data-plopen]');
- if(pl)pl.onclick=function(){openPlate();};
- var rs=el.querySelector('[data-rsopen]');
- if(rs)rs.onclick=function(){openRestSet(GEX);};
- document.getElementById('gx-log').onclick=logSet;
- ['gx-w','gx-r'].forEach(function(id){
-  var n=document.getElementById(id);
-  n.oninput=function(){
-   document.getElementById('gx-err').textContent='';
-   var po=document.getElementById('pl-out');
-   if(po){var W3=num(document.getElementById('gx-w').value);
-    po.textContent=W3?plateLoad(W3).txt:'Enter a weight';}};
-  n.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();logSet();}};});
- wireSetRows();
+  '<div id="sslist"></div>'+
+  '<button class="btnfull" id="ss-fin" style="margin-top:18px">Finish</button>','');
+ document.getElementById('tcopy').textContent='Close';
+ document.getElementById('ss-fin').onclick=function(){finishSession();};
+ drawSess();
+ if(SESST)clearInterval(SESST);
+ SESST=setInterval(sessTick,1000); sessTick();
 }
-function logSet(){
+function drawSess(){
  var t=gymToday(); if(!t)return;
- var wEl=document.getElementById('gx-w'), rEl=document.getElementById('gx-r');
- var W2=num(wEl.value), R=num(rEl.value);
- var err=document.getElementById('gx-err');
- if(!W2||!R||W2<0||R<1){err.textContent='Put a weight and a rep count in.';return;}
- err.textContent='';
- var b=gymBest(GEX);
- var pb=(!b||W2>b.w||(W2===b.w&&R>b.r))?1:0;
- t.sets.push({e:GEX,w:W2,r:R,pb:pb});
- put(S); haptic(pb?'heavy':'light');
- gxRefresh(); drawGym(1); restStart(GEX);                       /* inputs are untouched, keyboard stays up */
- var fl=document.getElementById('gx-flash');
- if(fl){
-  fl.innerHTML=pb
-   ? '<div class="card" style="margin-top:10px;border-color:rgba(79,190,139,.5)">'+
-     '<div class="tgt" style="color:var(--pos)">Best you have done on '+esc(GEX)+'.</div></div>'
-   : '';
-  if(pb)setTimeout(function(){var f2=document.getElementById('gx-flash');if(f2)f2.innerHTML='';},3200);
- }
+ var el=document.getElementById('sslist'); if(!el)return;
+ var P=gymPlan()[t.i]; if(!P)return;
+ var html=P.ex.map(function(ex,xi){
+  var done=gymSets(t,ex), tg=exTarget(ex);
+  var rows=Math.max(tg.s,done.length);
+  var body='';
+  for(var n=0;n<rows;n++){
+   var s2=done[n], pv=prevSet(ex,n);
+   body+='<div class="ssr'+(s2?' on':'')+'" data-ex="'+esc(ex)+'" data-n="'+n+'">'+
+    '<span class="ssn">'+(n+1)+'</span>'+
+    '<span class="ssp">'+(pv?pv.w+'x'+pv.r:'—')+'</span>'+
+    '<input class="ssi" data-f="w" inputmode="decimal" value="'+(s2?s2.w:'')+'" placeholder="'+(pv?pv.w:'')+'">'+
+    '<input class="ssi" data-f="r" inputmode="numeric" value="'+(s2?s2.r:tg.r)+'">'+
+    '<button class="sst'+(s2?' on':'')+'" data-tick>'+(s2?'&#10003;':'')+'</button>'+
+    '</div>';
+  }
+  return '<div class="ssx">'+
+   '<div class="ssxh"><span class="ssxn">'+esc(ex)+'</span>'+
+    '<button class="mg" data-rest="'+esc(ex)+'">'+restFmt(restLen(ex))+'</button>'+
+    '<button class="mg" data-tgt="'+esc(ex)+'">'+tg.s+'x'+tg.r+'</button></div>'+
+   '<div class="ssh"><span class="ssn">Set</span><span class="ssp">Last</span>'+
+    '<span class="ssi2">kg</span><span class="ssi2">reps</span><span class="sst2"></span></div>'+
+   body+
+   '<div class="ssb"><button class="mg" data-add="'+esc(ex)+'">+ Add set</button>'+
+    '<button class="mg" data-hist="'+esc(ex)+'">History</button></div>'+
+   '</div>';
+ }).join('');
+ el.innerHTML=html;
+ wireSess();
+ sumSess();
 }
+function sumSess(){
+ var t=gymToday(); if(!t)return;
+ var el=document.getElementById('ss-sum'); if(!el)return;
+ var v=gymVolume(t), n=(t.sets||[]).length, pb=(t.sets||[]).filter(function(x){return x.pb;}).length;
+ el.textContent=n+' set'+(n===1?'':'s')+' · '+Math.round(v).toLocaleString()+' kg'+(pb?' · '+pb+' best':'');
+}
+function wireSess(){
+ var t=gymToday(); if(!t)return;
+ var el=document.getElementById('sslist'); if(!el)return;
+ el.querySelectorAll('.ssr').forEach(function(row){
+  var ex=row.dataset.ex, n=+row.dataset.n;
+  var wEl=row.querySelector('[data-f=w]'), rEl=row.querySelector('[data-f=r]');
+  var tk=row.querySelector('[data-tick]');
+  tk.onclick=function(){
+   var done=gymSets(t,ex);
+   if(done[n]){                       /* untick: take it back off */
+    var seen=0;
+    for(var j=0;j<t.sets.length;j++){
+     if(t.sets[j].e===ex){ if(seen===n){t.sets.splice(j,1);break;} seen++; }}
+    put(S); drawSess(); drawGym(1); haptic('light'); return;
+   }
+   var W2=num(wEl.value), R=num(rEl.value);
+   if(!(W2>0)||!(R>0)){ wEl.focus(); wEl.classList.add('bad');
+    setTimeout(function(){wEl.classList.remove('bad');},900); return; }
+   var b=gymBest(ex);
+   var pb=(!b||W2>b.w||(W2===b.w&&R>b.r))?1:0;
+   t.sets.push({e:ex,w:W2,r:R,pb:pb});
+   put(S); drawSess(); drawGym(1); restStart(ex); haptic(pb?'heavy':'light');
+   if(pb){var s=document.getElementById('ss-sum');
+    if(s){s.classList.add('pbflash');setTimeout(function(){s.classList.remove('pbflash');},1600);}}
+  };
+  [wEl,rEl].forEach(function(inp){
+   inp.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();tk.click();}};});
+ });
+ el.querySelectorAll('[data-add]').forEach(function(b){
+  b.onclick=function(){
+   var ex=b.dataset.add, tg=exTarget(ex);
+   setTarget(ex,Math.max(tg.s,gymSets(t,ex).length)+1,tg.r);
+   drawSess();};});
+ el.querySelectorAll('[data-rest]').forEach(function(b){
+  b.onclick=function(){openRestSet(b.dataset.rest);};});
+ el.querySelectorAll('[data-tgt]').forEach(function(b){
+  b.onclick=function(){openTarget(b.dataset.tgt);};});
+ el.querySelectorAll('[data-hist]').forEach(function(b){
+  b.onclick=function(){openExHist(b.dataset.hist);};});
+}
+function openTarget(ex){
+ var tg=exTarget(ex);
+ openTool('Target for '+ex,
+  '<div class="hint">How many sets and reps you are going for. The rows appear ready to fill in.</div>'+
+  '<div class="two" style="margin-top:12px"><div><label>Sets</label>'+
+   '<input id="tg-s" type="number" value="'+tg.s+'" style="text-align:center;font-size:20px"></div>'+
+  '<div><label>Reps</label><input id="tg-r" type="number" value="'+tg.r+'" style="text-align:center;font-size:20px"></div></div>'+
+  '<div class="oacts" style="margin-top:12px" id="tg-q">'+
+  [[5,5],[3,8],[3,10],[4,8],[3,12],[4,12]].map(function(x){
+   return '<button data-tq="'+x[0]+','+x[1]+'">'+x[0]+' x '+x[1]+'</button>';}).join('')+'</div>'+
+  '<button class="btnfull" id="tg-save" style="margin-top:14px">Save</button>','');
+ document.getElementById('tcopy').textContent='Close';
+ document.querySelectorAll('[data-tq]').forEach(function(b){
+  b.onclick=function(){var p=b.dataset.tq.split(',');
+   document.getElementById('tg-s').value=p[0];document.getElementById('tg-r').value=p[1];};});
+ document.getElementById('tg-save').onclick=function(){
+  setTarget(ex,document.getElementById('tg-s').value,document.getElementById('tg-r').value);
+  closeTool(); haptic();
+  setTimeout(function(){gymSession();},180);};
+}
+function openExHist(ex){
+ openTool(ex, gymExCard(ex)||'<div class="hint">Nothing logged for this one yet.</div>','');
+ document.getElementById('tcopy').textContent='Close';
+}
+function finishSession(){
+ var t=gymToday(); if(!t)return;
+ if(!(t.sets||[]).length){
+  if(!confirm('Nothing logged. Close anyway?'))return;
+  closeTool(); return;}
+ t.done=1; t.mins=sessMins(t); put(S);
+ if(SESST)clearInterval(SESST); SESST=null; restStop();
+ var v=gymVolume(t), pbs=(t.sets||[]).filter(function(x){return x.pb;});
+ var best=gymHeaviest(t);
+ var cmp=gymRecapCompare(t);
+ var h='<div class="card"><div class="vhead" style="margin:0 0 10px">'+
+   new Date(t.d).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+'</div>'+
+  '<div class="stat3">'+
+   '<div><div class="n">'+(t.mins||0)+'</div><div class="l">minutes</div></div>'+
+   '<div><div class="n">'+(v>=1000?(v/1000).toFixed(1)+'t':Math.round(v))+'</div><div class="l">lifted</div></div>'+
+   '<div><div class="n'+(pbs.length?' good':'')+'">'+pbs.length+'</div><div class="l">best lifts</div></div>'+
+  '</div>'+
+  (best?'<div class="row" style="margin-top:12px"><div class="lab">Heaviest set</div>'+
+   '<div class="v2">'+esc(best.e)+' '+best.w+' kg x '+best.r+'</div></div>':'')+
+  '<div class="row" style="border-bottom:0"><div class="lab">Sets</div><div class="v2">'+(t.sets||[]).length+'</div></div>'+
+  '</div>';
+ if(pbs.length)h+='<div class="card" style="margin-top:10px;border-color:rgba(79,190,139,.5)">'+
+  '<div class="lab" style="color:var(--pos);font-weight:600">You beat your best on</div>'+
+  pbs.map(function(x){return '<div class="tgt" style="margin-top:4px">'+esc(x.e)+' — '+x.w+' kg x '+x.r+'</div>';}).join('')+
+  '</div>';
+ h+=cmp;
+ h+='<button class="btnfull" id="fs-done" style="margin-top:16px">Done</button>';
+ openTool('Session done',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.getElementById('fs-done').onclick=function(){closeTool();drawGym();};
+ haptic('heavy');
+}
+
 function gymRecap(i){
  var s2=gymLog()[i]; if(!s2)return;
  var byEx={};
@@ -7181,7 +7263,7 @@ function openRestSet(ex){
  document.getElementById('rs-save').onclick=function(){
   setRestLen(ex,num(document.getElementById('rs-x').value));
   closeTool(); haptic();
-  if(document.getElementById('gxbody'))drawGymEx();};
+  if(document.getElementById('sslist'))drawSess();};
 }
 
 /* ================= CALENDAR: ONE EVENT, PROPERLY =================
