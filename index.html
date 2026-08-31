@@ -6318,7 +6318,8 @@ function drawGym(light){
   '</div>'+
   (rest
    ? '<button class="btnfull" id="gymskip" style="margin-top:12px">Move on to '+esc(gymDayName(idx+1))+'</button>'
-   : '<button class="btnfull" id="gymgo" style="margin-top:12px">'+(t?'Carry on':'Start the session')+'</button>'+
+   : '<button class="btnfull" id="gymgo" style="margin-top:12px">'+
+     (t&&(t.sets||[]).length?'Back to the workout':'Start workout')+'</button>'+
      '<button class="addbtn" id="gymswap" style="margin-top:8px">Do a different day</button>');
  if(!rest)el.innerHTML+=gymLastCard(idx);
  var w=gymWarn();
@@ -6587,7 +6588,7 @@ function gymRecap(i){
     '<div class="v2" style="font-size:12px">'+Math.round(byEx[e].reduce(function(a,x){return a+x.w*x.r;},0)).toLocaleString()+'</div></div>';
   }).join('')+'</div>';
  h+=gymRecapCompare(s2);
- if(s2.d===TD)h+='<button class="addbtn" id="gr-go" style="margin-top:12px">Carry on with this session</button>';
+ if(s2.d===TD)h+='<button class="addbtn" id="gr-go" style="margin-top:12px">Back to the workout</button>';
  openTool(s2.n,h,'');
  document.getElementById('tcopy').textContent='Close';
  var g=document.getElementById('gr-go');
