@@ -1378,6 +1378,8 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
       <button class="tool" id="t-impl"><span>◈</span>Import prospects</button>
       <button class="tool" id="t-cal"><span>↗</span>Follow-ups to calendar</button>
       <button class="tool" id="t-backup"><span>⇪</span>Backup data</button>
+      <button class="tool" id="t-book"><span>◷</span>Add to calendar</button>
+      <button class="tool" id="t-xls"><span>▤</span>Export to a spreadsheet</button>
       <button class="tool" id="t-merge"><span>⇄</span>Merge from a file</button>
       <button class="tool" id="t-restore"><span>⇩</span>Restore data</button>
       <button class="tool" id="t-undo"><span>↺</span>Undo a restore</button>
@@ -7181,6 +7183,165 @@ function openRestSet(ex){
   closeTool(); haptic();
   if(document.getElementById('gxbody'))drawGymEx();};
 }
+
+/* ================= CALENDAR: ONE EVENT, PROPERLY =================
+   The old export dumped every follow-up into a file. This puts one viewing or
+   meeting in your calendar with the address and the phone number attached, so
+   you can tap to call or navigate from the calendar entry itself. */
+function bookEvent(o){
+ /* o: {n, d, t, mins, where, ph, notes} */
+ var uid=(o.d+'-'+Math.random().toString(36).slice(2,9)+'@daily');
+ var mins=num(o.mins)||60;
+ var st=icsDT(o.d,o.t||'09:00');
+ var sp=(o.t||'09:00').split(':');
+ var end=new Date(o.d+'T'+('0'+sp[0]).slice(-2)+':'+('0'+(sp[1]||'00')).slice(-2)+':00');
+ end.setMinutes(end.getMinutes()+mins);
+ var et=icsDay(iso(end))+'T'+('0'+end.getHours()).slice(-2)+('0'+end.getMinutes()).slice(-2)+'00';
+ var desc=[o.notes||'', o.ph?('Call: '+o.ph):''].filter(Boolean).join('\n');
+ var body=['BEGIN:VEVENT','UID:'+uid,'DTSTAMP:'+icsStamp(),
+  'DTSTART;TZID=Asia/Dubai:'+st,'DTEND;TZID=Asia/Dubai:'+et,
+  'SUMMARY:'+icsEsc(o.n)];
+ if(o.where)body.push('LOCATION:'+icsEsc(o.where));
+ if(desc)body.push('DESCRIPTION:'+icsEsc(desc));
+ body.push('BEGIN:VALARM','TRIGGER:-PT60M','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(o.n),'END:VALARM');
+ body.push('END:VEVENT');
+ icsFile([body.join('\r\n')],'event');
+}
+function openBook(pre){
+ pre=pre||{};
+ var h='<div class="hint">This adds one event to your calendar with the address and the number attached, '+
+  'so you can call or navigate straight from the reminder.</div>'+
+  '<div class="pfields">'+
+  '<label>What is it</label><input id="bk-n" value="'+esc(pre.n||'')+'" placeholder="Viewing with Fazal">'+
+  '<div class="two"><div><label>Date</label><input id="bk-d" type="date" value="'+esc(pre.d||TD)+'"></div>'+
+  '<div><label>Time</label><input id="bk-t" type="time" value="'+esc(pre.t||'10:00')+'"></div></div>'+
+  '<div class="two"><div><label>How long</label><select id="bk-m"></select></div>'+
+  '<div><label>Phone</label><input id="bk-ph" value="'+esc(pre.ph||'')+'"></div></div>'+
+  '<label>Where</label><input id="bk-w" value="'+esc(pre.where||'')+'" placeholder="Elora, The Valley">'+
+  '<label>Notes</label><textarea id="bk-note" rows="2">'+esc(pre.notes||'')+'</textarea>'+
+  '</div>'+
+  '<button class="btnfull" id="bk-go" style="margin-top:14px">Add to my calendar</button>'+
+  '<div class="hint" style="margin-top:9px">Your phone will ask which calendar to put it in. '+
+  'It also sets a reminder one hour before.</div>';
+ openTool('Add to calendar',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ fillSel(document.getElementById('bk-m'),['30 minutes','45 minutes','1 hour','90 minutes','2 hours']);
+ document.getElementById('bk-m').value=pre.mins===30?'30 minutes':'1 hour';
+ document.getElementById('bk-go').onclick=function(){
+  var n=document.getElementById('bk-n').value.trim();
+  if(!n){alert('Give it a name.');return;}
+  var mm={'30 minutes':30,'45 minutes':45,'1 hour':60,'90 minutes':90,'2 hours':120};
+  bookEvent({n:n,d:document.getElementById('bk-d').value||TD,
+   t:document.getElementById('bk-t').value||'10:00',
+   mins:mm[document.getElementById('bk-m').value]||60,
+   where:document.getElementById('bk-w').value.trim(),
+   ph:document.getElementById('bk-ph').value.trim(),
+   notes:document.getElementById('bk-note').value.trim()});
+  /* keep it in the app's own diary too, so Today still knows about it */
+  S.diary=Array.isArray(S.diary)?S.diary:[];
+  S.diary.push({d:document.getElementById('bk-d').value||TD,
+   t:document.getElementById('bk-t').value||'10:00',n:n,
+   w:document.getElementById('bk-w').value.trim(),ty:'Viewing',
+   ph:document.getElementById('bk-ph').value.trim()});
+  put(S); closeTool(); redrawAll(); haptic('heavy');
+ };
+}
+
+/* ================= EXCEL EXPORT =================
+   A real spreadsheet, not a screenshot. Excel opens this straight from Files. */
+function xlEsc(v){
+ var t=(v===undefined||v===null)?'':String(v);
+ return '"'+t.replace(/"/g,'""')+'"';
+}
+function sheetOf(rows){
+ return rows.map(function(r){return r.map(xlEsc).join(',');}).join('\r\n');
+}
+function exportBook(){
+ var PROB=[0.10,0.25,0.50,0.80,1.00];
+ var sheets=[];
+ sheets.push(['CLIENTS']);
+ sheets.push(['Name','Mobile','Unit or project','Type','Value AED','Rate %','Your fee AED',
+  'Stage','Weighted AED','Next action','Due','Blocker','Qualified','Areas','Max budget','Beds','Source','Notes']);
+ S.deals.forEach(function(d){
+  var fee=dealFee(d);
+  sheets.push([d.w,d.ph,d.u,d.ty,num(d.v)||'',num(d.r)||'',Math.round(fee)||'',
+   STAGES[num(d.s)]||'', d.s<4?Math.round(fee*(PROB[Math.min(num(d.s),4)]||0)):'',
+   d.na,d.nd,(blkDef(d.blk)||[])[1]||'',qScore(d)+' of 5',
+   d.lcom,num(d.lmax)||'',num(d.lbd)||'',d.src,String(d.n||'').replace(/\n/g,' ')]);});
+ sheets.push([]);
+ sheets.push(['STOCK']);
+ sheets.push(['Property','Type','Beds','BUA','Plot','Price AED','Rent AED','Per sqft',
+  'Original AED','Uplift %','Status','Row','Form A to','Permit to','Permit no','Listed on','Notes']);
+ (S.units||[]).forEach(function(u){
+  var up=num(u.op)?Math.round((num(u.pr)-num(u.op))/num(u.op)*100):'';
+  sheets.push([u.p,u.t,num(u.bd)||'',num(u.bua)||'',num(u.plot)||'',num(u.pr)||'',num(u.rent)||'',
+   psf(u)||'',num(u.op)||'',up,u.st||'Live',u.rw,u.faTo,u.tkTo,u.tkNo,u.listed,
+   String(u.n||'').replace(/\n/g,' ')]);});
+ sheets.push([]);
+ sheets.push(['PROSPECTS']);
+ sheets.push(['Unit','Owner','Mobile','Type','Due','Attempts','Est. value AED','Hook']);
+ (S.later||[]).forEach(function(x){
+  sheets.push([x.w,x.n,x.ph,x.ty,x.wd,(Array.isArray(x.att)?x.att.length:0),num(x.v)||'',
+   String(hookShow(x)||'').replace(/\n/g,' ')]);});
+ if((S.rent||[]).length){
+  sheets.push([]); sheets.push(['RENTALS']);
+  sheets.push(['Property','Landlord','Tenant','Mobile','Annual rent AED','Cheques','Starts','Ends',
+   'Days left','Ejari','Status','Your 5% AED']);
+  S.rent.forEach(function(r){
+   sheets.push([r.p,r.ll,r.tn,r.tph,num(r.amt)||'',r.ch,r.st,r.en,
+    rentDays(r)===null?'':rentDays(r),r.ej,r.status,Math.round(rentFee(r))||'']);});}
+ if((S.comm||[]).length){
+  sheets.push([]); sheets.push(['COMMISSION']);
+  sheets.push(['Client','Gross AED','Agency %','Your %','Referral AED','Your share AED',
+   'Invoice','Due','Received AED','Outstanding AED','Days late']);
+  S.comm.forEach(function(c){
+   sheets.push([c.w,num(c.gross)||'',num(c.agency)||0,num(c.mine)||100,num(c.ref)||'',
+    Math.round(commNet(c)),c.inv,c.due,num(c.got)||'',Math.round(commOut(c)),
+    commLate(c)>0?commLate(c):'']);});}
+ if((S.hold||[]).length){
+  sheets.push([]); sheets.push(['WHAT CLIENTS OWN']);
+  sheets.push(['Owner','Property','Developer','Paid AED','Value AED','Owed AED','Mortgage AED',
+   'Equity AED','Rent AED','Yield %','Handover','Next payment','Amount AED']);
+  S.hold.forEach(function(x){
+   sheets.push([x.w,x.p,x.dev,num(x.buy)||'',num(x.val)||'',num(x.owed)||'',num(x.mort)||'',
+    Math.round(holdEquity(x)),num(x.rent)||'',holdYield(x)?holdYield(x).toFixed(1):'',
+    x.hand,x.npd,num(x.npa)||'']);});}
+ sheets.push([]);
+ sheets.push(['Exported '+new Date().toLocaleString('en-GB')+' from Daily. Figures are as recorded, not audited.']);
+ var csv='﻿'+sheetOf(sheets);
+ var fn='Daily book '+TD+'.csv';
+ var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+ if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],fn,{type:'text/csv'})]})){
+  navigator.share({files:[new File([blob],fn,{type:'text/csv'})],title:'Daily book'}).catch(function(){});
+  return {n:S.deals.length};}
+ var url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=fn;document.body.appendChild(a);a.click();
+ setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);
+ return {n:S.deals.length};
+}
+function openExport(){
+ var rows=S.deals.length+(S.units||[]).length+(S.later||[]).length+
+  (S.rent||[]).length+(S.comm||[]).length+(S.hold||[]).length;
+ openTool('Export to a spreadsheet',
+  '<div class="hint">Everything in one file that Excel and Numbers open straight from your phone. '+
+  'Good for your own records, your accountant, or sending a pipeline report without screenshots.</div>'+
+  '<div class="card" style="margin-top:12px">'+
+   '<div class="row"><div class="lab">Clients</div><div class="v2">'+S.deals.length+'</div></div>'+
+   '<div class="row"><div class="lab">Stock</div><div class="v2">'+(S.units||[]).length+'</div></div>'+
+   '<div class="row"><div class="lab">Prospects</div><div class="v2">'+(S.later||[]).length+'</div></div>'+
+   ((S.rent||[]).length?'<div class="row"><div class="lab">Rentals</div><div class="v2">'+S.rent.length+'</div></div>':'')+
+   ((S.comm||[]).length?'<div class="row"><div class="lab">Commission</div><div class="v2">'+S.comm.length+'</div></div>':'')+
+   ((S.hold||[]).length?'<div class="row"><div class="lab">Client holdings</div><div class="v2">'+S.hold.length+'</div></div>':'')+
+   '<div class="row tot"><div class="lab">Rows in total</div><div class="v2">'+rows+'</div></div></div>'+
+  '<button class="btnfull" id="ex-go" style="margin-top:14px">Make the spreadsheet</button>'+
+  '<div class="hint" style="margin-top:9px;color:var(--neg)">This file has real names, numbers and '+
+  'phone numbers in it, with no password on it. Think before you send it to anyone.</div>','');
+ document.getElementById('tcopy').textContent='Close';
+ document.getElementById('ex-go').onclick=function(){
+  exportBook(); haptic('heavy');
+  var b=document.getElementById('ex-go'); b.textContent='Done';
+  setTimeout(function(){closeTool();},700);};
+}
 function closeTool(){
  var t=document.getElementById('tsheet');
  if(t)t.style.display='none';
@@ -7862,6 +8023,8 @@ function openSnapshots(){
   location.reload();};});
 }
 
+document.getElementById('t-book').onclick=function(){openBook({});};
+document.getElementById('t-xls').onclick=function(){openExport();};
 document.getElementById('t-merge').onclick=function(){
  openTool('Merge from a file',
   '<div class="hint">Load the other device\u2019s backup. Nothing is replaced. The app compares record by record '+
@@ -8043,7 +8206,8 @@ function drawUBody(i){
    '<button data-ux="plan">'+(u.img?'Masterplan':'+ Masterplan')+'</button>'+
    '<button data-ux="fp">'+(u.fp?'Floorplan':'+ Floorplan')+'</button>'+
    '<button data-ux="gal">Photos ('+picCount(u)+')</button>'+
-   '<button data-ux="pos">Position</button></div>';
+   '<button data-ux="pos">Position</button>'+
+   '<button data-ux="book">Book a viewing</button></div>';
  } else if(UVIEW==='plans'){
   h='<div class="card">'+
    crow('Payment plan', esc(pvNum(u.pl||'')))+
@@ -8088,6 +8252,8 @@ function drawUBody(i){
    else if(k==='edit')editUnit(i); else if(k==='plan')openImg(i,'img');
    else if(k==='fp')openImg(i,'fp'); else if(k==='gal')openGallery(i);
    else if(k==='pos')openPos(i); else if(k==='vw')openVw(i);
+   else if(k==='book')openBook({n:'Viewing '+(u.p||''),where:u.p,
+    notes:(u.t||'')+(num(u.pr)?' · '+money(u.pr):'')});
    else if(k==='lu')landlordUpdate(i); else if(k==='val')openVal(i);
    else if(k==='lic')openLic(i); else if(k==='share')shareUnit(i);
   };});
@@ -8142,6 +8308,8 @@ function drawCBody(i){
    else if(k==='blk')openBlk(i);
    else if(k==='msg')pickTemplate(i);
    else if(k==='docs')openDocs('deal',i);
+   else if(k==='book')openBook({n:'Meeting with '+(d.w||''),ph:d.ph,where:d.u,
+    notes:(d.na||'')+(num(d.v)?'\n'+money(d.v)+' at '+(d.r||0)+'%':'')});
    else if(k==='adv')advance(i);
    else if(k==='later')snoozeDeal(i);
    else if(k==='port'){ if(holdOf(d.w).length){CVIEW='port';clientScreen(i);} else openHold(null,d.w); }
@@ -8216,6 +8384,7 @@ function cvDeal(d,i){
  h+='<div class="oacts" style="margin-top:12px">'+
   (d.s<4?'<button class="val" data-cx="adv">'+(d.s===3?'Mark as won':'Move to '+STAGES[d.s+1])+'</button>':'')+
   '<button data-cx="later">Later</button>'+
+  '<button data-cx="book">Add to calendar</button>'+
   '<button data-cx="docs">Documents</button></div>';
  return h;
 }
