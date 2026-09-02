@@ -1394,7 +1394,7 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
     <button class="addbtn" id="addcomm" style="margin-top:9px">+ Track a commission</button></div>
 </div>
 
-<div id="p-gym" class="hide">
+<div id="p-gym" class="hide" data-retired="1">
   <div class="sec" id="gymtoday"></div>
   <div class="sec"><h2>Your cycle</h2><div class="card" id="gymcycle"></div></div>
   <div class="sec"><h2>Last 7 days</h2><div id="gymweek"></div></div>
@@ -1583,9 +1583,9 @@ const SRCS=['Referral','Repeat client','Portal lead','Walk in','Prospecting call
 /* Five tabs. Home far left, the create action dead centre, everything else behind Me.
    Rent, Diary and Gym are still full pages, they just live inside Me now. */
 const PAGES=[['today','Today','◧'],['deals','Deals','◆'],['cap','Capture','+'],['stock','Stock','▣'],['more','Me','≡']];
-const ALLP=['today','deals','stock','rent','diary','gym','more'];
-const PTITLE={today:'Today',deals:'Deals',stock:'Stock',rent:'Rent roll',diary:'Diary',gym:'Gym',more:'Me'};
-const SUBP={rent:1,diary:1,gym:1};
+const ALLP=['today','deals','stock','rent','diary','more'];
+const PTITLE={today:'Today',deals:'Deals',stock:'Stock',rent:'Rent roll',diary:'Diary',more:'Me'};
+const SUBP={rent:1,diary:1};
 const STOCKSEG=[['units','Inventory'],['proj','Projects'],['stats','Analytics'],['comps','Comps']];
 const CADENCE={0:2,1:3,2:2,3:2};
 const TEMPLATES=[
@@ -2046,8 +2046,7 @@ function drawHub(){
  var due=S.later.filter(function(x){return !x.dnc&&x.wd&&x.wd<=TD;}).length;
  var rows=[
   ['rent','Rent roll','Tenancies, renewals and what you are owed'],
-  ['diary','Diary','Your calendar and everything booked'],
-  ['gym','Gym','Today\'s session and the last five']];
+  ['diary','Diary','Your calendar and everything booked']];
  el.innerHTML=rows.map(function(r){
   return '<div class="hubrow" data-hp="'+r[0]+'"><div style="min-width:0">'+
    '<div class="lab">'+esc(r[1])+'</div><div class="tgt">'+esc(r[2])+'</div></div>'+
@@ -6297,7 +6296,7 @@ function drawComps(){
 }
 fetch('comps.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&j.communities){COMPS=j;drawComps();}}).catch(function(){});
 
-var APPVER='v43 \u00b7 2 Sep 2026 \u00b7 five tabs, capture in the middle, swipe back';
+var APPVER='v44 \u00b7 2 Sep 2026 \u00b7 gym moved out, five tabs, swipe back';
 function drawObj(){
  var L=S.deals.filter(function(d){return d.s===LOST&&d.lost;});
  var el=document.getElementById('objbox');
