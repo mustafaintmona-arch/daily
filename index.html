@@ -1204,6 +1204,23 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
   transition-duration:1ms!important}
  button:active,.ub:active,.cb:active,.pc2:active{transform:none}
 }
+.chips.sv b{border-color:rgba(185,151,91,.32)}
+.chips.sv b.on{background:var(--gold);color:#0B1F33;border-color:var(--gold)}
+.svrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;padding:9px;border:1px solid var(--line);border-radius:12px;background:var(--s1)}
+.svrow select,.svrow input{margin:0;flex:1 1 128px;min-width:0}
+.svx{flex:0 0 auto;background:none;border:1px solid rgba(212,106,94,.45);color:#D46A5E;border-radius:9px;padding:7px 10px;font-size:12px}
+.nav b.cap{color:var(--gold)}
+.nav b.cap i{width:36px;height:36px;line-height:34px;margin:-7px auto 3px;border-radius:50%;
+ background:var(--gold);color:#0B1F33;font-size:23px;font-weight:700;opacity:1;
+ box-shadow:0 3px 10px rgba(185,151,91,.35)}
+.nav b.cap:active i{transform:scale(.92)}
+#pback{background:var(--card2);border:1px solid var(--line);color:var(--dim);border-radius:12px;
+ padding:5px 13px;font-size:22px;line-height:1;font-family:inherit}
+.hubrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+ padding:14px 15px;border-bottom:1px solid var(--line)}
+.hubrow:last-child{border-bottom:0}
+.hubrow:active{background:var(--s2)}
+.hubrow .chev{color:var(--dim);font-size:20px;line-height:1}
 </style>
 </head>
 <body>
@@ -1211,7 +1228,7 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
 <div class="hdr"><h1>Daily</h1><div class="dt" id="dt"></div></div>
 <div id="offpill" class="pill2 hide">Offline · your data is safe</div>
 <div id="upd" class="pill2 upd hide">New version ready · <b>Reload</b></div>
-<div class="pgtitle"><span id="pgtitle">Today</span><button id="find" title="Search everything" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button><button class="sunbtn" id="sunb" title="Switch between night and daylight">Night</button><button id="eye" title="Hide names and numbers"><svg id="eyesvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg></button></div>
+<div class="pgtitle"><button id="pback" class="hide" title="Back to Me">‹</button><span id="pgtitle">Today</span><button id="find" title="Search everything" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button><button class="sunbtn" id="sunb" title="Switch between night and daylight">Night</button><button id="eye" title="Hide names and numbers"><svg id="eyesvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg></button></div>
 
 <div id="p-today">
   <button class="addbtn" id="capbtn" style="margin-top:10px">Capture something</button>
@@ -1302,6 +1319,7 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
     <h2>Pipeline <b id="dcount"></b></h2>
     <input id="dq" placeholder="Search client, unit or note">
     <div class="chips" id="dchips" style="margin-top:9px"></div>
+    <div class="chips sv" id="svd" style="margin-top:7px"></div>
     <select id="dfilt" class="hide"></select>
     <div class="card" style="margin-top:9px" id="dlist"></div>
     <button class="addbtn" id="adddeal">+ Add a client</button></div>
@@ -1327,6 +1345,7 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
     <input id="uq" placeholder="Search project, community or note">
     <select id="ufilt" style="margin-top:8px"></select>
     <div class="chips" id="usort" style="margin-top:9px"></div>
+    <div class="chips sv" id="svu" style="margin-top:7px"></div>
     <div class="slists" id="slists" style="margin-top:9px"></div>
     <div class="selbar hide" id="selbar"></div>
     <div class="card" style="margin-top:9px" id="ulist"></div>
@@ -1384,6 +1403,7 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
 </div>
 
 <div id="p-more" class="hide">
+  <div class="sec"><div class="card" id="hub" style="padding:0"></div></div>
   <div class="sec"><h2>Due today</h2><div class="card" id="duelist"></div></div>
   <div class="sec"><h2>This week</h2><div class="card" id="week"></div></div>
   <div class="sec"><h2>Calculators</h2>
@@ -1421,6 +1441,10 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
     <div class="card" id="kdfull"></div>
     <button class="addbtn" id="addkd">+ Add a key date</button></div>
   <div class="sec"><h2>Where business comes from</h2><div class="card" id="reflist"></div></div>
+  <div class="sec"><h2>Your own fields</h2>
+    <div class="card" id="cflist"></div>
+    <button class="addbtn" id="addcf">+ Add a field of your own</button>
+    <div class="hint">Anything the app does not already ask for. It shows on the record and in the edit sheet, and you can build a saved view on it.</div></div>
   <div class="sec"><h2>Rules</h2><div class="card"><div class="hint">
     One wallet: a husband and wife are one pocket. Pick one deal, drop the other.<br><br>
     Never ask a client for money before the unit is locked.<br><br>
@@ -1470,6 +1494,7 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
   <label>Household</label><input id="f-hh" placeholder="Leave blank, or a shared name like Kale family">
   <div class="hint" style="margin-top:-2px">Give two people the same household name and the app stops counting them twice.</div>
   <label>Notes</label><textarea id="f-n" rows="2"></textarea>
+  <div id="s-cf"></div>
   <button class="addbtn" id="sdocs" style="margin-top:4px">Documents</button>
   <div class="sheetbtns"><button id="sc">Cancel</button><button id="sv">Save</button></div>
   <button class="addbtn" id="sdel" style="border-color:rgba(212,106,94,.5);color:#D46A5E">Delete this deal</button>
@@ -1522,6 +1547,7 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
   <div class="two"><div><label>Handover</label><input id="us-h" placeholder="Ready, or Dec 2026"></div>
   <div><label>Payment plan</label><input id="us-pl" placeholder="100%, or 80/20"></div></div>
   <label>Notes</label><textarea id="us-n" rows="2" placeholder="Backing onto the park, tenanted until March, whatever matters"></textarea>
+  <div id="u-cf"></div>
   <div class="sheetbtns"><button id="us-c">Cancel</button><button id="us-s">Save</button></div>
   <button class="addbtn" id="us-del" style="border-color:rgba(212,106,94,.5);color:#D46A5E">Delete this unit</button>
 </div></div>
@@ -1554,7 +1580,12 @@ const PROB=[0.10,0.25,0.50,0.80,1.00];
 const DTYPES=['Ready','Off-plan','Resale','Commercial','Rent','Land'];
 const CHEQ=['1 cheque','2 cheques','3 cheques','4 cheques','6 cheques','12 cheques'];
 const SRCS=['Referral','Repeat client','Portal lead','Walk in','Prospecting call','Social','Other'];
-const PAGES=[['today','Today','◧'],['deals','Deals','◆'],['stock','Stock','▣'],['rent','Rent','▫'],['diary','Diary','▤'],['gym','Gym','◑'],['more','More','≡']];
+/* Five tabs. Home far left, the create action dead centre, everything else behind Me.
+   Rent, Diary and Gym are still full pages, they just live inside Me now. */
+const PAGES=[['today','Today','◧'],['deals','Deals','◆'],['cap','Capture','+'],['stock','Stock','▣'],['more','Me','≡']];
+const ALLP=['today','deals','stock','rent','diary','gym','more'];
+const PTITLE={today:'Today',deals:'Deals',stock:'Stock',rent:'Rent roll',diary:'Diary',gym:'Gym',more:'Me'};
+const SUBP={rent:1,diary:1,gym:1};
 const STOCKSEG=[['units','Inventory'],['proj','Projects'],['stats','Analytics'],['comps','Comps']];
 const CADENCE={0:2,1:3,2:2,3:2};
 const TEMPLATES=[
@@ -1594,7 +1625,7 @@ function flushPut(){
 const put=d=>{_wp=d; if(_wt)return; _wt=setTimeout(function(){_wt=null;flushPut();},220);};
 window.addEventListener('pagehide',flushPut);
 document.addEventListener('visibilitychange',function(){if(document.hidden)flushPut();});
-let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.cn)S.cn=[]; if(!S.nt)S.nt=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
+let S=db(); if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[]; if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.cn)S.cn=[]; if(!S.nt)S.nt=[]; if(!S.diary)S.diary=[]; if(!S.later)S.later=[]; if(!S.ledger)S.ledger=[]; if(!S.trash)S.trash=[]; if(!S.dnc)S.dnc=[]; if(!S.cf)S.cf=[]; if(!S.sv)S.sv=[]; if(S.priv===undefined)S.priv=0;
 /* repair anything an older version wrote in the wrong shape */
 function repairData(){
  var fixed=0;
@@ -1659,12 +1690,324 @@ const OPLANS=[
  ['50 / 50',20,6,3,50],
  ['40 / 60 post handover',10,6,3,60],
  ['1% monthly',20,40,1,40]];
+/* ================= YOUR OWN FIELDS ================= */
+const CFTYPES=[['text','Text'],['num','Number'],['money','Money'],['date','Date'],['pick','Choose from a list'],['yn','Yes or no']];
+const CFON=[['deal','Clients'],['unit','Units'],['proj','Projects']];
+function cfAll(){ if(!Array.isArray(S.cf))S.cf=[]; return S.cf; }
+function cfs(on){ return cfAll().filter(function(f){return f&&f.on===on&&f.lab;}); }
+function cfNewId(){ return 'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+function cfBag(rec){ if(!rec.xf||typeof rec.xf!=='object')rec.xf={}; return rec.xf; }
+function cfRaw(rec,f){ return (rec&&rec.xf)?rec.xf[f.id]:undefined; }
+function cfShow(rec,f){
+ var v=cfRaw(rec,f);
+ if(v===undefined||v===null||v==='')return '';
+ if(f.ty==='money')return pmoney(num(v));
+ if(f.ty==='yn')return String(v)==='1'?'Yes':'No';
+ if(f.ty==='num')return pvNum(String(num(v)));
+ if(f.ty==='date')return pvNum(String(v));
+ if(f.ty==='pick')return String(v);
+ return pvAll(String(v));
+}
+function cfInputs(on,rec){
+ var L=cfs(on); if(!L.length)return '';
+ return L.map(function(f){
+  var v=cfRaw(rec,f); v=(v===undefined||v===null)?'':String(v);
+  var id='xf-'+f.id;
+  if(f.ty==='pick')
+   return '<label>'+esc(f.lab)+'</label><select id="'+id+'"><option value=""></option>'+
+    (f.opts||[]).map(function(o){return '<option'+(v===o?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';
+  if(f.ty==='yn')
+   return '<label>'+esc(f.lab)+'</label><select id="'+id+'"><option value=""></option>'+
+    '<option value="1"'+(v==='1'?' selected':'')+'>Yes</option>'+
+    '<option value="0"'+(v==='0'?' selected':'')+'>No</option></select>';
+  var t=(f.ty==='num'||f.ty==='money')?'number':(f.ty==='date'?'date':'text');
+  return '<label>'+esc(f.lab)+'</label><input id="'+id+'" type="'+t+'"'+
+   ((f.ty==='num'||f.ty==='money')?' inputmode="numeric"':'')+' value="'+esc(v)+'">';
+ }).join('');
+}
+function cfRead(on,rec){
+ var bag=cfBag(rec);
+ cfs(on).forEach(function(f){
+  var el=document.getElementById('xf-'+f.id); if(!el)return;
+  var v=String(el.value==null?'':el.value).trim();
+  if(v==='')delete bag[f.id];
+  else bag[f.id]=(f.ty==='num'||f.ty==='money')?num(v):v;
+ });
+ rec.xf=bag; return bag;
+}
+function cfLines(on,rec){
+ return cfs(on).filter(function(f){return cfShow(rec,f)!=='';}).map(function(f){
+  return crow(f.lab, esc(cfShow(rec,f)));
+ }).join('');
+}
+function cfHay(on,rec){
+ return cfs(on).map(function(f){var v=cfRaw(rec,f);return v==null?'':String(v);}).join(' ');
+}
+function drawCF(){
+ var el=document.getElementById('cflist'); if(!el)return;
+ var L=cfAll();
+ el.innerHTML=L.length?L.map(function(f,j){
+  var on=(CFON.filter(function(o){return o[0]===f.on;})[0]||['','?'])[1];
+  var ty=(CFTYPES.filter(function(o){return o[0]===f.ty;})[0]||['','?'])[1];
+  return '<div class="row" data-cfe="'+j+'"><div style="min-width:0"><div class="lab">'+esc(f.lab)+'</div>'+
+   '<div class="tgt">On '+esc(on.toLowerCase())+' · '+esc(ty.toLowerCase())+
+   (f.ty==='pick'&&(f.opts||[]).length?' · '+(f.opts||[]).length+' choices':'')+'</div></div>'+
+   '<div style="color:var(--dim);white-space:nowrap">Edit</div></div>';}).join('')
+  :'<div class="hint">Nothing yet. Add a field and it shows up on every client, unit or project, both in the edit sheet and on the record itself. You can filter and search on it too.</div>';
+ el.querySelectorAll('[data-cfe]').forEach(function(b){b.onclick=function(){openCFEdit(+b.dataset.cfe);};});
+ var ab=document.getElementById('addcf'); if(ab)ab.onclick=function(){openCFEdit(null);};
+}
+function openCFEdit(j){
+ var isNew=(j===null);
+ var f=isNew?{id:cfNewId(),on:'deal',lab:'',ty:'text',opts:[]}:cfAll()[j];
+ if(!f)return;
+ var h='<label>What do you want to call it</label>'+
+  '<input id="cf-lab" placeholder="Passport expiry, Source of funds, Nationality" value="'+esc(f.lab||'')+'">'+
+  '<label>Put it on</label><select id="cf-on">'+CFON.map(function(o){
+    return '<option value="'+o[0]+'"'+(f.on===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>'+
+  '<label>What kind of thing is it</label><select id="cf-ty">'+CFTYPES.map(function(o){
+    return '<option value="'+o[0]+'"'+(f.ty===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>'+
+  '<div id="cf-optwrap"><label>The choices, one per line</label>'+
+  '<textarea id="cf-opts" rows="4" placeholder="Cash&#10;Mortgage&#10;Company">'+esc((f.opts||[]).join('\n'))+'</textarea></div>'+
+  '<div class="sheetbtns"><button id="cf-save">Save field</button></div>'+
+  (isNew?'':'<button class="addbtn" id="cf-del" style="border-color:rgba(212,106,94,.5);color:#D46A5E">Delete this field</button>');
+ openTool(isNew?'New field':'Edit field',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ var ty=document.getElementById('cf-ty'), ow=document.getElementById('cf-optwrap');
+ var sync=function(){ow.style.display=(ty.value==='pick')?'block':'none';};
+ sync(); ty.onchange=sync;
+ document.getElementById('cf-save').onclick=function(){
+  var lab=document.getElementById('cf-lab').value.trim();
+  if(!lab){alert('Give the field a name first.');return;}
+  var o={id:f.id,on:document.getElementById('cf-on').value,lab:lab,ty:ty.value,opts:[]};
+  if(o.ty==='pick'){
+   o.opts=document.getElementById('cf-opts').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+   if(!o.opts.length){alert('Add at least one choice, one per line.');return;}}
+  cfAll(); if(isNew)S.cf.push(o); else S.cf[j]=o;
+  put(S); closeTool(); drawCF(); invalidate();
+ };
+ var dl=document.getElementById('cf-del');
+ if(dl)dl.onclick=function(){
+  if(!confirm('Delete "'+f.lab+'"?\n\nWhat you already typed into it stays saved, it just stops showing. Any saved view using it will ignore that condition.'))return;
+  S.cf.splice(j,1); put(S); closeTool(); drawCF(); invalidate();
+ };
+}
+
+/* ================= SAVED VIEWS ================= */
+var SVD='', SVU='';
+const SVOPS={
+ text :[['has','contains'],['is','is exactly'],['not','does not contain'],['empty','is empty'],['filled','is filled in']],
+ num  :[['gt','more than'],['lt','less than'],['eq','equals'],['empty','is empty'],['filled','is filled in']],
+ money:[['gt','more than'],['lt','less than'],['empty','is empty'],['filled','is filled in']],
+ date :[['next','is within the next'],['past','is in the past'],['before','is before'],['after','is after'],['on','is on'],['empty','has no date'],['filled','has a date']],
+ stage:[['is','is'],['not','is not']],
+ pick :[['is','is'],['not','is not'],['empty','is empty'],['filled','is filled in']],
+ has  :[['yes','yes'],['no','no']]
+};
+function svFields(on){
+ var L = on==='deal'
+  ? [['w','Client name','text'],['s','Stage','stage'],['v','Deal value','money'],
+     ['fee','Your commission','money'],['nd','Next action date','date'],['ty','Type','text'],
+     ['src','Where it came from','text'],['u','Unit or interest','text'],['lcom','Community they want','text'],
+     ['lmax','Their budget','money'],['quiet','Days since last touch','num'],
+     ['stage_age','Days in this stage','num'],['ph','Phone number','has']]
+  : [['p','Project or unit','text'],['com','Community','text'],['t','Type','text'],
+     ['bd','Bedrooms','num'],['price','Price or rent','money'],['psf','Price per sqft','num'],
+     ['bua','Built-up area','num'],['plot','Plot size','num'],['tag','Tag','text'],
+     ['h','Handover','text'],['rw','Row position','text'],['dom','Days on market','num'],
+     ['live','Still available','has']];
+ return L.map(function(a){return {k:a[0],lab:a[1],ty:a[2]};}).concat(
+  cfs(on).map(function(f){
+   var t=f.ty==='pick'?'pick':(f.ty==='yn'?'has':(f.ty==='money'?'money':(f.ty==='num'?'num':(f.ty==='date'?'date':'text'))));
+   return {k:'xf:'+f.id,lab:f.lab,ty:t,f:f};}));
+}
+function svField(on,k){ return svFields(on).filter(function(x){return x.k===k;})[0]||null; }
+function svGet(rec,k,on){
+ if(!rec)return '';
+ if(k.indexOf('xf:')===0){var v=(rec.xf||{})[k.slice(3)];return v===undefined?'':v;}
+ if(on==='deal'){
+  if(k==='fee')return dealFee(rec);
+  if(k==='quiet'){var t=lastTouch(rec);return t?ddiff(t,TD):null;}
+  if(k==='stage_age')return stageAge(rec);
+  return rec[k];
+ }
+ if(k==='price')return uPrice(rec);
+ if(k==='psf')return psf(rec);
+ if(k==='dom')return uLive(rec)?daysOn(rec):null;
+ if(k==='live')return uLive(rec)?1:0;
+ return rec[k];
+}
+function svTest(rec,c,on){
+ var fl=svField(on,c.f); if(!fl||!c.op)return true;
+ var v=svGet(rec,c.f,on), ty=fl.ty, o=c.op, want=c.v;
+ var empty=(v===undefined||v===null||v===''||(typeof v==='number'&&isNaN(v)));
+ if(o==='empty')return empty;
+ if(o==='filled')return !empty;
+ if(ty==='has')return o==='yes'?(!empty&&String(v)!=='0'):(empty||String(v)==='0');
+ if(ty==='stage'){var st=(v===LOST)?'Lost':(STAGES[v]||''); return o==='is'?st===want:st!==want;}
+ if(ty==='num'||ty==='money'){
+  if(empty)return false;
+  var a=num(v), b=num(want);
+  if(o==='gt')return a>b;
+  if(o==='lt')return a<b;
+  return a===b;}
+ if(ty==='date'){
+  if(o==='next'){ if(empty)return false; var dd=ddiff(TD,String(v)); return dd>=0&&dd<=(num(want)||7); }
+  if(o==='past'){ return empty?false:String(v)<TD; }
+  if(empty)return false;
+  if(o==='before')return String(v)<String(want);
+  if(o==='after')return String(v)>String(want);
+  return String(v)===String(want);}
+ var s=String(v==null?'':v).toLowerCase(), w=String(want==null?'':want).toLowerCase();
+ if(o==='is')return s===w;
+ if(o==='not')return s.indexOf(w)<0;
+ return s.indexOf(w)>=0;
+}
+function svPass(rec,view,on){
+ if(!view||!view.conds||!view.conds.length)return true;
+ for(var i=0;i<view.conds.length;i++){
+  var c=view.conds[i]; if(!c||!c.f)continue;
+  if(!svTest(rec,c,on))return false;}
+ return true;
+}
+function svSortList(arr,view,on,pick){
+ if(!view||!view.sf||!svField(on,view.sf))return arr;
+ var fl=svField(on,view.sf);
+ var numeric=(fl.ty==='num'||fl.ty==='money'||fl.ty==='has'||fl.ty==='stage');
+ var dir=(view.sd==='asc')?1:-1;
+ return arr.slice().sort(function(a,b){
+  var A=svGet(pick(a),view.sf,on), B=svGet(pick(b),view.sf,on);
+  var ea=(A===undefined||A===null||A===''), eb=(B===undefined||B===null||B==='');
+  if(ea&&eb)return 0; if(ea)return 1; if(eb)return -1;
+  if(numeric)return (num(A)-num(B))*dir;
+  return String(A).localeCompare(String(B),undefined,{numeric:true,sensitivity:'base'})*dir;});
+}
+function svAll(){ if(!Array.isArray(S.sv))S.sv=[]; return S.sv; }
+function svList(on){ return svAll().filter(function(v){return v&&v.on===on;}); }
+function svById(id){ return svAll().filter(function(v){return v.id===id;})[0]||null; }
+function svActive(on){ var id=(on==='deal')?SVD:SVU; return id?svById(id):null; }
+function drawSV(on){
+ var el=document.getElementById(on==='deal'?'svd':'svu'); if(!el)return;
+ var cur=(on==='deal')?SVD:SVU;
+ if(cur&&!svById(cur)){ if(on==='deal')SVD=''; else SVU=''; cur=''; }
+ el.innerHTML='<b class="'+(cur?'':'on')+'" data-svp="">All</b>'+
+  svList(on).map(function(v){
+   return '<b class="'+(cur===v.id?'on':'')+'" data-svp="'+v.id+'">'+esc(v.name)+'</b>';}).join('')+
+  (cur?'<b data-sve="1">Edit</b>':'')+
+  '<b data-svn="1">+ New view</b>';
+ el.querySelectorAll('[data-svp]').forEach(function(b){b.onclick=function(){
+  if(on==='deal'){SVD=b.dataset.svp;drawDeals();}else{SVU=b.dataset.svp;drawUnits();}
+  haptic('light'); window.scrollTo(0,0);};});
+ var e=el.querySelector('[data-sve]'); if(e)e.onclick=function(){openSV(on,cur);};
+ var n=el.querySelector('[data-svn]'); if(n)n.onclick=function(){openSV(on,null);};
+}
+function openSV(on,id){
+ var isNew=!id;
+ var src=isNew?{id:'v'+Date.now().toString(36)+Math.random().toString(36).slice(2,4),on:on,name:'',conds:[],sf:'',sd:'desc'}:svById(id);
+ if(!src)return;
+ var W=JSON.parse(JSON.stringify(src));
+ if(!Array.isArray(W.conds))W.conds=[];
+ if(!W.conds.length)W.conds=[{f:'',op:'',v:''}];
+ var F=svFields(on);
+
+ function opsFor(k){ var fl=svField(on,k); return fl?(SVOPS[fl.ty]||SVOPS.text):[]; }
+ function valBox(c,i){
+  var fl=svField(on,c.f); if(!fl)return '';
+  if(c.op==='empty'||c.op==='filled')return '';
+  if(fl.ty==='has')return '';
+  if(fl.ty==='stage'){
+   var st=STAGES.concat(['Lost']);
+   return '<select class="svv" data-i="'+i+'">'+st.map(function(o){
+    return '<option'+(c.v===o?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';}
+  if(fl.ty==='pick')
+   return '<select class="svv" data-i="'+i+'"><option value=""></option>'+((fl.f&&fl.f.opts)||[]).map(function(o){
+    return '<option'+(c.v===o?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';
+  if(fl.ty==='date'){
+   if(c.op==='past')return '';
+   if(c.op==='next')return '<input class="svv" data-i="'+i+'" type="number" inputmode="numeric" placeholder="7" value="'+esc(c.v||'')+'">';
+   return '<input class="svv" data-i="'+i+'" type="date" value="'+esc(c.v||'')+'">';}
+  if(fl.ty==='num'||fl.ty==='money')
+   return '<input class="svv" data-i="'+i+'" type="number" inputmode="numeric" placeholder="0" value="'+esc(c.v||'')+'">';
+  return '<input class="svv" data-i="'+i+'" placeholder="type something" value="'+esc(c.v||'')+'">';
+ }
+ function condHTML(){
+  return W.conds.map(function(c,i){
+   var ops=opsFor(c.f);
+   return '<div class="svrow">'+
+    '<select class="svf" data-i="'+i+'"><option value="">Pick a field</option>'+
+     F.map(function(x){return '<option value="'+esc(x.k)+'"'+(c.f===x.k?' selected':'')+'>'+esc(x.lab)+'</option>';}).join('')+'</select>'+
+    (c.f?'<select class="svo" data-i="'+i+'">'+ops.map(function(o){
+      return '<option value="'+o[0]+'"'+(c.op===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>':'')+
+    (c.f?valBox(c,i):'')+
+    (W.conds.length>1?'<button class="svx" data-x="'+i+'">Remove</button>':'')+
+   '</div>';}).join('');
+ }
+ function grab(){
+  document.querySelectorAll('.svf').forEach(function(e){W.conds[+e.dataset.i].f=e.value;});
+  document.querySelectorAll('.svo').forEach(function(e){W.conds[+e.dataset.i].op=e.value;});
+  document.querySelectorAll('.svv').forEach(function(e){W.conds[+e.dataset.i].v=e.value;});
+  var n=document.getElementById('sv-n'); if(n)W.name=n.value;
+  var sf=document.getElementById('sv-sf'); if(sf)W.sf=sf.value;
+  var sd=document.getElementById('sv-sd'); if(sd)W.sd=sd.value;
+ }
+ function paint(){
+  document.getElementById('sv-cs').innerHTML=condHTML();
+  document.querySelectorAll('.svf').forEach(function(e){e.onchange=function(){
+   grab(); var c=W.conds[+e.dataset.i];
+   var ops=opsFor(c.f); c.op=ops.length?ops[0][0]:''; c.v='';
+   paint();};});
+  document.querySelectorAll('.svo').forEach(function(e){e.onchange=function(){
+   grab(); W.conds[+e.dataset.i].v=''; paint();};});
+  document.querySelectorAll('.svx').forEach(function(e){e.onclick=function(){
+   grab(); W.conds.splice(+e.dataset.x,1); if(!W.conds.length)W.conds=[{f:'',op:'',v:''}]; paint();};});
+  var add=document.getElementById('sv-add');
+  if(add)add.onclick=function(){grab(); if(W.conds.length<3)W.conds.push({f:'',op:'',v:''}); paint();};
+ }
+ var h='<label>Call it</label><input id="sv-n" placeholder="'+
+   (on==='deal'?'Big investors gone quiet':'Villas under 1,200 a foot')+'" value="'+esc(W.name)+'">'+
+  '<label>Show only the ones where</label><div id="sv-cs"></div>'+
+  '<button class="addbtn" id="sv-add" style="margin-top:8px">+ Add another condition</button>'+
+  '<div class="hint" style="margin-top:6px">Every condition has to be true. Three is the most.</div>'+
+  '<label style="margin-top:12px">Order them by</label>'+
+  '<select id="sv-sf"><option value="">Leave the usual order</option>'+
+   F.map(function(x){return '<option value="'+esc(x.k)+'"'+(W.sf===x.k?' selected':'')+'>'+esc(x.lab)+'</option>';}).join('')+'</select>'+
+  '<select id="sv-sd" style="margin-top:8px">'+
+   '<option value="desc"'+(W.sd!=='asc'?' selected':'')+'>Biggest or latest first</option>'+
+   '<option value="asc"'+(W.sd==='asc'?' selected':'')+'>Smallest or earliest first</option></select>'+
+  '<div class="sheetbtns"><button id="sv-save">Save view</button></div>'+
+  (isNew?'':'<button class="addbtn" id="sv-del" style="border-color:rgba(212,106,94,.5);color:#D46A5E">Delete this view</button>');
+ openTool(isNew?'New view':'Edit view',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ paint();
+ document.getElementById('sv-save').onclick=function(){
+  grab();
+  var nm=String(W.name||'').trim();
+  if(!nm){alert('Give the view a name so you can find it on the strip.');return;}
+  W.name=nm;
+  W.conds=W.conds.filter(function(c){return c.f&&c.op;});
+  svAll();
+  var at=-1; S.sv.forEach(function(v,j){if(v.id===W.id)at=j;});
+  if(at<0)S.sv.push(W); else S.sv[at]=W;
+  if(on==='deal')SVD=W.id; else SVU=W.id;
+  put(S); closeTool();
+  if(on==='deal')drawDeals(); else drawUnits();
+ };
+ var dl=document.getElementById('sv-del');
+ if(dl)dl.onclick=function(){
+  if(!confirm('Delete the view "'+W.name+'"? Your clients and units are not touched.'))return;
+  S.sv=svAll().filter(function(v){return v.id!==W.id;});
+  if(on==='deal')SVD=''; else SVU='';
+  put(S); closeTool();
+  if(on==='deal')drawDeals(); else drawUnits();
+ };
+}
+
 function searchAll(q){
  q=q.toLowerCase().trim(); if(q.length<2)return [];
  var r=[], hit=function(t){return String(t||'').toLowerCase().indexOf(q)>=0;};
- S.deals.forEach(function(d,i){if(hit(d.w)||hit(d.u)||hit(d.n)||hit(d.na))
+ S.deals.forEach(function(d,i){if(hit(d.w)||hit(d.u)||hit(d.n)||hit(d.na)||hit(cfHay('deal',d)))
   r.push({k:'Deal',t:d.w,s:d.u+' · '+STAGES[d.s],go:'deals'});});
- S.units.forEach(function(u,i){if(hit(u.p)||hit(u.t)||hit(u.n)||hit(u.com)||hit(u.tag))
+ S.units.forEach(function(u,i){if(hit(u.p)||hit(u.t)||hit(u.n)||hit(u.com)||hit(u.tag)||hit(cfHay('unit',u)))
   r.push({k:'Unit',t:u.p,s:u.t+' · '+money((u.lt||'Sale')==='Rent'?u.rent:u.pr),go:'stock',seg:'units'});});
  (S.proj||[]).forEach(function(o){if(hit(o.n)||hit(o.dev)||hit(o.loc)||hit(o.th)||hit(o.note))
   r.push({k:'Project',t:o.n,s:[o.dev,o.loc].filter(Boolean).join(' · '),go:'stock',seg:'proj'});});
@@ -1679,6 +2022,7 @@ function searchAll(q){
  S.diary.forEach(function(e){if(hit(e.n)||hit(e.w))
   r.push({k:'Diary',t:e.n,s:(e.w||'')+' · '+new Date(e.d).toLocaleDateString('en-GB',{day:'numeric',month:'short'}),go:'diary',day:e.d});});
  return r.slice(0,25);}
+(function(){var b=document.getElementById('pback'); if(b)b.onclick=function(){haptic('light');goPage('more');};})();
 document.getElementById('find').onclick=function(){
  openTool('Search','<input id="fx-q" placeholder="Client, unit, community, note" autocomplete="off"><div class="card" id="fx-r" style="margin-top:12px"><div class="hint">Type at least two letters. It looks through clients, units, projects, key dates, prospects and the diary.</div></div>','');
  document.getElementById('tcopy').textContent='Close';
@@ -1696,8 +2040,65 @@ document.getElementById('find').onclick=function(){
    TS.style.display='none'; goPage(x.go);};});
  };
 };
+/* ================= THE ME HUB, BACK, AND THE EDGE SWIPE ================= */
+function drawHub(){
+ var el=document.getElementById('hub'); if(!el)return;
+ var due=S.later.filter(function(x){return !x.dnc&&x.wd&&x.wd<=TD;}).length;
+ var rows=[
+  ['rent','Rent roll','Tenancies, renewals and what you are owed'],
+  ['diary','Diary','Your calendar and everything booked'],
+  ['gym','Gym','Today\'s session and the last five']];
+ el.innerHTML=rows.map(function(r){
+  return '<div class="hubrow" data-hp="'+r[0]+'"><div style="min-width:0">'+
+   '<div class="lab">'+esc(r[1])+'</div><div class="tgt">'+esc(r[2])+'</div></div>'+
+   '<div class="chev">\u203a</div></div>';}).join('');
+ el.querySelectorAll('[data-hp]').forEach(function(b){
+  b.onclick=function(){haptic('light');goPage(b.dataset.hp);};});
+}
+function topLayer(){
+ var v=document.getElementById('view');
+ if(v&&v.classList.contains('on'))return 'view';
+ var lb=document.getElementById('lightbox');
+ if(lb&&lb.style.display&&lb.style.display!=='none')return 'lightbox';
+ var ids=['tsheet','sheet','usheet'];
+ for(var i=0;i<ids.length;i++){
+  var e=document.getElementById(ids[i]);
+  if(e&&e.style.display&&e.style.display!=='none')return ids[i];}
+ return '';
+}
+function goBack(){
+ var t=topLayer();
+ if(t==='lightbox'){document.getElementById('lightbox').style.display='none';return true;}
+ if(t==='view'){closeView();return true;}
+ if(t==='tsheet'){closeTool();return true;}
+ if(t==='sheet'){document.getElementById('sheet').style.display='none';return true;}
+ if(t==='usheet'){closeUnitSheet();return true;}
+ if(SUBP[PAGE]){goPage('more');return true;}
+ if(PAGE!=='today'){goPage('today');return true;}
+ return false;
+}
+(function(){
+ /* swipe in from the left edge to go back, the way every other app on the phone works */
+ var sx=0,sy=0,live=false;
+ document.addEventListener('touchstart',function(e){
+  live=false;
+  if(e.touches.length!==1)return;
+  var t=e.touches[0];
+  if(t.clientX>26)return;
+  if(e.target&&e.target.closest&&
+     e.target.closest('.chips,.seg,.cseg,.slists,.cal,input,textarea,select'))return;
+  sx=t.clientX; sy=t.clientY; live=true;
+ },{passive:true});
+ document.addEventListener('touchend',function(e){
+  if(!live)return; live=false;
+  var t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+  if(dx>70&&Math.abs(dy)<55&&goBack())haptic('light');
+ },{passive:true});
+})();
 document.getElementById('nav').addEventListener('click',function(e){
- var b=e.target.closest('b[data-p]'); if(b)goPage(b.dataset.p);});
+ var b=e.target.closest('b[data-p]'); if(!b)return;
+ if(b.dataset.p==='cap'){haptic('light');openCapture();return;}
+ goPage(b.dataset.p);});
 document.getElementById('sseg').addEventListener('click',function(e){
  var b=e.target.closest('b[data-ss]'); if(!b)return;
  SSEG=b.dataset.ss; drawStockSeg(); if(SSEG==='stats')drawStock(); if(SSEG==='proj')drawProj(); window.scrollTo(0,0);});
@@ -2809,10 +3210,11 @@ function drawStockSeg(){
 }
 function goPage(k){
  PAGE=k;
- PAGES.forEach(function(p){var el=document.getElementById('p-'+p[0]);
-  el.classList.toggle('hide',p[0]!==PAGE);
-  if(p[0]===PAGE){el.classList.remove('fade');void el.offsetWidth;el.classList.add('fade');}});
- document.getElementById('pgtitle').textContent=PAGES.filter(function(p){return p[0]===PAGE;})[0][1];
+ ALLP.forEach(function(id){var el=document.getElementById('p-'+id); if(!el)return;
+  el.classList.toggle('hide',id!==PAGE);
+  if(id===PAGE){el.classList.remove('fade');void el.offsetWidth;el.classList.add('fade');}});
+ document.getElementById('pgtitle').textContent=PTITLE[PAGE]||PAGE;
+ var bk=document.getElementById('pback'); if(bk)bk.classList.toggle('hide',!SUBP[PAGE]);
  pageDraw(k); drawNav(); window.scrollTo(0,0);
  requestAnimationFrame(function(){
   segAll();
@@ -2824,9 +3226,11 @@ function goPage(k){
 function drawNav(){
  var due=S.later.filter(function(x){return !x.dnc&&x.wd&&x.wd<=TD;}).length
   + S.deals.filter(function(x){return x.s<4&&x.nd&&x.nd<=TD;}).length;
+ var act=SUBP[PAGE]?'more':PAGE;
  document.getElementById('nav').innerHTML=PAGES.map(function(p){
   var dot=(p[0]==='deals'&&due)?'<u class="dot"></u>':'';
-  return '<b class="'+(PAGE===p[0]?'on':'')+'" data-p="'+p[0]+'"><i>'+p[2]+dot+'</i>'+p[1]+'</b>';}).join('');
+  var cls=(p[0]==='cap')?'cap':(act===p[0]?'on':'');
+  return '<b class="'+cls+'" data-p="'+p[0]+'"><i>'+p[2]+dot+'</i>'+p[1]+'</b>';}).join('');
 }
 
 
@@ -3794,8 +4198,9 @@ function logQueue(q,key){
 }
 
 function drawDeals(){
- drawDealFilters();drawDealChips();
- var idx=[];S.deals.forEach(function(d,i){if(dealPass(d)&&chipPass(d)&&(DCHIP==='Lost'||d.s!==LOST))idx.push(i);});
+ drawDealFilters();drawDealChips();drawSV('deal');
+ var _sv=svActive('deal');
+ var idx=[];S.deals.forEach(function(d,i){if(dealPass(d)&&chipPass(d)&&svPass(d,_sv,'deal')&&(DCHIP==='Lost'||d.s!==LOST))idx.push(i);});
  document.getElementById('dcount').textContent=idx.length+' of '+S.deals.length;
  (function(){var b=document.getElementById('qstart'); if(!b)return;
   var n=buildQueue().length;
@@ -3815,7 +4220,8 @@ function drawDeals(){
   else if(d.nd&&dt<=7)G.soon.push(i);
   else G.rest.push(i);
  });
- [ 'late','now','soon','rest','done' ].forEach(function(k){
+ if(_sv&&_sv.sf){G={late:[],now:[],soon:[],rest:svSortList(idx,_sv,'deal',function(i){return S.deals[i];}),done:[]};}
+ else [ 'late','now','soon','rest','done' ].forEach(function(k){
   G[k].sort(function(a,b){
    var A=S.deals[a],B=S.deals[b];
    if(k==='late'){var x=daysTo(A.nd),y=daysTo(B.nd); if(x!==y)return x-y;}
@@ -3856,14 +4262,14 @@ function drawDeals(){
  function sec(k,label,hot){
   if(!G[k].length)return;
   H.push('<div class="grp"><b class="'+(hot?'hot':'')+'">'+label+'</b><i></i><u>'+G[k].length+'</u></div>');
-  var list=G[k], cut=(k==='rest'&&!SHOWALL)?6:list.length;
+  var list=G[k], cut=(k==='rest'&&!SHOWALL&&!(_sv&&_sv.sf))?6:list.length;
   H.push(list.slice(0,cut).map(card).join(''));
   if(cut<list.length)H.push('<button class="showmore" id="showall">Show the other '+(list.length-cut)+'</button>');
  }
  sec('late','Overdue',1); sec('now','Due today'); sec('soon','This week');
- sec('rest','Everyone else'); sec('done','Won');
+ sec('rest',(_sv&&_sv.sf)?_sv.name:'Everyone else'); sec('done','Won');
  document.getElementById('dlist').innerHTML=H.length?H.join('')
-  :'<div class="hint">'+(DCHIP==='All'?'Nothing matches that search.':'Nobody at '+DCHIP+' right now.')+'</div>';
+  :'<div class="hint">'+(_sv?('Nobody matches the view "'+esc(_sv.name)+'".'):(DCHIP==='All'?'Nothing matches that search.':'Nobody at '+DCHIP+' right now.'))+'</div>';
 
  var sa=document.getElementById('showall');
  if(sa)sa.onclick=function(){SHOWALL=1;drawDeals();};
@@ -3942,6 +4348,7 @@ function openSheet(i){
   S.deals[i].hist.push({d:TD,a:a||0,o:o||0});
   put(S);f('ask').value='';f('off').value='';drawLadder(S.deals[i]);};
  drawStagePick(d.s||0);toggleRent();
+ (function(){var w=document.getElementById('s-cf'); if(w)w.innerHTML=cfInputs('deal',d);})();
  var sd=document.getElementById('sdocs');
  sd.textContent='Documents'+(i!==null&&docCount(S.deals[i])?' ('+docCount(S.deals[i])+')':'');
  sd.onclick=function(){
@@ -3960,14 +4367,20 @@ document.getElementById('sc').onclick=function(){document.getElementById('sheet'
 document.getElementById('sdel').onclick=function(){if(EDIT!==null&&confirm('Delete this deal?')){toTrash('deal',S.deals[EDIT]);S.deals.splice(EDIT,1);put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawQual();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();}};
 document.getElementById('sv').onclick=function(){
  var w=f('w').value.trim(); if(!w){alert('Client name is needed');return;}
- var o={w:w,ph:f('ph').value.trim(),u:f('u').value.trim(),v:num(f('v').value),r:num(f('r').value)||2,
-  s:PICK,na:f('na').value.trim(),nd:f('nd').value,src:f('src').value,n:f('n').value.trim(),
-  ty:f('ty').value,ch:f('ch').value,rent:num(f('rent').value),ref:f('ref').value.trim(),hh:f('hh').value.trim(),
-  lbd:num(f('lbd').value),lmax:num(f('lmax').value),lcom:f('lcom').value.trim(),
-  npd:f('npd').value,npa:num(f('npa').value),
-  lost:(PICK===LOST?f('lost').value:''),
-  hist:(EDIT!==null&&S.deals[EDIT].hist)?S.deals[EDIT].hist:[]};
- if(EDIT===null)S.deals.push(o);else S.deals[EDIT]=o;
+ /* start from what is already on the record so nothing quietly disappears:
+    stage dates, blockers, documents, qualify answers, custom fields. */
+ var o=(EDIT===null)?{}:S.deals[EDIT];
+ o.w=w; o.ph=f('ph').value.trim(); o.u=f('u').value.trim(); o.v=num(f('v').value); o.r=num(f('r').value)||2;
+ if(EDIT!==null&&o.s!==PICK&&PICK!==undefined)o.sAt=TD;
+ o.s=PICK; o.na=f('na').value.trim(); o.nd=f('nd').value; o.src=f('src').value; o.n=f('n').value.trim();
+ o.ty=f('ty').value; o.ch=f('ch').value; o.rent=num(f('rent').value); o.ref=f('ref').value.trim(); o.hh=f('hh').value.trim();
+ o.lbd=num(f('lbd').value); o.lmax=num(f('lmax').value); o.lcom=f('lcom').value.trim();
+ o.npd=f('npd').value; o.npa=num(f('npa').value);
+ o.lost=(PICK===LOST?f('lost').value:'');
+ if(!Array.isArray(o.hist))o.hist=[];
+ if(EDIT===null&&!o.cAt)o.cAt=TD;
+ cfRead('deal',o);
+ if(EDIT===null)S.deals.push(o);
  put(S);document.getElementById('sheet').style.display='none';drawDeals();drawHero();drawHead();drawQuiet();drawCash();drawUnbanked();drawNoPhone();drawHouseholds();drawStuck();drawBlk();drawQual();drawCommit();drawPrep();drawDupes();drawKdToday();drawMore();
 };
 
@@ -4373,8 +4786,9 @@ function drawStock(){
 
 function drawUnits(){
  if(typeof warmImages==='function')setTimeout(warmImages,0);
- drawUnitSeg();drawUnitFilters();drawUnitSort();
- var list=[];S.units.forEach(function(u,i){if(unitPass(u))list.push([u,i]);});
+ drawUnitSeg();drawUnitFilters();drawUnitSort();drawSV('unit');
+ var _sv=svActive('unit');
+ var list=[];S.units.forEach(function(u,i){if(unitPass(u)&&svPass(u,_sv,'unit'))list.push([u,i]);});
  list.sort(function(a,b){
   var A=a[0], B=b[0];
   if(USORT==='Price high')return uPrice(B)-uPrice(A);
@@ -4385,6 +4799,7 @@ function drawUnits(){
    var sa=psf(A)||Infinity, sb=psf(B)||Infinity; return sa-sb;}
   if(USORT==='Newest')return b[1]-a[1];
   return String(A.p||'').localeCompare(String(B.p||''),undefined,{numeric:true,sensitivity:'base'});});
+ if(_sv&&_sv.sf)list=svSortList(list,_sv,'unit',function(x){return x[0];});
  document.getElementById('ucount').textContent=list.length+' of '+S.units.length;
  document.getElementById('ulist').innerHTML=list.length?list.map(function(x){
   var u=x[0], i=x[1], sp=[];
@@ -5723,6 +6138,7 @@ function openUnitSheet(i){
  var u=(i===null)?{lt:'Sale'}:S.units[i];
  ULT=(u.lt||'Sale'); URW=u.rw||''; UST=uStat(u);
  document.getElementById('us-title').textContent=(i===null)?'Add a unit':'Edit unit';
+ (function(){var w=document.getElementById('u-cf'); if(w)w.innerHTML=cfInputs('unit',u);})();
  [['p',u.p],['com',u.com],['t',u.t],['bd',u.bd],['tag',u.tag],['bua',u.bua],['plot',u.plot],
   ['pr',u.pr],['op',u.op],['rent',u.rent],['ch',u.ch],['h',u.h],['pl',u.pl],['n',u.n]
  ].forEach(function(x){
@@ -5747,6 +6163,7 @@ function saveUnitSheet(){
  u.pr=num(uf('pr').value); u.op=num(uf('op').value);
  u.rent=num(uf('rent').value); u.ch=uf('ch').value.trim();
  u.h=uf('h').value.trim(); u.pl=uf('pl').value.trim(); u.n=uf('n').value.trim();
+ cfRead('unit',u);
  if(UEDIT===null)S.units.unshift(u);
  put(S); closeUnitSheet(); drawUnits();
  if(navigator.vibrate)navigator.vibrate(8);
@@ -5880,7 +6297,7 @@ function drawComps(){
 }
 fetch('comps.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&j.communities){COMPS=j;drawComps();}}).catch(function(){});
 
-var APPVER='v41 · 30 Aug 2026 · one screen per client, merge sync, new design';
+var APPVER='v43 \u00b7 2 Sep 2026 \u00b7 five tabs, capture in the middle, swipe back';
 function drawObj(){
  var L=S.deals.filter(function(d){return d.s===LOST&&d.lost;});
  var el=document.getElementById('objbox');
@@ -5909,7 +6326,7 @@ function drawStore(){
   el.innerHTML+='<div class="row"><div><div class="lab">Total on device</div><div class="tgt">Including images</div></div><div class="val">'+mb+' MB / '+q+' MB</div></div>';});}
 }
 function drawMore(){
- drawRefs();drawKdAll();drawNotes();drawStore();drawObj();
+ drawHub();drawRefs();drawKdAll();drawNotes();drawStore();drawObj();drawCF();
  var due=[];S.deals.forEach(function(d,i){if(d.s<4&&d.nd&&d.nd<=TD)due.push(d);});
  due.sort(function(a,b){return dealFee(b)-dealFee(a);});
  document.getElementById('duelist').innerHTML=due.length?due.map(function(d){
@@ -7950,6 +8367,11 @@ function mergeRec(mine,their){
   if(isEmpty(b))return;                              /* keep mine */
   if((k==='hist'||k==='att')&&Array.isArray(a)&&Array.isArray(b)){
    out[k]=(a.length>=b.length)?a:b; filled.push(k); return;}
+  /* fields you invented: merge one by one, keep mine, fill my blanks from theirs */
+  if(k==='xf'&&a&&b&&typeof a==='object'&&typeof b==='object'){
+   var m={}; Object.keys(a).forEach(function(x){m[x]=a[x];});
+   Object.keys(b).forEach(function(x){if(isEmpty(m[x]))m[x]=b[x];});
+   out[k]=m; filled.push(k); return;}
   clash.push(k);
  });
  return {rec:out,filled:filled,clash:clash};
@@ -8231,8 +8653,8 @@ function doRestore(o,st){
    st.textContent='Saving '+ks.length+' images...';
    Promise.all(ks.map(function(k){return idbSet(k,imgs[k]).catch(function(){});}))
     .then(function(){
-     S=D; if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[];
-     if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.cn)S.cn=[]; if(!S.nt)S.nt=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(S.priv===undefined)S.priv=0;
+     S=D; SVD=''; SVU=''; if(!S.days)S.days={}; if(!S.deals)S.deals=[]; if(!S.units)S.units=[];
+     if(!S.op)S.op=[]; if(!S.proj)S.proj=[]; if(!S.camp)S.camp=[]; if(!S.kd)S.kd=[]; if(!S.cn)S.cn=[]; if(!S.nt)S.nt=[]; if(!S.diary)S.diary=[]; if(!S.dnc)S.dnc=[]; if(!S.cf)S.cf=[]; if(!S.sv)S.sv=[]; if(S.priv===undefined)S.priv=0;
      repairData();
      try{
       syncStamp(D);
@@ -8342,6 +8764,7 @@ function drawUBody(i){
    (psf(u)?crow('Per sqft','AED '+(S.priv?'\u2022\u2022\u2022':psf(u).toLocaleString())):'')+
    (!isR&&u.op?crow('Original', pmoney(u.op)+' · '+(u.pr>=u.op?'+':'')+Math.round((u.pr-u.op)/u.op*100)+'%'):'')+
    (u.rw?crow('Position', esc(u.rw)):'')+
+   cfLines('unit',u)+
    '</div>';
   if(posLine(u))h+='<div class="hint" style="margin-top:9px;color:var(--gold)">'+esc(pvNum(posLine(u)))+'</div>';
   if(String(u.n||'').trim())h+='<div class="tplbox" style="margin-top:12px"><p style="white-space:pre-wrap">'+esc(pvAll(u.n))+'</p></div>';
@@ -8475,6 +8898,7 @@ function cvBrief(d,i){
   crow('Who decides', esc(pvAll(q.who||'')), q.who?'':'var(--bad)')+
   crow('Why', esc(pvAll(q.why||'')))+
   crow('Timing', esc(pvAll(q.when||'')))+
+  cfLines('deal',d)+
   '</div>';
  if(B.blk)h+='<div class="card" style="margin-top:10px;border-color:rgba(212,106,94,.5)">'+
   '<div class="lab" style="color:var(--bad);font-weight:600">'+esc(B.blk[1])+'</div>'+
