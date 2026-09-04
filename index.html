@@ -1389,6 +1389,9 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
   <div class="sec"><h2>Tenancies <b id="rentn"></b></h2>
     <div class="card" id="rentlist"></div>
     <button class="addbtn" id="addrent" style="margin-top:9px">+ Add a tenancy</button></div>
+  <div class="sec"><h2>Landlord pages</h2>
+    <div class="card" id="lllist"></div>
+    <div class="hint">One page per landlord, their tenancies only. Tap to make the file, then upload it and send them the link. Nothing links back to your other clients.</div></div>
   <div class="sec"><h2>Commission <b id="commn"></b></h2><div id="commstats"></div>
     <div class="card" style="margin-top:12px" id="commlist"></div>
     <button class="addbtn" id="addcomm" style="margin-top:9px">+ Track a commission</button></div>
@@ -3198,7 +3201,7 @@ function pageDraw(k){
  if(DREW[k])return; DREW[k]=1;
  if(k==='stock'){drawUnits();drawComps();drawStock();drawProj();}
  if(k==='diary'){drawDiary();}
- if(k==='rent'){drawRent();drawComm();}
+ if(k==='rent'){drawRent();drawComm();drawLL();}
  if(k==='gym'){drawGym();}
  if(k==='more'){drawMore();}
 }
@@ -6296,7 +6299,7 @@ function drawComps(){
 }
 fetch('comps.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&j.communities){COMPS=j;drawComps();}}).catch(function(){});
 
-var APPVER='v44 \u00b7 2 Sep 2026 \u00b7 gym moved out, five tabs, swipe back';
+var APPVER='v45 \u00b7 4 Sep 2026 \u00b7 landlord pages, tenancies now merge';
 function drawObj(){
  var L=S.deals.filter(function(d){return d.s===LOST&&d.lost;});
  var el=document.getElementById('objbox');
@@ -7130,6 +7133,189 @@ function blankRent(){
  return {p:'',ll:'',tn:'',tph:'',amt:0,ch:'1 cheque',
   st:'',en:'',ej:'',nx:'',note:'',status:'Live',at:TD};
 }
+
+/* ================= LANDLORD PAGES =================
+   One self-contained page per landlord. Their data only, baked in.
+   No shared sheet, nothing to fetch, so a forwarded link leaks one
+   person's tenancies and never the book.
+   ================================================== */
+function llList(){
+ var m={};
+ rents().forEach(function(r,i){
+  var n=String(r.ll||'').trim(); if(!n)return;
+  if(!m[n])m[n]=[];
+  m[n].push({r:r,i:i});
+ });
+ return Object.keys(m).sort().map(function(n){return {name:n,rows:m[n]};});
+}
+function llMoney(n){ return 'AED ' + Math.round(Number(n)||0).toLocaleString(); }
+function llDate(d){
+ if(!d)return '';
+ try{return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});}
+ catch(e){return String(d);}
+}
+function llPct(r){
+ if(!r.st||!r.en)return null;
+ var a=new Date(r.st), b=new Date(r.en), n=new Date(TD);
+ var span=b-a; if(!(span>0))return null;
+ return Math.max(0,Math.min(100, Math.round((n-a)/span*100)));
+}
+
+function llHtml(name, rows){
+ var live=rows.filter(function(x){return x.r.status!=='Ended';});
+ var gross=live.reduce(function(a,x){return a+num(x.r.amt);},0);
+ var known=live.filter(function(x){return num(x.r.amt)>0;}).length;
+ var soonest=null;
+ live.forEach(function(x){
+  var d=rentDays(x.r);
+  if(d===null)return;
+  if(soonest===null||d<soonest)soonest=d;
+ });
+ var maxAmt=Math.max.apply(null,[1].concat(live.map(function(x){return num(x.r.amt);})));
+
+ function tile(big,small){
+  return '<div class="t"><div class="tb">'+esc(big)+'</div><div class="ts">'+esc(small)+'</div></div>';
+ }
+ var tiles=tile(String(live.length), live.length===1?'property':'properties')+
+  tile(gross?llMoney(gross).replace('AED ',''):'—', gross?'annual rent, AED':'rent not recorded yet')+
+  tile(soonest===null?'—':(soonest<0?Math.abs(soonest)+'':soonest+''),
+       soonest===null?'no renewal date set':(soonest<0?'days past renewal':'days to the next renewal'));
+
+ var cards=live.map(function(x){
+  var r=x.r, st=rentState(r), pct=llPct(r);
+  var tone = st.k==='over' ? 'bad' : (st.k==='soon' ? 'warn' : (st.k==='nodate' ? 'grey' : 'good'));
+  var bar = num(r.amt) ? Math.round(num(r.amt)/maxAmt*100) : 0;
+  return '<div class="card">'+
+   '<div class="ch">'+
+     '<div><div class="cu">'+esc(r.p||'Property')+'</div>'+
+     (r.tn?'<div class="cs">Tenant · '+esc(r.tn)+'</div>':'<div class="cs">Tenant not recorded</div>')+
+     '</div>'+
+     '<span class="pill '+tone+'">'+esc(st.t)+'</span>'+
+   '</div>'+
+   '<div class="grid">'+
+     '<div><div class="k">Annual rent</div><div class="v">'+(num(r.amt)?esc(llMoney(r.amt)):'—')+'</div></div>'+
+     '<div><div class="k">Cheques</div><div class="v">'+esc(r.ch||'—')+'</div></div>'+
+     '<div><div class="k">Started</div><div class="v">'+esc(llDate(r.st)||'—')+'</div></div>'+
+     '<div><div class="k">Ends</div><div class="v">'+esc(llDate(r.en)||'—')+'</div></div>'+
+   '</div>'+
+   (pct!==null?'<div class="track"><i style="width:'+pct+'%"></i></div>'+
+     '<div class="tk">'+pct+'% through the term</div>':'')+
+   (num(r.amt)?'<div class="track sm"><b style="width:'+bar+'%"></b></div>':'')+
+   (r.nx?'<div class="next">Next cheque due '+esc(llDate(r.nx))+'</div>':'')+
+   '</div>';
+ }).join('');
+
+ var acts=[];
+ live.forEach(function(x){
+  var d=rentDays(x.r);
+  if(d===null) acts.push('Confirm the end date on '+(x.r.p||'the tenancy')+' so renewal can be planned.');
+  else if(d<0) acts.push((x.r.p||'A tenancy')+' passed its end date '+Math.abs(d)+' days ago. Renew, re-let or review the rent.');
+  else if(d<=60) acts.push((x.r.p||'A tenancy')+' renews in '+d+' days. Ninety days notice is the usual window, so a decision is due now.');
+  if(!num(x.r.amt)) acts.push('The rent on '+(x.r.p||'one property')+' is not on record. Send it over and it will show here.');
+ });
+
+ var CSS=
+ '*{box-sizing:border-box;margin:0;padding:0}'+
+ 'body{background:#F4F2EE;color:#14202B;'+
+  "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;"+
+  '-webkit-font-smoothing:antialiased;padding:22px 16px 60px;line-height:1.5}'+
+ '.wrap{max-width:640px;margin:0 auto}'+
+ '.hd{margin-bottom:22px}'+
+ '.kick{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#8C8578;font-weight:600}'+
+ 'h1{font-family:Georgia,serif;font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:8px 0 4px}'+
+ '.sub{font-size:13.5px;color:#5C6670}'+
+ '.rule{height:3px;background:#B9975B;border-radius:2px;margin:16px 0 22px;width:56px}'+
+ '.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}'+
+ '.t{background:#fff;border-radius:16px;padding:16px 12px;text-align:center;'+
+  'box-shadow:0 1px 2px rgba(20,32,43,.05),0 8px 24px -12px rgba(20,32,43,.14)}'+
+ '.tb{font-family:Georgia,serif;font-size:27px;letter-spacing:-.02em;color:#14202B}'+
+ '.ts{font-size:10.5px;color:#8C8578;margin-top:5px;line-height:1.35}'+
+ '.card{background:#fff;border-radius:20px;padding:20px;margin-bottom:14px;'+
+  'box-shadow:0 1px 2px rgba(20,32,43,.05),0 10px 30px -14px rgba(20,32,43,.16)}'+
+ '.ch{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}'+
+ '.cu{font-size:17px;font-weight:650;letter-spacing:-.01em}'+
+ '.cs{font-size:12px;color:#8C8578;margin-top:3px}'+
+ '.pill{flex:0 0 auto;font-size:10.5px;font-weight:700;padding:6px 11px;border-radius:99px;white-space:nowrap}'+
+ '.pill.good{background:#E7F5EE;color:#1E7A50}'+
+ '.pill.warn{background:#FBF1DF;color:#8A6A2F}'+
+ '.pill.bad{background:#FBEAE7;color:#B03A2E}'+
+ '.pill.grey{background:#EEEDEA;color:#6B7280}'+
+ '.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px}'+
+ '.k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8C8578;font-weight:600}'+
+ '.v{font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums}'+
+ '.track{height:7px;background:#EFEDE8;border-radius:99px;margin-top:18px;overflow:hidden}'+
+ '.track i{display:block;height:100%;background:#14202B;border-radius:99px}'+
+ '.track.sm{height:5px;margin-top:9px}'+
+ '.track.sm b{display:block;height:100%;background:#B9975B;border-radius:99px}'+
+ '.tk{font-size:11px;color:#8C8578;margin-top:6px}'+
+ '.next{margin-top:14px;font-size:12.5px;color:#8A6A2F;background:#FBF1DF;'+
+  'padding:10px 12px;border-radius:11px}'+
+ '.sec{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#8C8578;'+
+  'font-weight:600;margin:28px 0 12px}'+
+ '.act{background:#fff;border-radius:16px;padding:16px 18px;margin-bottom:10px;font-size:13.5px;'+
+  'box-shadow:0 1px 2px rgba(20,32,43,.05)}'+
+ '.act:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;'+
+  'background:#B9975B;margin-right:10px;vertical-align:middle}'+
+ '.ft{margin-top:34px;padding-top:18px;border-top:1px solid #E2DFD8;font-size:11.5px;color:#8C8578;line-height:1.7}'+
+ '.ft b{color:#14202B;font-weight:650}'+
+ '@media(max-width:400px){.tiles{gap:7px}.tb{font-size:22px}h1{font-size:28px}}';
+
+ var body=
+ '<div class="wrap">'+
+  '<div class="hd">'+
+   '<div class="kick">Your portfolio</div>'+
+   '<h1>'+esc(name)+'</h1>'+
+   '<div class="sub">Managed by Mustafa Saleh, Allegiance Real Estate</div>'+
+   '<div class="rule"></div>'+
+  '</div>'+
+  '<div class="tiles">'+tiles+'</div>'+
+  cards+
+  (acts.length?'<div class="sec">What needs a decision</div>'+
+    acts.map(function(a){return '<div class="act">'+esc(a)+'</div>';}).join(''):'')+
+  '<div class="ft">'+
+   'Correct as at '+esc(llDate(TD))+'. Figures are from your own records and are confirmed at renewal.<br><br>'+
+   '<b>Mustafa Saleh</b><br>Allegiance Real Estate, Dubai'+
+  '</div>'+
+ '</div>';
+
+ return '<!doctype html><html lang="en"><head><meta charset="utf-8">'+
+  '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+  '<meta name="theme-color" content="#F4F2EE">'+
+  '<title>'+esc(name)+' · Portfolio</title>'+
+  '<style>'+CSS+'</style></head><body>'+body+'</body></html>';
+}
+
+function llMake(name){
+ var g=llList().filter(function(x){return x.name===name;})[0];
+ if(!g){alert('No tenancies recorded against that landlord yet.');return;}
+ var html=llHtml(name,g.rows);
+ var slug=String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+ var blob=new Blob([html],{type:'text/html'});
+ var a=document.createElement('a');
+ a.href=URL.createObjectURL(blob); a.download=slug+'.html';
+ document.body.appendChild(a); a.click();
+ setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},900);
+ haptic('light');
+}
+
+function drawLL(){
+ var el=document.getElementById('lllist'); if(!el)return;
+ var L=llList();
+ if(!L.length){
+  el.innerHTML='<div class="hint">Add a tenancy above and the landlord appears here with a page you can send them.</div>';
+  return;}
+ el.innerHTML=L.map(function(g,j){
+  var live=g.rows.filter(function(x){return x.r.status!=='Ended';});
+  var gross=live.reduce(function(a,x){return a+num(x.r.amt);},0);
+  return '<div class="row" data-ll="'+j+'" style="cursor:pointer"><div>'+
+   '<div class="lab">'+esc(pvName(g.name))+'</div>'+
+   '<div class="tgt">'+live.length+(live.length===1?' property':' properties')+
+    (gross?' · '+pmoney(gross)+' a year':' · rent not recorded')+'</div></div>'+
+   '<div class="v2" style="color:var(--gold)">Make page</div></div>';}).join('');
+ el.querySelectorAll('[data-ll]').forEach(function(b){
+  b.onclick=function(){ llMake(L[+b.dataset.ll].name); };});
+}
+
 function rentDays(r){ return r.en?ddiff(TD,r.en):null; }
 function rentFee(r){ return num(r.amt)*0.05; }
 function rentState(r){
@@ -8267,7 +8453,11 @@ var MCOLS=[
  ['nt','Notes',        function(x){return x.d+'|'+low(x.t).slice(0,40);}],
  ['proj','Projects',   function(x){return low(x.n||x.w);}],
  ['ledger','Commission',function(x){return x.d+'|'+(x.a||'')+'|'+low(x.w);}],
- ['diary','Diary',     function(x){return x.d+'|'+(x.t||'')+'|'+low(x.n);}]
+ ['diary','Diary',     function(x){return x.d+'|'+(x.t||'')+'|'+low(x.n);}],
+ /* tenancies and commission were missing here, so a merge silently dropped
+    every one of them. they key on the unit and the landlord. */
+ ['rent','Tenancies',  function(x){return low(x.p)+'|'+low(x.ll);}],
+ ['comm','Commission', function(x){return low(x.w)+'|'+(x.d||'')+'|'+(x.amt||x.a||'');}]
 ];
 function low(v){return String(v==null?'':v).trim().toLowerCase();}
 function dig(v){return String(v==null?'':v).replace(/\D/g,'');}
