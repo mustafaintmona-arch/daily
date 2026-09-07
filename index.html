@@ -1222,34 +1222,67 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
 .hubrow:active{background:var(--s2)}
 .hubrow .chev{color:var(--dim);font-size:20px;line-height:1}
 /* ---------------- site plan ---------------- */
-.plbar{display:flex;align-items:center;gap:7px;margin-bottom:8px}
-.plbar .sp{flex:1}
-.plbar button{background:var(--card);border:1px solid var(--line);color:var(--ink);
- border-radius:10px;padding:8px 13px;font-size:13px;font-weight:600}
-.plbar button:active{background:var(--card2)}
-.plbar button.on{border-color:var(--gold);color:var(--gold)}
-.plnote{font-size:12.5px;color:var(--gold);background:rgba(185,151,91,.12);
- border-radius:10px;padding:10px 12px;margin-bottom:8px;display:none}
-.plnote.on{display:block}
-#planwrap{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);
- border-radius:12px;background:#EFEDE8;max-height:62vh}
-#planinner{position:relative;width:100%;transform-origin:0 0}
-#planimg{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
-#planpins{position:absolute;inset:0;pointer-events:none}
-.pin{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;
- width:16px;height:16px;border-radius:50%;border:1.5px solid rgba(11,31,51,.55);
- background:rgba(255,255,255,.82);font-size:8px;font-weight:700;color:#0B1F33;
- display:flex;align-items:center;justify-content:center;line-height:1;padding:0}
-.pin.mine{background:var(--gold);border-color:#7d6335;color:#0B1F33;
- width:20px;height:20px;font-size:9px;box-shadow:0 0 0 2px rgba(185,151,91,.35)}
-.pin.sold{background:rgba(212,106,94,.9);border-color:#8d3b32;color:#fff}
-.pin:active{transform:translate(-50%,-50%) scale(1.35)}
-#planwrap.placing{cursor:crosshair}
-#planwrap.placing #planpins{opacity:.35}
-.plrow{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
-.plrow:last-child{border-bottom:0}
-.plrow b{flex:0 0 118px;color:var(--dim);font-weight:600}
-.plrow span{flex:1}
+.maptop{display:flex;align-items:center;gap:10px}
+.maptop .sp{flex:1}
+.mapbtn{background:var(--card);border:1px solid var(--line);color:var(--ink);
+ border-radius:10px;padding:8px 13px;font-size:12.5px;font-weight:600;white-space:nowrap;
+ text-decoration:none;display:inline-block}
+.mapbtn:active{background:var(--card2)}
+.mapbtn.gold{border-color:var(--gold);color:var(--gold)}
+.chips.mapcoms{margin-top:9px}
+.chips.mapcoms b u{text-decoration:none;opacity:.6;font-size:11px;margin-left:3px}
+.chips.mapcoms b.nomap{opacity:.55}
+.mapstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.mapstats div{background:var(--card);border:1px solid var(--line);border-radius:12px;
+ padding:11px 8px;text-align:center}
+.mapstats b{display:block;font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--gold)}
+.mapstats s{display:block;text-decoration:none;font-size:10px;color:var(--dim);margin-top:3px}
+.rotate{display:none;margin-top:10px;font-size:12.5px;color:var(--gold);
+ background:rgba(185,151,91,.12);border-radius:10px;padding:9px 12px}
+.rotate.on{display:block}
+#mapstage{position:relative;margin-top:10px;border:1px solid var(--line);border-radius:14px;
+ overflow:hidden;background:#EDEBE6;touch-action:none;aspect-ratio:1460/1100;max-height:70vh}
+#mapstage:fullscreen{max-height:none;height:100vh;border-radius:0;aspect-ratio:auto;
+ display:flex;align-items:center;justify-content:center}
+#mapinner{position:absolute;inset:0;transform-origin:50% 50%;will-change:transform}
+#mapimg{display:block;width:100%;height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
+#mappins{position:absolute;inset:0;pointer-events:none}
+.mpin{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;background:none;
+ border:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:2px}
+.mpin i{display:block;width:13px;height:13px;border-radius:50%;background:var(--gold);
+ border:2px solid #0B1F33;box-shadow:0 0 0 3px rgba(185,151,91,.32);transition:transform .14s}
+.mpin span{font-size:9px;font-weight:800;color:#0B1F33;background:var(--gold);
+ border-radius:4px;padding:1px 4px;line-height:1.25;white-space:nowrap}
+.mpin.sel i{transform:scale(1.45);box-shadow:0 0 0 5px rgba(185,151,91,.5)}
+.mpin:active i{transform:scale(1.3)}
+#mapstage.placing{cursor:crosshair}
+#mapstage.placing #mappins{opacity:.3}
+.mapctl{position:absolute;right:9px;bottom:9px;display:flex;gap:5px;
+ background:rgba(11,31,51,.82);border-radius:11px;padding:4px;backdrop-filter:blur(8px)}
+.mapctl button{background:none;border:0;color:#EDE9E1;font-size:14px;font-weight:700;
+ padding:6px 11px;border-radius:8px;min-width:38px}
+.mapctl button:active{background:rgba(255,255,255,.14)}
+.maphint{position:absolute;left:9px;bottom:12px;font-size:11px;color:#0B1F33;
+ background:rgba(255,255,255,.82);border-radius:8px;padding:5px 9px;max-width:64%}
+.lnk{background:none;border:0;color:var(--gold);text-decoration:underline;font-size:11px;padding:0}
+.mapcard{display:none;position:relative;margin-top:10px;background:var(--card);
+ border:1px solid var(--line);border-radius:16px;padding:16px 17px}
+.mapcard.on{display:block;animation:mcin .22s cubic-bezier(.22,.8,.3,1)}
+@keyframes mcin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.mapx{position:absolute;top:10px;right:11px;background:none;border:0;color:var(--dim);font-size:22px;line-height:1}
+.mch h3{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.mcs{font-size:12.5px;color:var(--dim);margin-top:2px}
+.mcprice{font-size:25px;font-weight:750;color:var(--gold);letter-spacing:-.03em;margin:12px 0 2px}
+.mcprice span{font-size:12.5px;color:var(--dim);font-weight:500;margin-left:9px;letter-spacing:0}
+.mcgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px 14px;margin-top:14px}
+.mcgrid s{display:block;text-decoration:none;font-size:9.5px;letter-spacing:.1em;
+ text-transform:uppercase;color:var(--dim)}
+.mcgrid b{display:block;font-size:13.5px;font-weight:600;margin-top:2px}
+.mcnote{margin-top:13px;background:var(--card2);border-radius:11px;padding:11px 13px;font-size:12.5px;line-height:1.55}
+.mcnote s{display:block;text-decoration:none;font-size:9.5px;letter-spacing:.1em;
+ text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.mcact{display:flex;gap:8px;margin-top:14px}
+.mapfull #s-plan{position:fixed;inset:0;z-index:60;background:var(--navy);overflow:auto;padding:12px}
 </style>
 </head>
 <body>
@@ -1380,18 +1413,7 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
     <div class="card" style="margin-top:9px" id="ulist"></div>
     <button class="addbtn" id="addunit">+ Add a unit</button></div>
 </div>
-<div id="s-plan" class="hide">
-  <div class="sec"><h2>Site plan <b id="plcount"></b></h2>
-    <div class="plbar">
-      <button id="pl-out">&minus;</button><button id="pl-fit">Fit</button><button id="pl-in">+</button>
-      <span class="sp"></span>
-      <button id="pl-place">Place pins</button>
-    </div>
-    <div class="plnote" id="plnote"></div>
-    <div id="planwrap"><div id="planinner"><img id="planimg" src="farmgardens.jpg" alt="Farm Gardens site plan"><div id="planpins"></div></div></div>
-    <div class="hint" id="pllegend"></div>
-  </div>
-</div>
+<div id="s-plan" class="hide"></div>
 <div id="s-proj" class="hide">
   <div class="sec"><h2>Projects <b id="pcount"></b></h2>
     <div id="plist"></div>
@@ -3250,7 +3272,7 @@ function drawStockSeg(){
  document.getElementById('sseg').innerHTML=STOCKSEG.map(function(o){
   return '<b class="'+(SSEG===o[0]?'on':'')+'" data-ss="'+o[0]+'">'+o[1]+'</b>';}).join('');
  STOCKSEG.forEach(function(o){document.getElementById('s-'+o[0]).classList.toggle('hide',o[0]!==SSEG);});
- if(SSEG==='plan')drawPlan();
+ if(SSEG==='plan')spDraw();
 }
 function goPage(k){
  PAGE=k;
@@ -7360,172 +7382,322 @@ function drawLL(){
 
 
 /* ================= SITE PLAN =================
-   The masterplan as a tappable map. Pin positions are fractions of the image,
-   so they hold at any zoom or screen size. Pins I could not read off the
-   brochure are placed by hand in Place pins mode, never guessed.
+   The masterplan as a map of the units you actually hold. One community at a
+   time. Nothing is drawn that you do not own or represent, so what a client
+   sees on your screen is your book and nothing else.
+
+   Positions are fractions of the image, so they hold at any zoom, any screen,
+   any orientation. Pins I placed are marked seed:1 and a pin you place by
+   hand always wins.
    ============================================= */
-const SITEPLANS={'farm gardens':{img:'farmgardens.jpg',name:'Farm Gardens 1'}};
-const PINSEED={"5":[0.42518,0.91783],"6":[0.30231,0.81202],"11":[0.35062,0.69425],"12":[0.352,0.63442],"15":[0.38723,0.65168],"19":[0.39195,0.8943],"20":[0.41132,0.91373],"22":[0.41922,0.80023],"26":[0.58557,0.79003],"27":[0.45331,0.63903],"30":[0.454,0.84484],"32":[0.48805,0.88416],"33":[0.49259,0.8204],"34":[0.48364,0.7514],"35":[0.48158,0.69447],"37":[0.48027,0.56564],"40":[0.6931,0.12462],"43":[0.4828,0.15197],"45":[0.45347,0.20969],"50":[0.41695,0.47903],"55":[0.42045,0.16621],"59":[0.42045,0.16627],"60":[0.38571,0.36969],"61":[0.38669,0.43407],"62":[0.3886,0.48359],"66":[0.35032,0.27692],"67":[0.35912,0.20615],"68":[0.34721,0.14792],"69":[0.32745,0.15601],"70":[0.31914,0.22085],"72":[0.32237,0.33259],"73":[0.32145,0.39356],"76":[0.70332,0.63573],"77":[0.70399,0.69556],"78":[0.70477,0.74798],"79":[0.70401,0.80952],"80":[0.70588,0.87504],"82":[0.67024,0.88758],"84":[0.67642,0.73316],"86":[0.67556,0.62211],"87":[0.67394,0.57704],"89":[0.63846,0.60667],"93":[0.41474,0.32125],"94":[0.63363,0.89766],"95":[0.61243,0.91094],"96":[0.5999,0.8551],"97":[0.608,0.79521],"99":[0.61136,0.65499],"101":[0.6085,0.5453],"102":[0.57277,0.54342],"103":[0.57212,0.59276],"106":[0.55353,0.77134],"109":[0.54475,0.59128],"110":[0.54497,0.53083],"115":[0.535,0.17647],"117":[0.57017,0.15823],"120":[0.57169,0.36963],"122":[0.61116,0.42701],"124":[0.6132,0.31755],"125":[0.60948,0.23151],"126":[0.60278,0.16786],"127":[0.61939,0.12387],"128":[0.63851,0.15311],"131":[0.64108,0.32923],"132":[0.6407,0.39128],"134":[0.67394,0.45852],"135":[0.67505,0.40952],"136":[0.67652,0.35202],"138":[0.67019,0.21481],"139":[0.67222,0.14792],"140":[0.70282,0.46188],"142":[0.70485,0.23789],"143":[0.70506,0.29954],"144":[0.70471,0.34957],"145":[0.70348,0.40952]};
-var PLANC='farm gardens', PLANZ=1, PLACING=null;
+const SITEMAPS={
+ 'farm gardens':{name:'Farm Gardens', img:'farmgardens.jpg', ratio:1100/1460}
+};
+/* read off the Emaar plan and checked one by one against the printed numbers */
+const MAPSEED={'farm gardens':{
+ '30':[0.374,0.796],'41':[0.440,0.236],'42':[0.460,0.164],'44':[0.394,0.102],
+ '58':[0.229,0.209],'64':[0.150,0.365],'69':[0.096,0.107],'71':[0.086,0.229],
+ '101':[0.714,0.500],'106':[0.593,0.723],'138':[0.850,0.167]}};
 
-function fgNum(x){var m=String(x||'').match(/farm gardens\s+(\d+)/i);return m?+m[1]:0;}
-function planPins(){
- S.pins=S.pins||{};
- if(!S.pins[PLANC]){ S.pins[PLANC]={}; Object.keys(PINSEED).forEach(function(k){
-   S.pins[PLANC][k]={x:PINSEED[k][0],y:PINSEED[k][1],seed:1}; }); put(S); }
- return S.pins[PLANC];
+var MAPC=null, MZ=1, MX=0, MY=0, MPLACE=null, MSEL=null;
+/* money() already carries the AED prefix, so these stay separate:
+   spShort for the stat tiles, spNum for anything measured in sqft. */
+function spShort(n){ if(S.priv)return '•••';
+ n=num(n);
+ if(Math.abs(n)>=1e6)return (n/1e6).toFixed(n>=1e7?1:2)+'M';
+ if(Math.abs(n)>=1e3)return Math.round(n/1e3)+'k';
+ return String(Math.round(n)); }
+function spNum(n){ return Math.round(num(n)).toLocaleString(); }
+
+/* two shapes to read: a unit reads "Farm Gardens 41, The Valley" and a
+   prospect reads "Farm Gardens 41 \u00b7 listing". Cut at either separator. */
+function spHead(p){ return String(p||'').split(/[,\u00b7]/)[0].trim(); }
+function comKey(p){
+ return spHead(p).replace(/\s+\d+\s*$/,'').trim().toLowerCase();
 }
-function planUnitOf(v){
- for(var i=0;i<S.units.length;i++) if(fgNum(S.units[i].p)===v) return S.units[i];
- return null;
+function unitNo(p){
+ var m=spHead(p).match(/(\d+)\s*$/);
+ return m?+m[1]:0;
 }
-function planProspectOf(v){
- for(var i=0;i<S.later.length;i++) if(fgNum(S.later[i].w)===v) return S.later[i];
- return null;
-}
-function planAll(){
- var seen={}, out=[];
- S.units.forEach(function(u){var v=fgNum(u.p); if(v)seen[v]=1;});
- S.later.forEach(function(x){var v=fgNum(x.w); if(v)seen[v]=1;});
- Object.keys(S.umap||{}).forEach(function(k){ if((S.umap[k].cm||'')==='farm gardens')seen[+k]=1; });
- Object.keys(seen).forEach(function(k){out.push(+k);});
- return out.sort(function(a,b){return a-b;});
-}
-function drawPlan(){
- var wrap=document.getElementById('planwrap'); if(!wrap)return;
- var P=planPins(), all=planAll();
- var placed=Object.keys(P).length;
- document.getElementById('plcount').textContent=placed+' of '+all.length;
- var box=document.getElementById('planpins'), h='';
- all.forEach(function(v){
-  var p=P[String(v)]; if(!p)return;
-  var u=planUnitOf(v), pr=planProspectOf(v);
-  var sold=pr&&/^SOLD /.test(String(pr.n2||''));
-  h+='<button class="pin'+(u?' mine':'')+(sold?' sold':'')+'" data-pv="'+v+'" '+
-     'style="left:'+(p.x*100).toFixed(3)+'%;top:'+(p.y*100).toFixed(3)+'%">'+v+'</button>';
+function mapComs(){
+ var m={};
+ S.units.forEach(function(u){
+  var k=comKey(u.p); if(!k)return;
+  if(!m[k])m[k]={key:k,n:0,units:[]};
+  m[k].n++; m[k].units.push(u);
  });
- box.innerHTML=h;
- box.querySelectorAll('[data-pv]').forEach(function(b){
-  b.onclick=function(e){e.stopPropagation();haptic('light');planSheet(+b.dataset.pv);};});
- var mine=all.filter(planUnitOf).length;
- document.getElementById('pllegend').innerHTML=
-  '<b style="color:var(--gold)">Gold</b> is yours to sell ('+mine+'). '+
-  'Red has just sold. Tap any pin for the detail. '+
-  (placed<all.length?('<b>'+(all.length-placed)+'</b> villas have no pin yet, tap Place pins to add them.'):'Every villa is pinned.');
- document.getElementById('planinner').style.width=(PLANZ*100)+'%';
+ return Object.keys(m).sort(function(a,b){return m[b].n-m[a].n;}).map(function(k){return m[k];});
 }
-function planSheet(v){
- var u=planUnitOf(v), pr=planProspectOf(v), um=(S.umap||{})[String(v)]||{};
- var bd=num(um.bd)||num(u&&u.bd)||num(pr&&pr.hkb);
- var h='';
- function row(l,x){return x?'<div class="plrow"><b>'+esc(l)+'</b><span>'+x+'</span></div>':'';}
- if(u){
-  var fee=num(u.pr)*0.02;
-  h+='<div class="lab" style="color:var(--gold);margin-bottom:4px">YOURS TO SELL</div><div class="card">'+
-   row('Asking', num(u.pr)?'AED '+pmoney(u.pr):'<span class="dim">not set</span>')+
-   row('Your fee at 2%', num(u.pr)?'AED '+pmoney(fee):'')+
-   row('Type', esc(u.t||''))+
-   row('Payment plan', esc(u.pl||''))+
-   row('Handover', esc(u.h||''))+
-   '</div>';
-  if(u.n)h+='<div class="hint" style="margin-top:8px">'+esc(u.n)+'</div>';
+function mapPins(){
+ S.pins=S.pins||{};
+ if(!S.pins[MAPC]){
+  S.pins[MAPC]={};
+  var sd=MAPSEED[MAPC]||{};
+  Object.keys(sd).forEach(function(k){S.pins[MAPC][k]={x:sd[k][0],y:sd[k][1],seed:1};});
+  put(S);
  }
- h+='<div class="lab" style="margin:14px 0 4px">THE PLOT</div><div class="card">'+
-   row('Bedrooms', bd?bd+' bed':'')+
-   row('Backs onto', esc(um.bk||''))+
-   row('Position', esc(um.cl||''))+
-   '</div>';
- if(pr&&pr.n2)
-  h+='<div class="lab" style="margin:14px 0 4px">THE MARKET</div>'+
-     '<div class="card"><div class="plrow"><span>'+esc(pr.n2)+'</span></div></div>';
- if(pr){
-  h+='<div class="lab" style="margin:14px 0 4px">OWNER</div><div class="card">'+
-    row('Name', pvName(pr.n||''))+
-    row('Phone', S.priv?'&bull;&bull;&bull;':esc(pr.ph||'not on record'))+
-    row('Last outcome', esc(pr.last||''))+
-    '</div>';
-  var d=String(pr.ph||'').replace(/\D/g,'');
-  if(d&&!S.priv)
-   h+='<div class="two" style="margin-top:10px">'+
-      '<a class="btnfull" style="text-align:center;text-decoration:none;display:block" '+
-      'href="https://wa.me/'+d+'" target="_blank" rel="noopener">WhatsApp</a>'+
-      '<a class="btnfull" style="text-align:center;text-decoration:none;display:block" '+
-      'href="tel:+'+d+'">Call</a></div>';
+ return S.pins[MAPC];
+}
+function mapUnits(){
+ return S.units.filter(function(u){return comKey(u.p)===MAPC;})
+   .sort(function(a,b){return num(b.pr)-num(a.pr);});
+}
+function mapApply(){
+ var inner=document.getElementById('mapinner'); if(!inner)return;
+ inner.style.transform='translate3d('+MX.toFixed(1)+'px,'+MY.toFixed(1)+'px,0) scale('+MZ.toFixed(3)+')';
+}
+function mapClamp(){
+ var st=document.getElementById('mapstage'); if(!st)return;
+ var w=st.clientWidth, h=st.clientHeight;
+ var ow=w*MZ, oh=h*MZ;
+ var maxX=Math.max(0,(ow-w)/2), maxY=Math.max(0,(oh-h)/2);
+ MX=Math.max(-maxX,Math.min(maxX,MX));
+ MY=Math.max(-maxY,Math.min(maxY,MY));
+}
+function mapZoom(z,cx,cy){
+ var st=document.getElementById('mapstage'); if(!st)return;
+ var old=MZ; MZ=Math.max(1,Math.min(7,z));
+ if(cx!==undefined){
+  var r=st.getBoundingClientRect();
+  var dx=cx-r.left-r.width/2, dy=cy-r.top-r.height/2;
+  MX=(MX-dx)*(MZ/old)+dx; MY=(MY-dy)*(MZ/old)+dy;
  }
- openTool('Villa '+v+(bd?' \u00b7 '+bd+' bed':''), h, '');
+ if(MZ===1){MX=0;MY=0;}
+ mapClamp(); mapApply(); drawMapBar();
 }
-/* --------- place a pin by tapping where it really is --------- */
-function planNext(){
- var P=planPins(), all=planAll();
- for(var i=0;i<all.length;i++) if(!P[String(all[i])]) return all[i];
- return null;
-}
-function planPlaceMode(on){
- var wrap=document.getElementById('planwrap');
- var note=document.getElementById('plnote');
- var btn=document.getElementById('pl-place');
- if(!on){ PLACING=null; wrap.classList.remove('placing'); note.classList.remove('on');
-  btn.classList.remove('on'); btn.textContent='Place pins'; drawPlan(); return; }
- PLACING=planNext();
- if(PLACING===null){ alert('Every villa already has a pin. Tap a pin and choose Move it if one is wrong.'); return; }
- wrap.classList.add('placing'); note.classList.add('on');
- btn.classList.add('on'); btn.textContent='Done';
- note.innerHTML='Find <b>villa '+PLACING+'</b> on the plan and tap it. '+
-   '<span class="dim">Zoom in first, it is easier.</span> '+
-   '<button id="pl-skip" style="margin-left:8px;background:none;border:0;color:var(--gold);'+
-   'text-decoration:underline;font-size:12.5px">skip</button>';
- var sk=document.getElementById('pl-skip');
- if(sk)sk.onclick=function(e){e.stopPropagation();planSkip();};
-}
-var PLSKIP={};
-function planSkip(){
- if(PLACING!==null)PLSKIP[PLACING]=1;
- var P=planPins(), all=planAll(), nx=null;
- for(var i=0;i<all.length;i++){var k=all[i]; if(!P[String(k)]&&!PLSKIP[k]){nx=k;break;}}
- if(nx===null){ alert('Nothing left to place.'); planPlaceMode(false); return; }
- PLACING=nx; planPlaceMode(true);
+function drawMapBar(){
+ var z=document.getElementById('mapzoom');
+ if(z)z.textContent=MZ<1.05?'Fit':(MZ.toFixed(1)+'×');
 }
 
-/* --------- site plan controls --------- */
-(function(){
- var zin=document.getElementById('pl-in'), zout=document.getElementById('pl-out'),
-     fit=document.getElementById('pl-fit'), place=document.getElementById('pl-place'),
-     inner=document.getElementById('planinner'), wrap=document.getElementById('planwrap');
- if(!inner)return;
- function setZ(z){
-  PLANZ=Math.max(1,Math.min(6,z));
-  inner.style.width=(PLANZ*100)+'%';
+/* ---------------- draw ---------------- */
+function spDraw(){
+ var host=document.getElementById('s-plan'); if(!host)return;
+ var coms=mapComs();
+ if(!coms.length){
+  host.innerHTML='<div class="sec"><h2>Site plan</h2>'+
+   '<div class="hint">Add a unit to your stock and it appears here on the plan.</div></div>';
+  return;}
+ if(!MAPC||!coms.some(function(c){return c.key===MAPC;})){
+  var withMap=coms.filter(function(c){return SITEMAPS[c.key];});
+  MAPC=(withMap[0]||coms[0]).key;
  }
- if(zin)zin.onclick=function(){
-  var cx=(wrap.scrollLeft+wrap.clientWidth/2)/inner.offsetWidth;
-  var cy=(wrap.scrollTop+wrap.clientHeight/2)/inner.offsetHeight;
-  setZ(PLANZ*1.6); haptic('light');
-  wrap.scrollLeft=cx*inner.offsetWidth-wrap.clientWidth/2;
-  wrap.scrollTop=cy*inner.offsetHeight-wrap.clientHeight/2;
+ var cfg=SITEMAPS[MAPC], units=mapUnits(), P=cfg?mapPins():{};
+ var placed=units.filter(function(u){return P[String(unitNo(u.p))];});
+ var todo=units.filter(function(u){return !P[String(unitNo(u.p))];});
+
+ var chips=coms.map(function(c){
+  var has=!!SITEMAPS[c.key];
+  return '<b class="'+(c.key===MAPC?'on':'')+(has?'':' nomap')+'" data-mc="'+esc(c.key)+'">'+
+   esc((SITEMAPS[c.key]&&SITEMAPS[c.key].name)||c.key.replace(/\b\w/g,function(x){return x.toUpperCase();}))+
+   ' <u>'+c.n+'</u></b>';}).join('');
+
+ var h='<div class="sec">'+
+  '<div class="maptop"><h2>Site plan</h2><div class="sp"></div>'+
+   '<button class="mapbtn" id="mapfull">Full screen</button></div>'+
+  '<div class="chips mapcoms">'+chips+'</div>';
+
+ if(!cfg){
+  h+='<div class="card" style="margin-top:10px"><div class="hint">'+
+   'No plan loaded for this community yet. Send me the masterplan image with the '+
+   'unit numbers on it and your '+units.length+' unit'+(units.length===1?'':'s')+' will appear on it.'+
+   '</div></div></div>';
+  host.innerHTML=h; wireMapComs(); return;
+ }
+
+ var total=units.reduce(function(a,u){return a+num(u.pr);},0);
+ h+='<div class="mapstats">'+
+   '<div><b>'+units.length+'</b><s>units here</s></div>'+
+   '<div><b>'+spShort(total)+'</b><s>AED total</s></div>'+
+   '<div><b>'+spShort(total*0.02)+'</b><s>fee at 2%</s></div>'+
+  '</div>'+
+  '<div class="rotate" id="maprot">Turn your phone sideways for the full plan.</div>'+
+  '<div id="mapstage"><div id="mapinner">'+
+    '<img id="mapimg" src="'+esc(cfg.img)+'" alt="'+esc(cfg.name)+' site plan" draggable="false">'+
+    '<div id="mappins"></div></div>'+
+   '<div class="mapctl">'+
+     '<button data-mz="out">&minus;</button>'+
+     '<button data-mz="fit" id="mapzoom">Fit</button>'+
+     '<button data-mz="in">+</button>'+
+   '</div>'+
+   '<div class="maphint" id="maphint"></div>'+
+  '</div>'+
+  '<div id="mapcard" class="mapcard"></div>';
+
+ if(todo.length){
+  h+='<div class="lab" style="margin:16px 0 6px">NOT ON THE PLAN YET</div><div class="card">'+
+   todo.map(function(u){var v=unitNo(u.p);
+    return '<div class="row"><div><div class="lab">'+esc(u.p)+'</div>'+
+     '<div class="tgt">'+esc(u.t||'')+'</div></div>'+
+     '<div class="v2"><button class="mapbtn gold" data-place="'+v+'">Place</button></div></div>';
+   }).join('')+'</div>';
+ }
+ h+='</div>';
+ host.innerHTML=h;
+ wireMapComs(); wireMapStage(); drawPins();
+ document.getElementById('maphint').textContent=
+  placed.length+' of '+units.length+' pinned · pinch or double tap to zoom';
+}
+
+function drawPins(){
+ var box=document.getElementById('mappins'); if(!box)return;
+ var P=mapPins(), out='';
+ mapUnits().forEach(function(u){
+  var v=unitNo(u.p), p=P[String(v)]; if(!p)return;
+  out+='<button class="mpin'+(MSEL===v?' sel':'')+'" data-mv="'+v+'" '+
+   'style="left:'+(p.x*100).toFixed(3)+'%;top:'+(p.y*100).toFixed(3)+'%">'+
+   '<i></i><span>'+v+'</span></button>';
+ });
+ box.innerHTML=out;
+ box.querySelectorAll('[data-mv]').forEach(function(b){
+  b.onclick=function(e){e.stopPropagation();haptic('light');mapCard(+b.dataset.mv);};});
+}
+
+function mapCard(v){
+ MSEL=v; drawPins();
+ var u=null; mapUnits().forEach(function(x){if(unitNo(x.p)===v)u=x;});
+ if(!u)return;
+ var el=document.getElementById('mapcard'); if(!el)return;
+ var psf=num(u.bua)?Math.round(num(u.pr)/num(u.bua)):0;
+ var fee=num(u.pr)*0.02;
+ var um=(S.umap||{})[String(v)]||{};
+ var pr=null; S.later.forEach(function(x){ if(unitNo(x.w)===v&&comKey(x.w)===MAPC)pr=x; });
+ function bit(l,x){return x?'<div><s>'+esc(l)+'</s><b>'+x+'</b></div>':'';}
+ var html='<button class="mapx" id="mapclose">&times;</button>'+
+  '<div class="mch"><h3>'+esc(u.p.split(',')[0])+'</h3>'+
+   '<div class="mcs">'+esc(u.t||'')+(u.tag?' · '+esc(u.tag):'')+'</div></div>'+
+  '<div class="mcprice">'+(num(u.pr)?pmoney(u.pr):'Price not set')+
+   (psf&&!S.priv?'<span>'+spNum(psf)+' /sqft</span>':'')+'</div>'+
+  '<div class="mcgrid">'+
+   bit('Your fee at 2%', num(u.pr)?pmoney(fee):'')+
+   bit('Bedrooms', num(u.bd)?num(u.bd)+' bed':(um.bd?um.bd+' bed':''))+
+   bit('Built up', num(u.bua)?spNum(u.bua)+' sqft':'')+
+   bit('Plot', num(u.plot)?spNum(u.plot)+' sqft':'')+
+   bit('Payment plan', esc(u.pl||''))+
+   bit('Handover', esc(u.h||''))+
+   bit('Position', esc(u.rw||''))+
+   bit('Backs onto', esc(um.bk||''))+
+  '</div>'+
+  (pr&&pr.n2?'<div class="mcnote"><s>LATEST NEARBY</s>'+esc(pr.n2)+'</div>':'')+
+  (u.n?'<div class="mcnote"><s>YOUR NOTE</s>'+esc(u.n)+'</div>':'')+
+  '<div class="mcact">'+
+   '<button class="mapbtn" data-move="'+v+'">Move the pin</button>'+
+   (u.link?'<a class="mapbtn gold" href="'+esc(u.link)+'" target="_blank" rel="noopener">Listing</a>':'')+
+  '</div>';
+ el.innerHTML=html; el.classList.add('on');
+ document.getElementById('mapclose').onclick=function(){
+  el.classList.remove('on'); MSEL=null; drawPins();};
+ var mv=el.querySelector('[data-move]');
+ if(mv)mv.onclick=function(){el.classList.remove('on');mapPlace(+mv.dataset.move);};
+}
+
+function mapPlace(v){
+ MPLACE=v; MSEL=null; drawPins();
+ var st=document.getElementById('mapstage');
+ st.classList.add('placing');
+ document.getElementById('maphint').innerHTML=
+  'Tap where <b>unit '+v+'</b> sits on the plan. '+
+  '<button id="mapcancel" class="lnk">cancel</button>';
+ var c=document.getElementById('mapcancel');
+ if(c)c.onclick=function(e){e.stopPropagation();mapPlaceStop();};
+}
+function mapPlaceStop(){
+ MPLACE=null;
+ var st=document.getElementById('mapstage'); if(st)st.classList.remove('placing');
+ spDraw();
+}
+
+/* ---------------- gestures ---------------- */
+function wireMapComs(){
+ document.querySelectorAll('[data-mc]').forEach(function(b){
+  b.onclick=function(){MAPC=b.dataset.mc;MZ=1;MX=0;MY=0;MSEL=null;MPLACE=null;spDraw();haptic('light');};});
+ var f=document.getElementById('mapfull');
+ if(f)f.onclick=function(){
+  var st=document.getElementById('mapstage');
+  if(!st)return;
+  if(st.requestFullscreen)st.requestFullscreen().catch(function(){});
+  else if(st.webkitRequestFullscreen)st.webkitRequestFullscreen();
+  else document.getElementById('p-stock').classList.toggle('mapfull');
+  haptic('light');
  };
- if(zout)zout.onclick=function(){setZ(PLANZ/1.6);haptic('light');};
- if(fit)fit.onclick=function(){setZ(1);wrap.scrollLeft=0;wrap.scrollTop=0;haptic('light');};
- if(place)place.onclick=function(){ planPlaceMode(!PLACING&&PLACING!==0); };
+ document.querySelectorAll('[data-place]').forEach(function(b){
+  b.onclick=function(){mapPlace(+b.dataset.place);};});
+}
+function wireMapStage(){
+ var st=document.getElementById('mapstage'), inner=document.getElementById('mapinner');
+ if(!st||!inner)return;
+ st.querySelectorAll('[data-mz]').forEach(function(b){
+  b.onclick=function(e){e.stopPropagation();
+   var k=b.dataset.mz;
+   if(k==='in')mapZoom(MZ*1.7);
+   else if(k==='out')mapZoom(MZ/1.7);
+   else {MZ=1;MX=0;MY=0;mapApply();drawMapBar();}
+   haptic('light');};});
 
- /* tap the plan to drop the pin you are being asked for */
+ var pt={}, start=null, lastTap=0;
+ function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+ st.addEventListener('touchstart',function(e){
+  for(var i=0;i<e.changedTouches.length;i++){
+   var t=e.changedTouches[i]; pt[t.identifier]={x:t.clientX,y:t.clientY};}
+  var ks=Object.keys(pt);
+  if(ks.length===1){
+   start={x:pt[ks[0]].x,y:pt[ks[0]].y,mx:MX,my:MY,moved:0};
+  } else if(ks.length===2){
+   start={d:dist(pt[ks[0]],pt[ks[1]]),z:MZ,
+     cx:(pt[ks[0]].x+pt[ks[1]].x)/2, cy:(pt[ks[0]].y+pt[ks[1]].y)/2, pinch:1};
+  }
+ },{passive:true});
+ st.addEventListener('touchmove',function(e){
+  for(var i=0;i<e.changedTouches.length;i++){
+   var t=e.changedTouches[i]; if(pt[t.identifier])pt[t.identifier]={x:t.clientX,y:t.clientY};}
+  var ks=Object.keys(pt);
+  if(!start)return;
+  if(ks.length>=2&&start.pinch){
+   var d=dist(pt[ks[0]],pt[ks[1]]);
+   if(start.d>0)mapZoom(start.z*(d/start.d), start.cx, start.cy);
+   e.preventDefault();
+  } else if(ks.length===1&&!start.pinch&&MZ>1){
+   MX=start.mx+(pt[ks[0]].x-start.x);
+   MY=start.my+(pt[ks[0]].y-start.y);
+   start.moved=Math.max(start.moved,Math.abs(pt[ks[0]].x-start.x)+Math.abs(pt[ks[0]].y-start.y));
+   mapClamp(); mapApply(); e.preventDefault();
+  }
+ },{passive:false});
+ st.addEventListener('touchend',function(e){
+  for(var i=0;i<e.changedTouches.length;i++) delete pt[e.changedTouches[i].identifier];
+  if(!Object.keys(pt).length){
+   if(start&&!start.pinch&&start.moved<8){
+    var now=Date.now();
+    if(now-lastTap<300){ mapZoom(MZ>1.6?1:2.8, start.x, start.y); lastTap=0; }
+    else lastTap=now;
+   }
+   start=null;
+  }
+ },{passive:true});
+
+ /* placing a pin: tap the plan, we store where you tapped */
  inner.addEventListener('click',function(e){
-  if(PLACING===null||PLACING===undefined)return;
-  if(e.target&&e.target.classList&&e.target.classList.contains('pin'))return;
+  if(MPLACE===null||MPLACE===undefined)return;
+  if(e.target&&e.target.closest&&e.target.closest('.mpin'))return;
   var r=inner.getBoundingClientRect();
   var x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
   if(x<0||x>1||y<0||y>1)return;
-  var P=planPins();
-  P[String(PLACING)]={x:+x.toFixed(5),y:+y.toFixed(5)};
+  mapPins()[String(MPLACE)]={x:+x.toFixed(5),y:+y.toFixed(5)};
   put(S); haptic('light');
-  var done=PLACING;
-  var nx=null, all=planAll();
-  for(var i=0;i<all.length;i++){var k=all[i]; if(!P[String(k)]&&!PLSKIP[k]){nx=k;break;}}
-  drawPlan();
-  if(nx===null){ planPlaceMode(false); alert('Villa '+done+' placed. That is all of them.'); return; }
-  PLACING=nx; planPlaceMode(true);
+  var done=MPLACE; MPLACE=null;
+  var st2=document.getElementById('mapstage'); if(st2)st2.classList.remove('placing');
+  spDraw(); mapCard(done);
  });
-})();
 
+ /* the rotate nudge only shows when it would actually help */
+ function rot(){
+  var r=document.getElementById('maprot'); if(!r)return;
+  r.classList.toggle('on', window.innerHeight>window.innerWidth && window.innerWidth<820);
+ }
+ rot(); window.addEventListener('resize',rot); window.addEventListener('orientationchange',function(){
+  setTimeout(function(){rot();MZ=1;MX=0;MY=0;mapApply();drawMapBar();},250);});
+ mapApply(); drawMapBar();
+}
 function rentDays(r){ return r.en?ddiff(TD,r.en):null; }
 function rentFee(r){ return num(r.amt)*0.05; }
 function rentState(r){
@@ -8855,6 +9027,8 @@ function openMerge(o,fname){
  });
  h+='<div class="hint" style="margin-top:12px">A snapshot is saved first. If this goes wrong, '+
     'More then Undo a restore.</div>'+
+    '<button class="addbtn" id="mgall" style="margin-top:10px">Take the other side on everything</button>'+
+    '<div class="hint" style="margin-top:5px">Only for a file you trust. Anything you changed here is replaced.</div>'+
     '<button class="btnfull" id="mggo" style="margin-top:12px">Merge</button>'+
     '<button class="addbtn" id="mgcancel" style="margin-top:8px">Cancel</button>';
  openTool('Merge, not replace',h,'');
@@ -8865,6 +9039,19 @@ function openMerge(o,fname){
    var id=b.dataset.mg; MPICK[id]=b.dataset.v;
    box.querySelectorAll('[data-mg="'+id+'"]').forEach(function(o){
     o.classList.toggle('on',o===b);});};});
+ /* tapping Theirs on a hundred rows is not a workflow. one button does the lot. */
+ var ma=document.getElementById('mgall');
+ if(ma)ma.onclick=function(){
+  var n=0;
+  MPLAN.cols.forEach(function(c){ c.rows.forEach(function(r,j){
+   if(r.t==='goneThere')return;            /* never mass-delete */
+   MPICK[c.key+':'+j]='take'; n++; });});
+  box.querySelectorAll('[data-mg]').forEach(function(b){
+   b.classList.toggle('on', b.dataset.v==='take');});
+  haptic('light');
+  this.textContent='Taking the other side on all '+n;
+  this.classList.add('on');
+ };
  document.getElementById('mgcancel').onclick=function(){closeTool();};
  document.getElementById('mggo').onclick=function(){applyMerge(o);};
 }
