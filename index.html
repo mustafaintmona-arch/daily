@@ -1282,7 +1282,21 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
 .mcnote s{display:block;text-decoration:none;font-size:9.5px;letter-spacing:.1em;
  text-transform:uppercase;color:var(--dim);margin-bottom:4px}
 .mcact{display:flex;gap:8px;margin-top:14px}
-.mapfull #s-plan{position:fixed;inset:0;z-index:60;background:var(--navy);overflow:auto;padding:12px}
+.mpin.four i{background:#9BA6B2;box-shadow:0 0 0 3px rgba(155,166,178,.3)}
+.mpin.four span{background:#9BA6B2;color:#0B1F33}
+.mpin.five i{background:var(--gold);box-shadow:0 0 0 3px rgba(185,151,91,.32)}
+.mpin.five span{background:var(--gold);color:#0B1F33}
+.maphint i{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 5px 0 0;
+ vertical-align:middle;border:1.5px solid #0B1F33}
+.maphint i.lg4{background:#9BA6B2} .maphint i.lg5{background:#B9975B;margin-left:10px}
+body.spfull #mapstage{position:fixed;inset:0;z-index:70;border-radius:0;max-height:none;
+ aspect-ratio:auto;width:100vw;height:100dvh;background:#0B1F33}
+body.spfull .nav{display:none!important}
+body.spfull #mapstage .mapctl{bottom:calc(9px + env(safe-area-inset-bottom))}
+body.spfull #spx{display:flex}
+#spx{display:none;position:absolute;top:calc(10px + env(safe-area-inset-top));right:10px;z-index:3;
+ width:38px;height:38px;border-radius:50%;background:rgba(11,31,51,.82);color:#EDE9E1;
+ border:0;align-items:center;justify-content:center;font-size:20px}
 </style>
 </head>
 <body>
@@ -7399,7 +7413,18 @@ const MAPSEED={'farm gardens':{
  '58':[0.229,0.209],'64':[0.150,0.365],'69':[0.096,0.107],'71':[0.086,0.229],
  '101':[0.714,0.500],'106':[0.593,0.723],'138':[0.850,0.167]}};
 
-var MAPC=null, MZ=1, MX=0, MY=0, MPLACE=null, MSEL=null;
+var MAPC=null, MZ=1, MX=0, MY=0, MPLACE=null, MSEL=null, SPFULL=false;
+/* iOS will not give a plain div the Fullscreen API, so asking for it fails
+   quietly and the button looks broken. A fixed overlay works everywhere. */
+function spFull(on){
+ SPFULL = (on===undefined) ? !SPFULL : !!on;
+ document.body.classList.toggle('spfull', SPFULL);
+ var f=document.getElementById('mapfull');
+ if(f)f.textContent=SPFULL?'Close':'Full screen';
+ MZ=1; MX=0; MY=0;
+ setTimeout(function(){mapApply();drawMapBar();},60);
+ haptic('light');
+}
 /* money() already carries the AED prefix, so these stay separate:
    spShort for the stat tiles, spNum for anything measured in sqft. */
 function spShort(n){ if(S.priv)return '•••';
@@ -7521,6 +7546,7 @@ function spDraw(){
      '<button data-mz="in">+</button>'+
    '</div>'+
    '<div class="maphint" id="maphint"></div>'+
+   '<button id="spx" aria-label="Close full screen">&times;</button>'+
   '</div>'+
   '<div id="mapcard" class="mapcard"></div>';
 
@@ -7535,8 +7561,10 @@ function spDraw(){
  h+='</div>';
  host.innerHTML=h;
  wireMapComs(); wireMapStage(); drawPins();
- document.getElementById('maphint').textContent=
-  placed.length+' of '+units.length+' pinned · pinch or double tap to zoom';
+ var five=units.filter(function(u){var um=(S.umap||{})[String(unitNo(u.p))]||{};
+   return (num(u.bd)||num(um.bd))===5;}).length;
+ document.getElementById('maphint').innerHTML=
+  '<i class="lg5"></i>'+five+' five bed <i class="lg4"></i>'+(units.length-five)+' four bed';
 }
 
 function drawPins(){
@@ -7544,7 +7572,9 @@ function drawPins(){
  var P=mapPins(), out='';
  mapUnits().forEach(function(u){
   var v=unitNo(u.p), p=P[String(v)]; if(!p)return;
-  out+='<button class="mpin'+(MSEL===v?' sel':'')+'" data-mv="'+v+'" '+
+  var um=(S.umap||{})[String(v)]||{};
+  var bd=num(u.bd)||num(um.bd);          /* gold is a 5 bed, grey is a 4 */
+  out+='<button class="mpin'+(bd===5?' five':' four')+(MSEL===v?' sel':'')+'" data-mv="'+v+'" '+
    'style="left:'+(p.x*100).toFixed(3)+'%;top:'+(p.y*100).toFixed(3)+'%">'+
    '<i></i><span>'+v+'</span></button>';
  });
@@ -7612,20 +7642,15 @@ function wireMapComs(){
  document.querySelectorAll('[data-mc]').forEach(function(b){
   b.onclick=function(){MAPC=b.dataset.mc;MZ=1;MX=0;MY=0;MSEL=null;MPLACE=null;spDraw();haptic('light');};});
  var f=document.getElementById('mapfull');
- if(f)f.onclick=function(){
-  var st=document.getElementById('mapstage');
-  if(!st)return;
-  if(st.requestFullscreen)st.requestFullscreen().catch(function(){});
-  else if(st.webkitRequestFullscreen)st.webkitRequestFullscreen();
-  else document.getElementById('p-stock').classList.toggle('mapfull');
-  haptic('light');
- };
+ if(f)f.onclick=function(){spFull();};
  document.querySelectorAll('[data-place]').forEach(function(b){
   b.onclick=function(){mapPlace(+b.dataset.place);};});
 }
 function wireMapStage(){
  var st=document.getElementById('mapstage'), inner=document.getElementById('mapinner');
  if(!st||!inner)return;
+ var xb=document.getElementById('spx');
+ if(xb)xb.onclick=function(e){e.stopPropagation();spFull(false);};
  st.querySelectorAll('[data-mz]').forEach(function(b){
   b.onclick=function(e){e.stopPropagation();
    var k=b.dataset.mz;
@@ -7694,6 +7719,7 @@ function wireMapStage(){
   var r=document.getElementById('maprot'); if(!r)return;
   r.classList.toggle('on', window.innerHeight>window.innerWidth && window.innerWidth<820);
  }
+ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&SPFULL)spFull(false);});
  rot(); window.addEventListener('resize',rot); window.addEventListener('orientationchange',function(){
   setTimeout(function(){rot();MZ=1;MX=0;MY=0;mapApply();drawMapBar();},250);});
  mapApply(); drawMapBar();
