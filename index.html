@@ -18,8 +18,6 @@ button,a,.seg b,.cd,.uhead{-webkit-user-select:none;user-select:none}
 button,.seg b,.cd,.qbtn,.tool,.ub,.addbtn{transition:transform .09s ease,background .15s ease,color .15s ease,opacity .15s ease}
 button:active,.seg b:active,.cd:active,.qbtn:active,.tool:active,.ub:active,.addbtn:active{transform:scale(.97)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-.fade{animation:fi .18s ease}
-@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 :root{--navy:#0B1F33;--gold:#B9975B;--ink:#EDE9E1;--dim:#8C8578;--card:#12293F;--card2:#0E2334;
  --line:#1E3A54;--ok:#4CAF7D;--bad:#D46A5E}
 body{background:var(--navy);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -659,9 +657,6 @@ h2 b{color:var(--gold);font-weight:600;letter-spacing:.04em;text-transform:none;
 .pill,.tg,.rwp,.dft,.stp,.dom,.vrow,.rw2{font-weight:600;letter-spacing:.04em}
 .tg,.dom{padding:3px 9px}
 /* motion: content arrives, it does not jump */
-.fade{animation:fade .22s ease}
-@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-.card,.pc2,.unit{animation:fade .18s ease}
 /* nav sits quieter */
 nav b{transition:color .15s}
 nav b.on i{transform:translateY(-1px)}
@@ -938,6 +933,11 @@ body{background:var(--s0);color:var(--t1);font-size:var(--f2);line-height:1.5;le
 .pgtitle{font-family:inherit;font-size:var(--f5);font-weight:650;letter-spacing:-.03em;margin-top:var(--x4)}
 .upn .nm,.qwho,.vname{font-size:var(--f5);font-weight:650;letter-spacing:-.03em;line-height:1.15}
 .pc2 .nm2{font-size:var(--f4);font-weight:650;letter-spacing:-.02em}
+.sidep{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;
+ border-radius:6px;font-size:10.5px;font-weight:800;margin-right:7px;padding:0 4px}
+.sidep.buyer{background:#5AA9E6;color:#06233A}
+.sidep.seller{background:var(--gold);color:var(--navy)}
+.sidep.both{background:var(--ok);color:#06231A}
 
 .card,.pc2,.upn,.brief,.cal,.dcard,.move,.hhb,.nobar,.nag,.focus,.tplbox,.jbox,
 .rvl,.mreq,.qwhy,.vnote,.docc,.galcell{background:var(--s1);border:1px solid var(--hair);
@@ -2210,21 +2210,30 @@ function goBack(){
  return false;
 }
 (function(){
- /* swipe in from the left edge to go back, the way every other app on the phone works */
- var sx=0,sy=0,live=false;
+ /* Swipe left or right anywhere to move between the main tabs. Coming in from
+    the very left edge still means back, because that is what the phone does. */
+ var SWIPE=['today','deals','stock','more'];
+ var sx=0,sy=0,live=false,edge=false,t0=0;
+ var BLOCK='.chips,.seg,.cseg,.slists,.cal,.pick,#mapstage,.upn,input,textarea,select';
  document.addEventListener('touchstart',function(e){
-  live=false;
+  live=false; edge=false;
   if(e.touches.length!==1)return;
   var t=e.touches[0];
-  if(t.clientX>26)return;
-  if(e.target&&e.target.closest&&
-     e.target.closest('.chips,.seg,.cseg,.slists,.cal,input,textarea,select'))return;
-  sx=t.clientX; sy=t.clientY; live=true;
+  if(e.target&&e.target.closest&&e.target.closest(BLOCK))return;
+  sx=t.clientX; sy=t.clientY; t0=Date.now(); edge=(t.clientX<=26); live=true;
  },{passive:true});
  document.addEventListener('touchend',function(e){
   if(!live)return; live=false;
   var t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
-  if(dx>70&&Math.abs(dy)<55&&goBack())haptic('light');
+  if(Date.now()-t0>800)return;
+  if(Math.abs(dx)<62||Math.abs(dy)>60)return;
+  if(Math.abs(dx)<Math.abs(dy)*1.4)return;
+  if(edge&&dx>0){ if(goBack())haptic('light'); return; }
+  if(SUBP[PAGE]){ if(dx>0&&goBack())haptic('light'); return; }
+  var i=SWIPE.indexOf(PAGE); if(i<0)return;
+  var j=i+(dx<0?1:-1);
+  if(j<0||j>=SWIPE.length)return;
+  goPage(SWIPE[j]);
  },{passive:true});
 })();
 document.getElementById('nav').addEventListener('click',function(e){
@@ -3343,17 +3352,14 @@ function drawStockSeg(){
 }
 function goPage(k){
  PAGE=k;
+ /* three forced reflows and three animations on every tab tap is what read as
+    a flash. Show the page, animate nothing. */
  ALLP.forEach(function(id){var el=document.getElementById('p-'+id); if(!el)return;
-  el.classList.toggle('hide',id!==PAGE);
-  if(id===PAGE){el.classList.remove('fade');void el.offsetWidth;el.classList.add('fade');}});
+  el.classList.toggle('hide',id!==PAGE);});
  document.getElementById('pgtitle').textContent=PTITLE[PAGE]||PAGE;
  var bk=document.getElementById('pback'); if(bk)bk.classList.toggle('hide',!SUBP[PAGE]);
  pageDraw(k); drawNav(); window.scrollTo(0,0);
- requestAnimationFrame(function(){
-  segAll();
-  stagger(document.getElementById('dlist'));
-  stagger(document.getElementById('ulist'));
- });
+ requestAnimationFrame(segAll);
  haptic('light');
 }
 function drawNav(){
@@ -4381,7 +4387,8 @@ function drawDeals(){
         :'<button class="go2" data-ed="'+i+'">Add a number</button>');
   return '<div class="pc2'+(late?' late':'')+(d.s===4?' won':'')+'" id="pc-'+i+'">'+
    '<div class="r1"><div style="flex:1;min-width:0">'+
-     '<div class="nm2">'+esc(pvName(d.w))+'</div>'+
+     '<div class="nm2">'+(d.side?'<span class="sidep '+d.side.toLowerCase()+'">'+
+       esc(d.side==='Both'?'B/S':d.side.charAt(0))+'</span>':'')+esc(pvName(d.w))+'</div>'+
      '<div class="m2">'+esc(pvNum(d.u||'No unit yet'))+' · '+sub+'</div></div>'+
      '<div class="fee2">'+pmoney(dealFee(d))+'<small>your fee</small></div></div>'+
    '<div class="tags">'+tags+'</div>'+
