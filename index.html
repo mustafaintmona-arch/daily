@@ -1283,6 +1283,27 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
  text-transform:uppercase;color:var(--dim);margin-bottom:4px}
 .mcact{display:flex;gap:8px;margin-top:14px}
 .chips.mapfilt{margin-top:9px}
+.spsale{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;background:none;
+ border:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:2px}
+.spsale i{display:block;width:11px;height:11px;background:#EDE9E1;border:2px solid #0B1F33;
+ transform:rotate(45deg);box-shadow:0 0 0 2px rgba(11,31,51,.18)}
+.spsale span{font-size:8.5px;font-weight:800;color:#EDE9E1;background:#0B1F33;
+ border-radius:4px;padding:1px 4px;line-height:1.25;white-space:nowrap}
+.mcband{margin-top:14px}
+.mcband s{display:block;text-decoration:none;font-size:9.5px;letter-spacing:.1em;
+ text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+.bandbar{position:relative;height:7px;background:var(--card2);border-radius:99px;margin:0 2px}
+.bandbar u{position:absolute;left:0;top:0;height:100%;background:rgba(76,175,125,.35);border-radius:99px}
+.bandbar i{position:absolute;top:-3px;width:2px;height:13px;background:var(--dim);transform:translateX(-50%)}
+.bandbar b{position:absolute;top:-5px;width:11px;height:17px;border-radius:4px;
+ background:var(--gold);transform:translateX(-50%);border:2px solid var(--navy)}
+.bandbar b.over{background:var(--bad)}
+.bandlab{display:flex;justify-content:space-between;font-size:10.5px;color:var(--dim);margin-top:8px}
+.bandwarn{margin-top:8px;font-size:12px;color:var(--bad);background:rgba(212,106,94,.12);
+ border-radius:9px;padding:8px 10px}
+body.spclient .mpin i{width:17px;height:17px}
+body.spclient .mpin span{font-size:11px;padding:2px 6px}
+body.spclient .mcprice{font-size:29px}
 .mpin.four i{background:#9BA6B2;box-shadow:0 0 0 3px rgba(155,166,178,.3)}
 .mpin.st-none i{border-style:dashed}
 .mpin.st-reserved i{border-color:#E0A42C}
@@ -7414,6 +7435,28 @@ const MAPSEED={'farm gardens':{
  '101':[0.714,0.500],'106':[0.593,0.723],'138':[0.850,0.167]}};
 
 var MAPC=null, MZ=1, MX=0, MY=0, MPLACE=null, MSEL=null, MFILT='all';
+var MSALES=false, MSPLACE=null, CLIENTM=false;
+/* Farm Gardens resales from your own sheet, deduplicated, with the two land
+   transfers under 4M taken out. [unit, month, price, beds] */
+const FGSALES=[[107,"2026-09",8150000,5],[98,"2026-08",7500000,4],[2,"2026-08",7200000,4],[28,"2026-05",7100000,4],[111,"2026-05",8000000,5],[114,"2026-05",8000000,5],[47,"2026-04",6700000,4],[112,"2026-02",8600000,5],[33,"2026-02",8450000,5],[110,"2026-01",8500000,5],[14,"2026-01",7600000,4],[76,"2026-01",7700000,4],[52,"2025-12",7500000,4],[15,"2025-12",7500000,4],[34,"2025-11",8000000,5],[67,"2025-11",8450000,5],[94,"2025-10",8330000,5],[102,"2025-09",7300000,4],[73,"2025-07",7500000,4],[116,"2025-06",8050000,5],[141,"2025-06",7850000,5],[18,"2025-06",7900000,5],[139,"2025-06",7500000,5],[67,"2025-05",7800000,5],[96,"2025-04",7800000,5],[93,"2025-02",7825000,5],[84,"2025-01",7000000,4],[29,"2025-01",6600000,5],[97,"2025-01",7850000,5],[77,"2025-01",6500000,4],[144,"2024-12",6675000,4],[63,"2024-11",6050000,4],[98,"2024-11",6250000,4],[95,"2024-10",8000000,5],[112,"2024-09",7600000,5],[84,"2024-06",6157000,4],[94,"2024-05",7600000,5],[133,"2024-05",6050000,4],[117,"2024-04",7300000,5],[103,"2024-04",6400000,4],[93,"2024-04",7000000,5],[78,"2024-04",5454888,4],[28,"2024-03",5900000,4],[104,"2024-03",6678888,5],[92,"2024-02",6100000,4],[144,"2024-02",5700000,4],[35,"2024-02",6930000,5],[129,"2024-01",6640000,5],[26,"2023-12",5900000,4],[99,"2023-12",5700000,4],[86,"2023-11",5750000,4],[36,"2023-11",7300000,5],[20,"2023-07",6779733,5],[102,"2023-06",5915741,4]];
+function spSalesFor(bd){return FGSALES.filter(function(s){return s[3]===bd;});}
+function spSalePins(){
+ S.pins=S.pins||{}; var k=MAPC+'!sales';
+ if(!S.pins[k])S.pins[k]={};
+ return S.pins[k];
+}
+/* where this asking price sits against every real sale of the same size */
+function spBand(u){
+ var bd=spBeds(u), p=num(u.pr);
+ var ss=spSalesFor(bd).map(function(x){return x[2];});
+ if(!ss.length||!p)return null;
+ ss.sort(function(a,b){return a-b;});
+ var lo=ss[0], hi=ss[ss.length-1], mid=ss[Math.floor(ss.length/2)];
+ var top=Math.max(hi,p), span=top-lo||1;
+ return {lo:lo,hi:hi,mid:mid,n:ss.length,p:p,
+   fp:(p-lo)/span*100, fh:(hi-lo)/span*100, fm:(mid-lo)/span*100,
+   over:p>hi};
+}
 /* money() already carries the AED prefix, so these stay separate:
    spShort for the stat tiles, spNum for anything measured in sqft. */
 function spShort(n){ if(S.priv)return '•••';
@@ -7574,7 +7617,7 @@ function spDraw(){
    ' <u>'+c.n+'</u></b>';}).join('');
 
  var h='<div class="sec">'+
-  '<div class="maptop"><h2>Site plan</h2><div class="sp"></div>'+'<button class="mapbtn" id="mapshare">Send this plan</button></div>'+
+  '<div class="maptop"><h2>Site plan</h2><div class="sp"></div>'+'<button class="mapbtn" id="mapclient">'+(CLIENTM?'Exit client view':'Client view')+'</button>'+'<button class="mapbtn" id="mapshare">Send</button></div>'+
   '<div class="chips mapcoms">'+chips+'</div>';
 
  if(!cfg){
@@ -7589,13 +7632,15 @@ function spDraw(){
  h+='<div class="mapstats">'+
    '<div><b>'+units.length+'</b><s>units here</s></div>'+
    '<div><b>'+spShort(total)+'</b><s>AED total</s></div>'+
-   '<div><b>'+spShort(total*0.02)+'</b><s>fee at 2%</s></div>'+
+   (CLIENTM?'':'<div><b>'+spShort(total*0.02)+'</b><s>fee at 2%</s></div>')+
   '</div>'+
   '<div class="chips mapfilt">'+
     ['all','5','4'].map(function(k){
       var lab=k==='all'?'All '+units.length:(k==='5'?'5 bed '+units.filter(function(u){return spBeds(u)===5;}).length
                                                      :'4 bed '+units.filter(function(u){return spBeds(u)===4;}).length);
       return '<b class="'+(MFILT===k?'on':'')+'" data-spf="'+k+'">'+lab+'</b>';}).join('')+
+    '<b class="'+(MSALES?'on':'')+'" id="mapsales">Sold nearby '+
+      Object.keys(spSalePins()).length+'</b>'+
    '</div>'+
   '<div class="rotate" id="maprot">Turn your phone sideways for the full plan.</div>'+
   '<div id="mapstage"><div id="mapinner">'+
@@ -7610,7 +7655,7 @@ function spDraw(){
   '</div>'+
   '<div id="mapcard" class="mapcard"></div>';
 
- if(todo.length){
+ if(todo.length&&!CLIENTM){
   h+='<div class="lab" style="margin:16px 0 6px">NOT ON THE PLAN YET</div><div class="card">'+
    todo.map(function(u){var v=unitNo(u.p);
     return '<div class="row"><div><div class="lab">'+esc(u.p)+'</div>'+
@@ -7640,7 +7685,25 @@ function drawPins(){
    'style="left:'+(p.x*100).toFixed(3)+'%;top:'+(p.y*100).toFixed(3)+'%">'+
    '<i></i><span>'+v+'</span></button>';
  });
+ if(MSALES){
+  var SP=spSalePins();
+  Object.keys(SP).forEach(function(k){
+   var sale=null;
+   FGSALES.forEach(function(x){ if(String(x[0])===k && (!sale||x[1]>sale[1]))sale=x; });
+   if(!sale)return;
+   var q=SP[k];
+   out+='<button class="spsale" data-sv="'+k+'" '+
+    'style="left:'+(q.x*100).toFixed(3)+'%;top:'+(q.y*100).toFixed(3)+'%">'+
+    '<i></i><span>'+spShort(sale[2])+'</span></button>';
+  });
+ }
  box.innerHTML=out;
+ box.querySelectorAll('[data-sv]').forEach(function(b){
+  b.onclick=function(e){e.stopPropagation();
+   var k=b.dataset.sv, sale=null;
+   FGSALES.forEach(function(x){ if(String(x[0])===k && (!sale||x[1]>sale[1]))sale=x; });
+   if(sale)alert('Unit '+sale[0]+' sold '+sale[1]+' for AED '+money(sale[2]).replace('AED ','')+
+     ' ('+sale[3]+' bed)');};});
  box.querySelectorAll('[data-mv]').forEach(function(b){
   b.onclick=function(e){e.stopPropagation();haptic('light');mapCard(+b.dataset.mv);};});
 }
@@ -7656,13 +7719,12 @@ function mapCard(v){
  var pr=null; S.later.forEach(function(x){ if(unitNo(x.w)===v&&comKey(x.w)===MAPC)pr=x; });
  function bit(l,x){return x?'<div><s>'+esc(l)+'</s><b>'+x+'</b></div>':'';}
  var html='<button class="mapx" id="mapclose">&times;</button>'+
-  (u.img?'<div class="mcimg" id="mcimg"></div>':'')+
   '<div class="mch"><h3>'+esc(u.p.split(',')[0])+'</h3>'+
    '<div class="mcs">'+esc(u.t||'')+(u.tag?' · '+esc(u.tag):'')+'</div></div>'+
   '<div class="mcprice">'+(num(u.pr)?pmoney(u.pr):'Price not set')+
    (psf&&!S.priv?'<span>'+spNum(psf)+' /sqft</span>':'')+'</div>'+
   '<div class="mcgrid">'+
-   bit('Your fee at 2%', num(u.pr)?pmoney(fee):'')+
+   (CLIENTM?'':bit('Your fee at 2%', num(u.pr)?pmoney(fee):''))+
    bit('Bedrooms', num(u.bd)?num(u.bd)+' bed':(um.bd?um.bd+' bed':''))+
    bit('Built up', num(u.bua)?spNum(u.bua)+' sqft':'')+
    bit('Plot', num(u.plot)?spNum(u.plot)+' sqft':'')+
@@ -7671,25 +7733,51 @@ function mapCard(v){
    bit('Position', esc(u.rw||''))+
    bit('Backs onto', esc(um.bk||''))+
   '</div>'+
-  (pr&&pr.n2?'<div class="mcnote"><s>LATEST NEARBY</s>'+esc(pr.n2)+'</div>':'')+
-  (u.n?'<div class="mcnote"><s>YOUR NOTE</s>'+esc(u.n)+'</div>':'')+
+  (function(){var b=spBand(u); if(!b||CLIENTM)return '';
+    return '<div class="mcband"><s>AGAINST '+b.n+' REAL '+spBeds(u)+' BED SALES</s>'+
+      '<div class="bandbar"><i style="left:'+b.fm.toFixed(1)+'%"></i>'+
+      '<u style="width:'+b.fh.toFixed(1)+'%"></u>'+
+      '<b class="'+(b.over?'over':'')+'" style="left:'+Math.min(99,b.fp).toFixed(1)+'%"></b></div>'+
+      '<div class="bandlab"><span>'+spShort(b.lo)+'</span><span>median '+spShort(b.mid)+
+      '</span><span>'+spShort(b.hi)+'</span></div>'+
+      (b.over?'<div class="bandwarn">You are asking above every '+spBeds(u)+
+        ' bed that has ever sold here.</div>':'')+'</div>';})()+
+  (pr&&pr.n2&&!CLIENTM?'<div class="mcnote"><s>LATEST NEARBY</s>'+esc(pr.n2)+'</div>':'')+
+  (u.n&&!CLIENTM?'<div class="mcnote"><s>YOUR NOTE</s>'+esc(u.n)+'</div>':'')+
   '<div class="mcact">'+
    '<button class="mapbtn" data-move="'+v+'">Move the pin</button>'+
    (u.link?'<a class="mapbtn gold" href="'+esc(u.link)+'" target="_blank" rel="noopener">Listing</a>':'')+
   '</div>';
  el.innerHTML=html; el.classList.add('on');
- if(u.img&&typeof loadImgKey==='function'){
-  loadImgKey(u.img).then(function(src){
-   var im=document.getElementById('mcimg');
-   if(im&&src)im.innerHTML='<img src="'+src+'" alt="">';
-  }).catch(function(){});
- }
+
  document.getElementById('mapclose').onclick=function(){
   el.classList.remove('on'); MSEL=null; drawPins();};
  var mv=el.querySelector('[data-move]');
  if(mv)mv.onclick=function(){el.classList.remove('on');mapPlace(+mv.dataset.move);};
 }
 
+/* the sale markers need positions too, and guessing them off the brochure
+   put pins on the wrong villas, so these are placed by hand as well. */
+function spSaleNext(){
+ var SP=spSalePins(), seen={};
+ for(var i=0;i<FGSALES.length;i++){
+  var k=String(FGSALES[i][0]);
+  if(!SP[k]&&!seen[k]){return FGSALES[i];}
+ }
+ return null;
+}
+function spSalePlace(){
+ var nx=spSaleNext();
+ if(!nx){alert('Every sale in your sheet already has a marker.');return;}
+ MSPLACE=nx; MPLACE=null; MSEL=null;
+ var st=document.getElementById('mapstage'); if(st)st.classList.add('placing');
+ document.getElementById('maphint').innerHTML=
+  'Tap <b>unit '+nx[0]+'</b> on the plan. It sold '+esc(nx[1])+' for AED '+
+  money(nx[2]).replace('AED ','')+'. <button id="mapcancel" class="lnk">stop</button>';
+ var c=document.getElementById('mapcancel');
+ if(c)c.onclick=function(e){e.stopPropagation();MSPLACE=null;
+   if(st)st.classList.remove('placing');spDraw();};
+}
 function mapPlace(v){
  MPLACE=v; MSEL=null; drawPins();
  var st=document.getElementById('mapstage');
@@ -7716,6 +7804,13 @@ function wireMapComs(){
   b.onclick=function(){MFILT=b.dataset.mf;MSEL=null;spDraw();haptic('light');};});
  var shb=document.getElementById('mapshare');
  if(shb)shb.onclick=function(){spShare();};
+ var cb=document.getElementById('mapclient');
+ if(cb)cb.onclick=function(){CLIENTM=!CLIENTM;MSEL=null;
+   document.body.classList.toggle('spclient',CLIENTM);spDraw();haptic('light');};
+ var sb=document.getElementById('mapsales');
+ if(sb)sb.onclick=function(){
+   if(!Object.keys(spSalePins()).length){spSalePlace();return;}
+   MSALES=!MSALES;spDraw();haptic('light');};
 }
 function wireMapStage(){
  var st=document.getElementById('mapstage'), inner=document.getElementById('mapinner');
@@ -7771,15 +7866,23 @@ function wireMapStage(){
 
  /* placing a pin: tap the plan, we store where you tapped */
  inner.addEventListener('click',function(e){
-  if(MPLACE===null||MPLACE===undefined)return;
-  if(e.target&&e.target.closest&&e.target.closest('.mpin'))return;
+  if(MPLACE==null&&MSPLACE==null)return;
+  if(e.target&&e.target.closest&&e.target.closest('.mpin,.spsale'))return;
   var r=inner.getBoundingClientRect();
   var x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
   if(x<0||x>1||y<0||y>1)return;
+  var st2=document.getElementById('mapstage');
+  if(MSPLACE!=null){
+   spSalePins()[String(MSPLACE[0])]={x:+x.toFixed(5),y:+y.toFixed(5)};
+   put(S); haptic('light'); MSPLACE=null; MSALES=true;
+   if(st2)st2.classList.remove('placing');
+   spDraw(); spSalePlace();          /* straight on to the next one */
+   return;
+  }
   mapPins()[String(MPLACE)]={x:+x.toFixed(5),y:+y.toFixed(5)};
   put(S); haptic('light');
   var done=MPLACE; MPLACE=null;
-  var st2=document.getElementById('mapstage'); if(st2)st2.classList.remove('placing');
+  if(st2)st2.classList.remove('placing');
   spDraw(); mapCard(done);
  });
 
