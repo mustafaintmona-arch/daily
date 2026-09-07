@@ -1221,6 +1221,35 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
 .hubrow:last-child{border-bottom:0}
 .hubrow:active{background:var(--s2)}
 .hubrow .chev{color:var(--dim);font-size:20px;line-height:1}
+/* ---------------- site plan ---------------- */
+.plbar{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.plbar .sp{flex:1}
+.plbar button{background:var(--card);border:1px solid var(--line);color:var(--ink);
+ border-radius:10px;padding:8px 13px;font-size:13px;font-weight:600}
+.plbar button:active{background:var(--card2)}
+.plbar button.on{border-color:var(--gold);color:var(--gold)}
+.plnote{font-size:12.5px;color:var(--gold);background:rgba(185,151,91,.12);
+ border-radius:10px;padding:10px 12px;margin-bottom:8px;display:none}
+.plnote.on{display:block}
+#planwrap{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);
+ border-radius:12px;background:#EFEDE8;max-height:62vh}
+#planinner{position:relative;width:100%;transform-origin:0 0}
+#planimg{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+#planpins{position:absolute;inset:0;pointer-events:none}
+.pin{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;
+ width:16px;height:16px;border-radius:50%;border:1.5px solid rgba(11,31,51,.55);
+ background:rgba(255,255,255,.82);font-size:8px;font-weight:700;color:#0B1F33;
+ display:flex;align-items:center;justify-content:center;line-height:1;padding:0}
+.pin.mine{background:var(--gold);border-color:#7d6335;color:#0B1F33;
+ width:20px;height:20px;font-size:9px;box-shadow:0 0 0 2px rgba(185,151,91,.35)}
+.pin.sold{background:rgba(212,106,94,.9);border-color:#8d3b32;color:#fff}
+.pin:active{transform:translate(-50%,-50%) scale(1.35)}
+#planwrap.placing{cursor:crosshair}
+#planwrap.placing #planpins{opacity:.35}
+.plrow{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.plrow:last-child{border-bottom:0}
+.plrow b{flex:0 0 118px;color:var(--dim);font-weight:600}
+.plrow span{flex:1}
 </style>
 </head>
 <body>
@@ -1350,6 +1379,18 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
     <div class="selbar hide" id="selbar"></div>
     <div class="card" style="margin-top:9px" id="ulist"></div>
     <button class="addbtn" id="addunit">+ Add a unit</button></div>
+</div>
+<div id="s-plan" class="hide">
+  <div class="sec"><h2>Site plan <b id="plcount"></b></h2>
+    <div class="plbar">
+      <button id="pl-out">&minus;</button><button id="pl-fit">Fit</button><button id="pl-in">+</button>
+      <span class="sp"></span>
+      <button id="pl-place">Place pins</button>
+    </div>
+    <div class="plnote" id="plnote"></div>
+    <div id="planwrap"><div id="planinner"><img id="planimg" src="farmgardens.jpg" alt="Farm Gardens site plan"><div id="planpins"></div></div></div>
+    <div class="hint" id="pllegend"></div>
+  </div>
 </div>
 <div id="s-proj" class="hide">
   <div class="sec"><h2>Projects <b id="pcount"></b></h2>
@@ -1589,7 +1630,7 @@ const PAGES=[['today','Today','◧'],['deals','Deals','◆'],['cap','Capture','+
 const ALLP=['today','deals','stock','rent','diary','more'];
 const PTITLE={today:'Today',deals:'Deals',stock:'Stock',rent:'Rent roll',diary:'Diary',more:'Me'};
 const SUBP={rent:1,diary:1};
-const STOCKSEG=[['units','Inventory'],['proj','Projects'],['stats','Analytics'],['comps','Comps']];
+const STOCKSEG=[['units','Inventory'],['plan','Site plan'],['proj','Projects'],['stats','Analytics'],['comps','Comps']];
 const CADENCE={0:2,1:3,2:2,3:2};
 const TEMPLATES=[
 ['Neighbour sold','{name}, quick one about your {unit}.\n\nA villa a few doors from you just traded. Prices in the community are well up since launch, but the last few quarters have flattened.\n\nYour neighbours are taking profit. The window is still open, it is just not widening anymore.\n\nWant me to send what your unit would fetch today? No obligation.'],
@@ -3209,6 +3250,7 @@ function drawStockSeg(){
  document.getElementById('sseg').innerHTML=STOCKSEG.map(function(o){
   return '<b class="'+(SSEG===o[0]?'on':'')+'" data-ss="'+o[0]+'">'+o[1]+'</b>';}).join('');
  STOCKSEG.forEach(function(o){document.getElementById('s-'+o[0]).classList.toggle('hide',o[0]!==SSEG);});
+ if(SSEG==='plan')drawPlan();
 }
 function goPage(k){
  PAGE=k;
@@ -6299,7 +6341,7 @@ function drawComps(){
 }
 fetch('comps.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&j.communities){COMPS=j;drawComps();}}).catch(function(){});
 
-var APPVER='v46 \u00b7 4 Sep 2026 \u00b7 landlord pages, dashboard, merge keeps tenancies';
+var APPVER='v47 \u00b7 6 Sep 2026 \u00b7 merge keeps unit map, do-not-contact, your fields and views';
 function drawObj(){
  var L=S.deals.filter(function(d){return d.s===LOST&&d.lost;});
  var el=document.getElementById('objbox');
@@ -7315,6 +7357,174 @@ function drawLL(){
  el.querySelectorAll('[data-ll]').forEach(function(b){
   b.onclick=function(){ llMake(L[+b.dataset.ll].name); };});
 }
+
+
+/* ================= SITE PLAN =================
+   The masterplan as a tappable map. Pin positions are fractions of the image,
+   so they hold at any zoom or screen size. Pins I could not read off the
+   brochure are placed by hand in Place pins mode, never guessed.
+   ============================================= */
+const SITEPLANS={'farm gardens':{img:'farmgardens.jpg',name:'Farm Gardens 1'}};
+const PINSEED={"5":[0.42518,0.91783],"6":[0.30231,0.81202],"11":[0.35062,0.69425],"12":[0.352,0.63442],"15":[0.38723,0.65168],"19":[0.39195,0.8943],"20":[0.41132,0.91373],"22":[0.41922,0.80023],"26":[0.58557,0.79003],"27":[0.45331,0.63903],"30":[0.454,0.84484],"32":[0.48805,0.88416],"33":[0.49259,0.8204],"34":[0.48364,0.7514],"35":[0.48158,0.69447],"37":[0.48027,0.56564],"40":[0.6931,0.12462],"43":[0.4828,0.15197],"45":[0.45347,0.20969],"50":[0.41695,0.47903],"55":[0.42045,0.16621],"59":[0.42045,0.16627],"60":[0.38571,0.36969],"61":[0.38669,0.43407],"62":[0.3886,0.48359],"66":[0.35032,0.27692],"67":[0.35912,0.20615],"68":[0.34721,0.14792],"69":[0.32745,0.15601],"70":[0.31914,0.22085],"72":[0.32237,0.33259],"73":[0.32145,0.39356],"76":[0.70332,0.63573],"77":[0.70399,0.69556],"78":[0.70477,0.74798],"79":[0.70401,0.80952],"80":[0.70588,0.87504],"82":[0.67024,0.88758],"84":[0.67642,0.73316],"86":[0.67556,0.62211],"87":[0.67394,0.57704],"89":[0.63846,0.60667],"93":[0.41474,0.32125],"94":[0.63363,0.89766],"95":[0.61243,0.91094],"96":[0.5999,0.8551],"97":[0.608,0.79521],"99":[0.61136,0.65499],"101":[0.6085,0.5453],"102":[0.57277,0.54342],"103":[0.57212,0.59276],"106":[0.55353,0.77134],"109":[0.54475,0.59128],"110":[0.54497,0.53083],"115":[0.535,0.17647],"117":[0.57017,0.15823],"120":[0.57169,0.36963],"122":[0.61116,0.42701],"124":[0.6132,0.31755],"125":[0.60948,0.23151],"126":[0.60278,0.16786],"127":[0.61939,0.12387],"128":[0.63851,0.15311],"131":[0.64108,0.32923],"132":[0.6407,0.39128],"134":[0.67394,0.45852],"135":[0.67505,0.40952],"136":[0.67652,0.35202],"138":[0.67019,0.21481],"139":[0.67222,0.14792],"140":[0.70282,0.46188],"142":[0.70485,0.23789],"143":[0.70506,0.29954],"144":[0.70471,0.34957],"145":[0.70348,0.40952]};
+var PLANC='farm gardens', PLANZ=1, PLACING=null;
+
+function fgNum(x){var m=String(x||'').match(/farm gardens\s+(\d+)/i);return m?+m[1]:0;}
+function planPins(){
+ S.pins=S.pins||{};
+ if(!S.pins[PLANC]){ S.pins[PLANC]={}; Object.keys(PINSEED).forEach(function(k){
+   S.pins[PLANC][k]={x:PINSEED[k][0],y:PINSEED[k][1],seed:1}; }); put(S); }
+ return S.pins[PLANC];
+}
+function planUnitOf(v){
+ for(var i=0;i<S.units.length;i++) if(fgNum(S.units[i].p)===v) return S.units[i];
+ return null;
+}
+function planProspectOf(v){
+ for(var i=0;i<S.later.length;i++) if(fgNum(S.later[i].w)===v) return S.later[i];
+ return null;
+}
+function planAll(){
+ var seen={}, out=[];
+ S.units.forEach(function(u){var v=fgNum(u.p); if(v)seen[v]=1;});
+ S.later.forEach(function(x){var v=fgNum(x.w); if(v)seen[v]=1;});
+ Object.keys(S.umap||{}).forEach(function(k){ if((S.umap[k].cm||'')==='farm gardens')seen[+k]=1; });
+ Object.keys(seen).forEach(function(k){out.push(+k);});
+ return out.sort(function(a,b){return a-b;});
+}
+function drawPlan(){
+ var wrap=document.getElementById('planwrap'); if(!wrap)return;
+ var P=planPins(), all=planAll();
+ var placed=Object.keys(P).length;
+ document.getElementById('plcount').textContent=placed+' of '+all.length;
+ var box=document.getElementById('planpins'), h='';
+ all.forEach(function(v){
+  var p=P[String(v)]; if(!p)return;
+  var u=planUnitOf(v), pr=planProspectOf(v);
+  var sold=pr&&/^SOLD /.test(String(pr.n2||''));
+  h+='<button class="pin'+(u?' mine':'')+(sold?' sold':'')+'" data-pv="'+v+'" '+
+     'style="left:'+(p.x*100).toFixed(3)+'%;top:'+(p.y*100).toFixed(3)+'%">'+v+'</button>';
+ });
+ box.innerHTML=h;
+ box.querySelectorAll('[data-pv]').forEach(function(b){
+  b.onclick=function(e){e.stopPropagation();haptic('light');planSheet(+b.dataset.pv);};});
+ var mine=all.filter(planUnitOf).length;
+ document.getElementById('pllegend').innerHTML=
+  '<b style="color:var(--gold)">Gold</b> is yours to sell ('+mine+'). '+
+  'Red has just sold. Tap any pin for the detail. '+
+  (placed<all.length?('<b>'+(all.length-placed)+'</b> villas have no pin yet, tap Place pins to add them.'):'Every villa is pinned.');
+ document.getElementById('planinner').style.width=(PLANZ*100)+'%';
+}
+function planSheet(v){
+ var u=planUnitOf(v), pr=planProspectOf(v), um=(S.umap||{})[String(v)]||{};
+ var bd=num(um.bd)||num(u&&u.bd)||num(pr&&pr.hkb);
+ var h='';
+ function row(l,x){return x?'<div class="plrow"><b>'+esc(l)+'</b><span>'+x+'</span></div>':'';}
+ if(u){
+  var fee=num(u.pr)*0.02;
+  h+='<div class="lab" style="color:var(--gold);margin-bottom:4px">YOURS TO SELL</div><div class="card">'+
+   row('Asking', num(u.pr)?'AED '+pmoney(u.pr):'<span class="dim">not set</span>')+
+   row('Your fee at 2%', num(u.pr)?'AED '+pmoney(fee):'')+
+   row('Type', esc(u.t||''))+
+   row('Payment plan', esc(u.pl||''))+
+   row('Handover', esc(u.h||''))+
+   '</div>';
+  if(u.n)h+='<div class="hint" style="margin-top:8px">'+esc(u.n)+'</div>';
+ }
+ h+='<div class="lab" style="margin:14px 0 4px">THE PLOT</div><div class="card">'+
+   row('Bedrooms', bd?bd+' bed':'')+
+   row('Backs onto', esc(um.bk||''))+
+   row('Position', esc(um.cl||''))+
+   '</div>';
+ if(pr&&pr.n2)
+  h+='<div class="lab" style="margin:14px 0 4px">THE MARKET</div>'+
+     '<div class="card"><div class="plrow"><span>'+esc(pr.n2)+'</span></div></div>';
+ if(pr){
+  h+='<div class="lab" style="margin:14px 0 4px">OWNER</div><div class="card">'+
+    row('Name', pvName(pr.n||''))+
+    row('Phone', S.priv?'&bull;&bull;&bull;':esc(pr.ph||'not on record'))+
+    row('Last outcome', esc(pr.last||''))+
+    '</div>';
+  var d=String(pr.ph||'').replace(/\D/g,'');
+  if(d&&!S.priv)
+   h+='<div class="two" style="margin-top:10px">'+
+      '<a class="btnfull" style="text-align:center;text-decoration:none;display:block" '+
+      'href="https://wa.me/'+d+'" target="_blank" rel="noopener">WhatsApp</a>'+
+      '<a class="btnfull" style="text-align:center;text-decoration:none;display:block" '+
+      'href="tel:+'+d+'">Call</a></div>';
+ }
+ openTool('Villa '+v+(bd?' \u00b7 '+bd+' bed':''), h, '');
+}
+/* --------- place a pin by tapping where it really is --------- */
+function planNext(){
+ var P=planPins(), all=planAll();
+ for(var i=0;i<all.length;i++) if(!P[String(all[i])]) return all[i];
+ return null;
+}
+function planPlaceMode(on){
+ var wrap=document.getElementById('planwrap');
+ var note=document.getElementById('plnote');
+ var btn=document.getElementById('pl-place');
+ if(!on){ PLACING=null; wrap.classList.remove('placing'); note.classList.remove('on');
+  btn.classList.remove('on'); btn.textContent='Place pins'; drawPlan(); return; }
+ PLACING=planNext();
+ if(PLACING===null){ alert('Every villa already has a pin. Tap a pin and choose Move it if one is wrong.'); return; }
+ wrap.classList.add('placing'); note.classList.add('on');
+ btn.classList.add('on'); btn.textContent='Done';
+ note.innerHTML='Find <b>villa '+PLACING+'</b> on the plan and tap it. '+
+   '<span class="dim">Zoom in first, it is easier.</span> '+
+   '<button id="pl-skip" style="margin-left:8px;background:none;border:0;color:var(--gold);'+
+   'text-decoration:underline;font-size:12.5px">skip</button>';
+ var sk=document.getElementById('pl-skip');
+ if(sk)sk.onclick=function(e){e.stopPropagation();planSkip();};
+}
+var PLSKIP={};
+function planSkip(){
+ if(PLACING!==null)PLSKIP[PLACING]=1;
+ var P=planPins(), all=planAll(), nx=null;
+ for(var i=0;i<all.length;i++){var k=all[i]; if(!P[String(k)]&&!PLSKIP[k]){nx=k;break;}}
+ if(nx===null){ alert('Nothing left to place.'); planPlaceMode(false); return; }
+ PLACING=nx; planPlaceMode(true);
+}
+
+/* --------- site plan controls --------- */
+(function(){
+ var zin=document.getElementById('pl-in'), zout=document.getElementById('pl-out'),
+     fit=document.getElementById('pl-fit'), place=document.getElementById('pl-place'),
+     inner=document.getElementById('planinner'), wrap=document.getElementById('planwrap');
+ if(!inner)return;
+ function setZ(z){
+  PLANZ=Math.max(1,Math.min(6,z));
+  inner.style.width=(PLANZ*100)+'%';
+ }
+ if(zin)zin.onclick=function(){
+  var cx=(wrap.scrollLeft+wrap.clientWidth/2)/inner.offsetWidth;
+  var cy=(wrap.scrollTop+wrap.clientHeight/2)/inner.offsetHeight;
+  setZ(PLANZ*1.6); haptic('light');
+  wrap.scrollLeft=cx*inner.offsetWidth-wrap.clientWidth/2;
+  wrap.scrollTop=cy*inner.offsetHeight-wrap.clientHeight/2;
+ };
+ if(zout)zout.onclick=function(){setZ(PLANZ/1.6);haptic('light');};
+ if(fit)fit.onclick=function(){setZ(1);wrap.scrollLeft=0;wrap.scrollTop=0;haptic('light');};
+ if(place)place.onclick=function(){ planPlaceMode(!PLACING&&PLACING!==0); };
+
+ /* tap the plan to drop the pin you are being asked for */
+ inner.addEventListener('click',function(e){
+  if(PLACING===null||PLACING===undefined)return;
+  if(e.target&&e.target.classList&&e.target.classList.contains('pin'))return;
+  var r=inner.getBoundingClientRect();
+  var x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
+  if(x<0||x>1||y<0||y>1)return;
+  var P=planPins();
+  P[String(PLACING)]={x:+x.toFixed(5),y:+y.toFixed(5)};
+  put(S); haptic('light');
+  var done=PLACING;
+  var nx=null, all=planAll();
+  for(var i=0;i<all.length;i++){var k=all[i]; if(!P[String(k)]&&!PLSKIP[k]){nx=k;break;}}
+  drawPlan();
+  if(nx===null){ planPlaceMode(false); alert('Villa '+done+' placed. That is all of them.'); return; }
+  PLACING=nx; planPlaceMode(true);
+ });
+})();
 
 function rentDays(r){ return r.en?ddiff(TD,r.en):null; }
 function rentFee(r){ return num(r.amt)*0.05; }
@@ -8687,6 +8897,16 @@ function applyMerge(o){
  if(D.umap&&typeof D.umap==='object'&&!Array.isArray(D.umap)){
   S.umap=S.umap||{};
   Object.keys(D.umap).forEach(function(k){ if(!S.umap[k]){S.umap[k]=D.umap[k];n.add++;} });
+ }
+ if(D.pins&&typeof D.pins==='object'){
+  S.pins=S.pins||{};
+  Object.keys(D.pins).forEach(function(c){
+   S.pins[c]=S.pins[c]||{};
+   Object.keys(D.pins[c]).forEach(function(k){
+    /* a pin you placed by hand always beats a seeded one */
+    var mine=S.pins[c][k], theirs=D.pins[c][k];
+    if(!mine||(mine.seed&&!theirs.seed)){S.pins[c][k]=theirs;n.add++;}
+   });});
  }
  if(Array.isArray(D.dnc)){
   S.dnc=Array.isArray(S.dnc)?S.dnc:[];
