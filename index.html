@@ -6299,7 +6299,7 @@ function drawComps(){
 }
 fetch('comps.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&j.communities){COMPS=j;drawComps();}}).catch(function(){});
 
-var APPVER='v45 \u00b7 4 Sep 2026 \u00b7 landlord pages, tenancies now merge';
+var APPVER='v46 \u00b7 4 Sep 2026 \u00b7 landlord pages, dashboard, merge keeps tenancies';
 function drawObj(){
  var L=S.deals.filter(function(d){return d.s===LOST&&d.lost;});
  var el=document.getElementById('objbox');
@@ -8452,12 +8452,15 @@ var MCOLS=[
  ['cn','Contacts',     function(x){return low(x.n)+'|'+dig(x.ph);}],
  ['nt','Notes',        function(x){return x.d+'|'+low(x.t).slice(0,40);}],
  ['proj','Projects',   function(x){return low(x.n||x.w);}],
- ['ledger','Commission',function(x){return x.d+'|'+(x.a||'')+'|'+low(x.w);}],
+ ['ledger','Earnings',  function(x){return x.d+'|'+(x.a||'')+'|'+low(x.w);}],
  ['diary','Diary',     function(x){return x.d+'|'+(x.t||'')+'|'+low(x.n);}],
  /* tenancies and commission were missing here, so a merge silently dropped
     every one of them. they key on the unit and the landlord. */
  ['rent','Tenancies',  function(x){return low(x.p)+'|'+low(x.ll);}],
- ['comm','Commission', function(x){return low(x.w)+'|'+(x.d||'')+'|'+(x.amt||x.a||'');}]
+ ['comm','Commission', function(x){return low(x.w)+'|'+(x.d||'')+'|'+(x.amt||x.a||'');}],
+ /* your own fields and your saved views were being dropped too */
+ ['cf','Your fields',  function(x){return x.id||low(x.lab);}],
+ ['sv','Saved views',  function(x){return x.id||low(x.name);}]
 ];
 function low(v){return String(v==null?'':v).trim().toLowerCase();}
 function dig(v){return String(v==null?'':v).replace(/\D/g,'');}
@@ -8677,6 +8680,18 @@ function applyMerge(o){
    S[key]=S[key].filter(function(x){return dels.indexOf(x)<0;});
    n.del+=dels.length;}
  });
+ /* Two stores the column machinery cannot carry: umap is an object keyed by
+    unit number, dnc is a flat list of phone strings. Both are union merges,
+    additive only. Losing a do-not-contact number means messaging someone who
+    asked you not to, so this side never deletes. */
+ if(D.umap&&typeof D.umap==='object'&&!Array.isArray(D.umap)){
+  S.umap=S.umap||{};
+  Object.keys(D.umap).forEach(function(k){ if(!S.umap[k]){S.umap[k]=D.umap[k];n.add++;} });
+ }
+ if(Array.isArray(D.dnc)){
+  S.dnc=Array.isArray(S.dnc)?S.dnc:[];
+  D.dnc.forEach(function(x){ if(S.dnc.indexOf(x)<0){S.dnc.push(x);n.add++;} });
+ }
  syncStamp(D);
  repairData();
  try{put(S);flushPut();}

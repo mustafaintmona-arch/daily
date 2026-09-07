@@ -561,8 +561,14 @@ var MCOLS=[
  ['cn','Contacts',     function(x){return low(x.n)+'|'+dig(x.ph);}],
  ['nt','Notes',        function(x){return x.d+'|'+low(x.t).slice(0,40);}],
  ['proj','Projects',   function(x){return low(x.n||x.w);}],
- ['ledger','Commission',function(x){return x.d+'|'+(x.a||'')+'|'+low(x.w);}],
- ['diary','Diary',     function(x){return x.d+'|'+(x.t||'')+'|'+low(x.n);}]
+ ['ledger','Earnings',  function(x){return x.d+'|'+(x.a||'')+'|'+low(x.w);}],
+ ['diary','Diary',     function(x){return x.d+'|'+(x.t||'')+'|'+low(x.n);}],
+ /* the Desk was dropping these too. same fix as the phone app. */
+ ['rent','Tenancies',  function(x){return low(x.p)+'|'+low(x.ll);}],
+ ['comm','Commission', function(x){return low(x.w)+'|'+(x.d||'')+'|'+(x.amt||x.a||'');}],
+ /* your own fields and your saved views were being dropped too */
+ ['cf','Your fields',  function(x){return x.id||low(x.lab);}],
+ ['sv','Saved views',  function(x){return x.id||low(x.name);}]
 ];
 function low(v){return String(v==null?'':v).trim().toLowerCase();}
 function dig(v){return String(v==null?'':v).replace(/\D/g,'');}
@@ -669,6 +675,17 @@ function applyMerge(){
    else if(pick==='mix'&&r.mr){St[key][r.i]=r.mr.rec;n.upd++;}
    else if(pick==='del'&&r.t==='goneThere'){dels.push(r.mine);}});
   if(dels.length){St[key]=St[key].filter(function(x){return dels.indexOf(x)<0;});n.del+=dels.length;}});
+ /* umap is an object keyed by unit number and dnc is a flat list of phone
+    strings, so neither fits the column machinery. Union merge, additive only. */
+ var St2=S(), Dv=MSRC||{};
+ if(Dv.umap&&typeof Dv.umap==='object'&&!Array.isArray(Dv.umap)){
+  St2.umap=St2.umap||{};
+  Object.keys(Dv.umap).forEach(function(k){ if(!St2.umap[k]){St2.umap[k]=Dv.umap[k];n.add++;} });
+ }
+ if(Array.isArray(Dv.dnc)){
+  St2.dnc=Array.isArray(St2.dnc)?St2.dnc:[];
+  Dv.dnc.forEach(function(x){ if(St2.dnc.indexOf(x)<0){St2.dnc.push(x);n.add++;} });
+ }
  syncStamp(MSRC); persist();
  document.getElementById('sheet').classList.remove('on');
  toast('Merged: '+n.add+' added, '+n.upd+' updated'+(n.del?', '+n.del+' removed':''));
