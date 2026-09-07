@@ -1241,7 +1241,7 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
  background:rgba(185,151,91,.12);border-radius:10px;padding:9px 12px}
 .rotate.on{display:block}
 #mapstage{position:relative;margin-top:10px;border:1px solid var(--line);border-radius:14px;
- overflow:hidden;background:#EDEBE6;touch-action:none;aspect-ratio:1460/1100;max-height:70vh}
+ overflow:hidden;background:#EDEBE6;touch-action:none;max-height:70vh}
 #mapstage:fullscreen{max-height:none;height:100vh;border-radius:0;aspect-ratio:auto;
  display:flex;align-items:center;justify-content:center}
 #mapinner{position:absolute;inset:0;transform-origin:50% 50%;will-change:transform}
@@ -1289,6 +1289,20 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
  transform:rotate(45deg);box-shadow:0 0 0 2px rgba(11,31,51,.18)}
 .spsale span{font-size:8.5px;font-weight:800;color:#EDE9E1;background:#0B1F33;
  border-radius:4px;padding:1px 4px;line-height:1.25;white-space:nowrap}
+.mcfits{margin-top:16px}
+.mcfits>s{display:block;text-decoration:none;font-size:9.5px;letter-spacing:.1em;
+ text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.fitrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.fitrow:last-child{border-bottom:0}
+.fx{flex:1;min-width:0}
+.fx b{display:block;font-size:13.5px;font-weight:650}
+.fx s{display:block;text-decoration:none;font-size:11.5px;color:var(--dim);margin-top:1px}
+.fitwa{flex:0 0 auto;background:var(--gold);color:#0B1F33;border-radius:9px;padding:7px 12px;
+ font-size:12px;font-weight:700;text-decoration:none}
+.fitwa.off{background:none;color:var(--dim);font-weight:500}
+.fitsep{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+ margin:10px 0 2px}
+.fitnote{font-size:11.5px;color:var(--dim);margin-top:9px}
 .mcband{margin-top:14px}
 .mcband s{display:block;text-decoration:none;font-size:9.5px;letter-spacing:.1em;
  text-transform:uppercase;color:var(--dim);margin-bottom:7px}
@@ -7426,7 +7440,8 @@ function drawLL(){
    hand always wins.
    ============================================= */
 const SITEMAPS={
- 'farm gardens':{name:'Farm Gardens', img:'farmgardens.jpg', ratio:1100/1460}
+ 'farm gardens':{name:'Farm Gardens', img:'farmgardens.jpg', w:1460, h:1100},
+ 'elora':       {name:'Elora',        img:'elora.jpg',       w:1261, h:564}
 };
 /* read off the Emaar plan and checked one by one against the printed numbers */
 const MAPSEED={'farm gardens':{
@@ -7551,6 +7566,44 @@ function spShare(){
  img.onerror=function(){alert('Could not load the plan image.');};
  img.src=cfg.img;
 }
+
+/* --------- who on the book could actually buy this ---------
+   Budget is the hard gate. Beds and area are preferences, so a mismatch
+   demotes a client rather than hiding them. Anyone with no budget on record
+   cannot be judged, so they are listed separately rather than guessed at. */
+function spFits(u){
+ var price=num(u.pr), bd=spBeds(u), hay=String(u.p||'').toLowerCase();
+ if(!price)return {fit:[],near:[],unknown:0};
+ var fit=[], near=[], unknown=0;
+ S.deals.forEach(function(d,i){
+  if(num(d.s)===LOST)return;
+  var bud=num(d.lmax);
+  if(!bud){unknown++;return;}
+  if(bud<price*0.85)return;                       /* more than 15% short */
+  var wb=num(d.lbd);
+  var bedOK=!wb||wb===bd;
+  var areaOK=false;
+  String(d.lcom||'').toLowerCase().split(/[,/]+/).forEach(function(w){
+   w=w.trim(); if(w.length>3&&hay.indexOf(w)>=0)areaOK=true;});
+  var sc=(bud>=price?3:1)+(bedOK?2:0)+(areaOK?2:0)+num(d.s)*0.1;
+  var row={i:i,d:d,bud:bud,bedOK:bedOK,areaOK:areaOK,sc:sc,short:bud<price};
+  (bud>=price?fit:near).push(row);
+ });
+ fit.sort(function(a,b){return b.sc-a.sc;});
+ near.sort(function(a,b){return b.sc-a.sc;});
+ return {fit:fit,near:near,unknown:unknown};
+}
+function spFitRow(r,price){
+ var d=r.d, ph=String(d.ph||'').replace(/\D/g,'');
+ var why=[];
+ if(!r.bedOK)why.push('wants '+num(d.lbd)+' bed');
+ if(!r.areaOK&&d.lcom)why.push('looking at '+String(d.lcom).split(',')[0].trim());
+ if(r.short)why.push('AED '+spShort(price-r.bud)+' short');
+ return '<div class="fitrow"><div class="fx"><b>'+pvName(d.w)+'</b>'+
+  '<s>Budget '+spShort(r.bud)+(why.length?' · '+esc(why.join(' · ')):'')+'</s></div>'+
+  (ph&&!S.priv?'<a class="fitwa" href="https://wa.me/'+ph+'" target="_blank" rel="noopener">WhatsApp</a>':
+   '<span class="fitwa off">no number</span>')+'</div>';
+}
 function spBeds(u){
  var um=(S.umap||{})[String(unitNo(u.p))]||{};
  return num(u.bd)||num(um.bd);
@@ -7643,7 +7696,7 @@ function spDraw(){
       Object.keys(spSalePins()).length+'</b>'+
    '</div>'+
   '<div class="rotate" id="maprot">Turn your phone sideways for the full plan.</div>'+
-  '<div id="mapstage"><div id="mapinner">'+
+  '<div id="mapstage" style="aspect-ratio:'+cfg.w+'/'+cfg.h+'"><div id="mapinner">'+
     '<img id="mapimg" src="'+esc(cfg.img)+'" alt="'+esc(cfg.name)+' site plan" draggable="false">'+
     '<div id="mappins"></div></div>'+
    '<div class="mapctl">'+
@@ -7743,6 +7796,18 @@ function mapCard(v){
       (b.over?'<div class="bandwarn">You are asking above every '+spBeds(u)+
         ' bed that has ever sold here.</div>':'')+'</div>';})()+
   (pr&&pr.n2&&!CLIENTM?'<div class="mcnote"><s>LATEST NEARBY</s>'+esc(pr.n2)+'</div>':'')+
+  (function(){ if(CLIENTM)return '';
+    var f=spFits(u), n=f.fit.length+f.near.length;
+    if(!n)return '<div class="mcnote"><s>WHO FITS</s>'+
+      'Nobody on your book has a budget that reaches '+pmoney(u.pr)+'.'+
+      (f.unknown?' '+f.unknown+' clients have no budget on record.':'')+'</div>';
+    return '<div class="mcfits"><s>WHO FITS · '+f.fit.length+' can afford it'+
+      (f.near.length?', '+f.near.length+' close':'')+'</s>'+
+      f.fit.slice(0,4).map(function(r){return spFitRow(r,num(u.pr));}).join('')+
+      (f.near.length?'<div class="fitsep">Within 15%</div>'+
+        f.near.slice(0,3).map(function(r){return spFitRow(r,num(u.pr));}).join(''):'')+
+      (f.unknown?'<div class="fitnote">'+f.unknown+' more have no budget on record</div>':'')+
+      '</div>';})()+
   (u.n&&!CLIENTM?'<div class="mcnote"><s>YOUR NOTE</s>'+esc(u.n)+'</div>':'')+
   '<div class="mcact">'+
    '<button class="mapbtn" data-move="'+v+'">Move the pin</button>'+
