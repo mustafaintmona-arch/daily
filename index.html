@@ -1282,21 +1282,21 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
 .mcnote s{display:block;text-decoration:none;font-size:9.5px;letter-spacing:.1em;
  text-transform:uppercase;color:var(--dim);margin-bottom:4px}
 .mcact{display:flex;gap:8px;margin-top:14px}
+.chips.mapfilt{margin-top:9px}
 .mpin.four i{background:#9BA6B2;box-shadow:0 0 0 3px rgba(155,166,178,.3)}
+.mpin.st-none i{border-style:dashed}
+.mpin.st-reserved i{border-color:#E0A42C}
+.mpin.st-sold i{border-color:#D46A5E}
+.mpin.st-withdrawn i{opacity:.5}
+.maphint .nost{color:#C08A2E}
+.mcimg{border-radius:12px;overflow:hidden;margin:-2px 0 12px;background:var(--card2);min-height:6px}
+.mcimg img{display:block;width:100%;height:auto;max-height:190px;object-fit:cover}
 .mpin.four span{background:#9BA6B2;color:#0B1F33}
 .mpin.five i{background:var(--gold);box-shadow:0 0 0 3px rgba(185,151,91,.32)}
 .mpin.five span{background:var(--gold);color:#0B1F33}
 .maphint i{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 5px 0 0;
  vertical-align:middle;border:1.5px solid #0B1F33}
 .maphint i.lg4{background:#9BA6B2} .maphint i.lg5{background:#B9975B;margin-left:10px}
-body.spfull #mapstage{position:fixed;inset:0;z-index:70;border-radius:0;max-height:none;
- aspect-ratio:auto;width:100vw;height:100dvh;background:#0B1F33}
-body.spfull .nav{display:none!important}
-body.spfull #mapstage .mapctl{bottom:calc(9px + env(safe-area-inset-bottom))}
-body.spfull #spx{display:flex}
-#spx{display:none;position:absolute;top:calc(10px + env(safe-area-inset-top));right:10px;z-index:3;
- width:38px;height:38px;border-radius:50%;background:rgba(11,31,51,.82);color:#EDE9E1;
- border:0;align-items:center;justify-content:center;font-size:20px}
 </style>
 </head>
 <body>
@@ -7413,18 +7413,7 @@ const MAPSEED={'farm gardens':{
  '58':[0.229,0.209],'64':[0.150,0.365],'69':[0.096,0.107],'71':[0.086,0.229],
  '101':[0.714,0.500],'106':[0.593,0.723],'138':[0.850,0.167]}};
 
-var MAPC=null, MZ=1, MX=0, MY=0, MPLACE=null, MSEL=null, SPFULL=false;
-/* iOS will not give a plain div the Fullscreen API, so asking for it fails
-   quietly and the button looks broken. A fixed overlay works everywhere. */
-function spFull(on){
- SPFULL = (on===undefined) ? !SPFULL : !!on;
- document.body.classList.toggle('spfull', SPFULL);
- var f=document.getElementById('mapfull');
- if(f)f.textContent=SPFULL?'Close':'Full screen';
- MZ=1; MX=0; MY=0;
- setTimeout(function(){mapApply();drawMapBar();},60);
- haptic('light');
-}
+var MAPC=null, MZ=1, MX=0, MY=0, MPLACE=null, MSEL=null, MFILT='all';
 /* money() already carries the AED prefix, so these stay separate:
    spShort for the stat tiles, spNum for anything measured in sqft. */
 function spShort(n){ if(S.priv)return '•••';
@@ -7433,10 +7422,9 @@ function spShort(n){ if(S.priv)return '•••';
  if(Math.abs(n)>=1e3)return Math.round(n/1e3)+'k';
  return String(Math.round(n)); }
 function spNum(n){ return Math.round(num(n)).toLocaleString(); }
-
 /* two shapes to read: a unit reads "Farm Gardens 41, The Valley" and a
-   prospect reads "Farm Gardens 41 \u00b7 listing". Cut at either separator. */
-function spHead(p){ return String(p||'').split(/[,\u00b7]/)[0].trim(); }
+   prospect reads "Farm Gardens 41 · listing". Cut at either separator. */
+function spHead(p){ return String(p||'').split(/[,·]/)[0].trim(); }
 function comKey(p){
  return spHead(p).replace(/\s+\d+\s*$/,'').trim().toLowerCase();
 }
@@ -7463,9 +7451,77 @@ function mapPins(){
  }
  return S.pins[MAPC];
 }
+
+/* --------- send the plan on afterwards ---------
+   Draws the plan and only the pins currently shown onto a canvas, then hands
+   it to the share sheet. Same origin image, so the canvas stays clean. */
+function spShare(){
+ var cfg=SITEMAPS[MAPC]; if(!cfg)return;
+ var shown=mapShown(), P=mapPins();
+ var pins=shown.filter(function(u){return P[String(unitNo(u.p))];});
+ if(!pins.length){alert('Nothing pinned to send yet.');return;}
+ var img=new Image();
+ img.onload=function(){
+  var W=img.naturalWidth, H=img.naturalHeight, BAR=Math.round(H*0.075);
+  var c=document.createElement('canvas'); c.width=W; c.height=H+BAR;
+  var x=c.getContext('2d');
+  x.fillStyle='#0B1F33'; x.fillRect(0,0,W,H+BAR);
+  x.drawImage(img,0,0,W,H);
+  var R=Math.round(W*0.011);
+  pins.forEach(function(u){
+   var v=unitNo(u.p), p=P[String(v)], px=p.x*W, py=p.y*H;
+   var five=spBeds(u)===5;
+   x.beginPath(); x.arc(px,py,R+4,0,6.2832);
+   x.fillStyle=five?'rgba(185,151,91,.34)':'rgba(155,166,178,.34)'; x.fill();
+   x.beginPath(); x.arc(px,py,R,0,6.2832);
+   x.fillStyle=five?'#B9975B':'#9BA6B2'; x.fill();
+   x.lineWidth=Math.max(2,R*0.28); x.strokeStyle='#0B1F33'; x.stroke();
+   x.font='700 '+Math.round(R*1.5)+'px -apple-system,Helvetica,Arial';
+   x.textAlign='center'; x.textBaseline='middle';
+   x.fillStyle='#0B1F33';
+   var w=x.measureText(v).width+R*0.9, hh=R*1.9;
+   x.fillStyle=five?'#B9975B':'#9BA6B2';
+   x.fillRect(px-w/2, py+R+3, w, hh);
+   x.fillStyle='#0B1F33'; x.fillText(String(v), px, py+R+3+hh/2);
+  });
+  x.fillStyle='#EDE9E1';
+  x.font='600 '+Math.round(BAR*0.34)+'px Georgia,serif';
+  x.textAlign='left'; x.textBaseline='middle';
+  x.fillText(cfg.name+' · '+pins.length+' unit'+(pins.length===1?'':'s'), Math.round(W*0.02), H+BAR*0.4);
+  x.fillStyle='#8C8578'; x.font='400 '+Math.round(BAR*0.24)+'px -apple-system,Helvetica,Arial';
+  x.fillText('Mustafa Saleh · Allegiance Real Estate · Dubai', Math.round(W*0.02), H+BAR*0.74);
+  c.toBlob(function(blob){
+   if(!blob){alert('Could not build the image.');return;}
+   var name=cfg.name.replace(/\s+/g,'-').toLowerCase()+'-'+pins.length+'-units.png';
+   var file=null;
+   try{ file=new File([blob],name,{type:'image/png'}); }catch(e){}
+   if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:cfg.name}).catch(function(){});
+   } else {
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},900);
+   }
+   haptic('light');
+  },'image/png');
+ };
+ img.onerror=function(){alert('Could not load the plan image.');};
+ img.src=cfg.img;
+}
+function spBeds(u){
+ var um=(S.umap||{})[String(unitNo(u.p))]||{};
+ return num(u.bd)||num(um.bd);
+}
 function mapUnits(){
  return S.units.filter(function(u){return comKey(u.p)===MAPC;})
    .sort(function(a,b){return num(b.pr)-num(a.pr);});
+}
+/* what is actually on the map right now, after the filter */
+function mapShown(){
+ var L=mapUnits();
+ if(MFILT==='5')return L.filter(function(u){return spBeds(u)===5;});
+ if(MFILT==='4')return L.filter(function(u){return spBeds(u)===4;});
+ return L;
 }
 function mapApply(){
  var inner=document.getElementById('mapinner'); if(!inner)return;
@@ -7518,8 +7574,7 @@ function spDraw(){
    ' <u>'+c.n+'</u></b>';}).join('');
 
  var h='<div class="sec">'+
-  '<div class="maptop"><h2>Site plan</h2><div class="sp"></div>'+
-   '<button class="mapbtn" id="mapfull">Full screen</button></div>'+
+  '<div class="maptop"><h2>Site plan</h2><div class="sp"></div>'+'<button class="mapbtn" id="mapshare">Send this plan</button></div>'+
   '<div class="chips mapcoms">'+chips+'</div>';
 
  if(!cfg){
@@ -7536,6 +7591,12 @@ function spDraw(){
    '<div><b>'+spShort(total)+'</b><s>AED total</s></div>'+
    '<div><b>'+spShort(total*0.02)+'</b><s>fee at 2%</s></div>'+
   '</div>'+
+  '<div class="chips mapfilt">'+
+    ['all','5','4'].map(function(k){
+      var lab=k==='all'?'All '+units.length:(k==='5'?'5 bed '+units.filter(function(u){return spBeds(u)===5;}).length
+                                                     :'4 bed '+units.filter(function(u){return spBeds(u)===4;}).length);
+      return '<b class="'+(MFILT===k?'on':'')+'" data-spf="'+k+'">'+lab+'</b>';}).join('')+
+   '</div>'+
   '<div class="rotate" id="maprot">Turn your phone sideways for the full plan.</div>'+
   '<div id="mapstage"><div id="mapinner">'+
     '<img id="mapimg" src="'+esc(cfg.img)+'" alt="'+esc(cfg.name)+' site plan" draggable="false">'+
@@ -7546,7 +7607,6 @@ function spDraw(){
      '<button data-mz="in">+</button>'+
    '</div>'+
    '<div class="maphint" id="maphint"></div>'+
-   '<button id="spx" aria-label="Close full screen">&times;</button>'+
   '</div>'+
   '<div id="mapcard" class="mapcard"></div>';
 
@@ -7561,20 +7621,22 @@ function spDraw(){
  h+='</div>';
  host.innerHTML=h;
  wireMapComs(); wireMapStage(); drawPins();
- var five=units.filter(function(u){var um=(S.umap||{})[String(unitNo(u.p))]||{};
-   return (num(u.bd)||num(um.bd))===5;}).length;
+ var sh=mapShown(), five=sh.filter(function(u){return spBeds(u)===5;}).length;
+ var noSt=sh.filter(function(u){return !u.st;}).length;
  document.getElementById('maphint').innerHTML=
-  '<i class="lg5"></i>'+five+' five bed <i class="lg4"></i>'+(units.length-five)+' four bed';
+  '<i class="lg5"></i>'+five+' five bed <i class="lg4"></i>'+(sh.length-five)+' four bed'+
+  (noSt?' <span class="nost">· '+noSt+' with no status</span>':'');
 }
 
 function drawPins(){
  var box=document.getElementById('mappins'); if(!box)return;
  var P=mapPins(), out='';
- mapUnits().forEach(function(u){
+ mapShown().forEach(function(u){
   var v=unitNo(u.p), p=P[String(v)]; if(!p)return;
-  var um=(S.umap||{})[String(v)]||{};
-  var bd=num(u.bd)||num(um.bd);          /* gold is a 5 bed, grey is a 4 */
-  out+='<button class="mpin'+(bd===5?' five':' four')+(MSEL===v?' sel':'')+'" data-mv="'+v+'" '+
+  var bd=spBeds(u);                       /* gold is a 5 bed, grey is a 4 */
+  /* the ring is the status. nothing is set on any unit yet, so most read unset */
+  var st=u.st?('st-'+String(u.st).toLowerCase()):'st-none';
+  out+='<button class="mpin'+(bd===5?' five':' four')+' '+st+(MSEL===v?' sel':'')+'" data-mv="'+v+'" '+
    'style="left:'+(p.x*100).toFixed(3)+'%;top:'+(p.y*100).toFixed(3)+'%">'+
    '<i></i><span>'+v+'</span></button>';
  });
@@ -7594,6 +7656,7 @@ function mapCard(v){
  var pr=null; S.later.forEach(function(x){ if(unitNo(x.w)===v&&comKey(x.w)===MAPC)pr=x; });
  function bit(l,x){return x?'<div><s>'+esc(l)+'</s><b>'+x+'</b></div>':'';}
  var html='<button class="mapx" id="mapclose">&times;</button>'+
+  (u.img?'<div class="mcimg" id="mcimg"></div>':'')+
   '<div class="mch"><h3>'+esc(u.p.split(',')[0])+'</h3>'+
    '<div class="mcs">'+esc(u.t||'')+(u.tag?' · '+esc(u.tag):'')+'</div></div>'+
   '<div class="mcprice">'+(num(u.pr)?pmoney(u.pr):'Price not set')+
@@ -7615,6 +7678,12 @@ function mapCard(v){
    (u.link?'<a class="mapbtn gold" href="'+esc(u.link)+'" target="_blank" rel="noopener">Listing</a>':'')+
   '</div>';
  el.innerHTML=html; el.classList.add('on');
+ if(u.img&&typeof loadImgKey==='function'){
+  loadImgKey(u.img).then(function(src){
+   var im=document.getElementById('mcimg');
+   if(im&&src)im.innerHTML='<img src="'+src+'" alt="">';
+  }).catch(function(){});
+ }
  document.getElementById('mapclose').onclick=function(){
   el.classList.remove('on'); MSEL=null; drawPins();};
  var mv=el.querySelector('[data-move]');
@@ -7641,16 +7710,16 @@ function mapPlaceStop(){
 function wireMapComs(){
  document.querySelectorAll('[data-mc]').forEach(function(b){
   b.onclick=function(){MAPC=b.dataset.mc;MZ=1;MX=0;MY=0;MSEL=null;MPLACE=null;spDraw();haptic('light');};});
- var f=document.getElementById('mapfull');
- if(f)f.onclick=function(){spFull();};
  document.querySelectorAll('[data-place]').forEach(function(b){
   b.onclick=function(){mapPlace(+b.dataset.place);};});
+ document.querySelectorAll('[data-spf]').forEach(function(b){
+  b.onclick=function(){MFILT=b.dataset.mf;MSEL=null;spDraw();haptic('light');};});
+ var shb=document.getElementById('mapshare');
+ if(shb)shb.onclick=function(){spShare();};
 }
 function wireMapStage(){
  var st=document.getElementById('mapstage'), inner=document.getElementById('mapinner');
  if(!st||!inner)return;
- var xb=document.getElementById('spx');
- if(xb)xb.onclick=function(e){e.stopPropagation();spFull(false);};
  st.querySelectorAll('[data-mz]').forEach(function(b){
   b.onclick=function(e){e.stopPropagation();
    var k=b.dataset.mz;
@@ -7719,7 +7788,6 @@ function wireMapStage(){
   var r=document.getElementById('maprot'); if(!r)return;
   r.classList.toggle('on', window.innerHeight>window.innerWidth && window.innerWidth<820);
  }
- document.addEventListener('keydown',function(e){if(e.key==='Escape'&&SPFULL)spFull(false);});
  rot(); window.addEventListener('resize',rot); window.addEventListener('orientationchange',function(){
   setTimeout(function(){rot();MZ=1;MX=0;MY=0;mapApply();drawMapBar();},250);});
  mapApply(); drawMapBar();
