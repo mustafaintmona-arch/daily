@@ -933,6 +933,17 @@ body{background:var(--s0);color:var(--t1);font-size:var(--f2);line-height:1.5;le
 .pgtitle{font-family:inherit;font-size:var(--f5);font-weight:650;letter-spacing:-.03em;margin-top:var(--x4)}
 .upn .nm,.qwho,.vname{font-size:var(--f5);font-weight:650;letter-spacing:-.03em;line-height:1.15}
 .pc2 .nm2{font-size:var(--f4);font-weight:650;letter-spacing:-.02em}
+.swp{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.swp:last-child{border-bottom:0}
+.swn{flex:1;min-width:0;font-size:14px;font-weight:600}
+.swn s{display:block;text-decoration:none;font-size:11.5px;color:var(--dim);font-weight:400;margin-top:1px}
+.swb{display:flex;gap:5px;flex:0 0 auto}
+.swb button{background:var(--card2);border:1px solid var(--line);color:var(--dim);
+ border-radius:8px;padding:7px 9px;font-size:11.5px;font-weight:700;min-width:38px}
+.swb button.on.buyer{background:#5AA9E6;color:#06233A;border-color:#5AA9E6}
+.swb button.on.seller{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.swb button.on.both{background:var(--ok);color:#06231A;border-color:var(--ok)}
+#dosweep b{color:var(--gold);font-weight:700;margin-left:5px}
 .sidep{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;
  border-radius:6px;font-size:10.5px;font-weight:800;margin-right:7px;padding:0 4px}
 .sidep.buyer{background:#5AA9E6;color:#06233A}
@@ -1204,6 +1215,7 @@ button:active,.ub:active,.cb:active,.tool:active,.qbtn:active,.addbtn:active,
   transition-duration:1ms!important}
  button:active,.ub:active,.cb:active,.pc2:active{transform:none}
 }
+.chips b.ghost{opacity:.45;font-weight:500}
 .chips.sv b{border-color:rgba(185,151,91,.32)}
 .chips.sv b.on{background:var(--gold);color:#0B1F33;border-color:var(--gold)}
 .svrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;padding:9px;border:1px solid var(--line);border-radius:12px;background:var(--s1)}
@@ -1443,7 +1455,8 @@ body.spclient .mcprice{font-size:29px}
   </div>
   <div class="sec"><div class="seg" id="dseg"></div></div>
   <div id="d-active">
-  <div class="sec"><button class="qstart" id="qstart">Start calling</button>
+  <div class="sec"><div id="sidenudge"></div>
+    <button class="qstart" id="qstart">Start calling</button>
     <h2>Pipeline <b id="dcount"></b></h2>
     <input id="dq" placeholder="Search client, unit or note">
     <div class="chips" id="dchips" style="margin-top:9px"></div>
@@ -2023,8 +2036,12 @@ function drawSV(on){
  var el=document.getElementById(on==='deal'?'svd':'svu'); if(!el)return;
  var cur=(on==='deal')?SVD:SVU;
  if(cur&&!svById(cur)){ if(on==='deal')SVD=''; else SVU=''; cur=''; }
- el.innerHTML='<b class="'+(cur?'':'on')+'" data-svp="">All</b>'+
-  svList(on).map(function(v){
+ var L=svList(on);
+ /* with no saved views this row was a blank strip taking up space. Until there
+    is one to show, it collapses to a single quiet chip. */
+ if(!L.length&&!cur){ el.innerHTML='<b class="ghost" data-svn="1">+ Saved view</b>'; }
+ else el.innerHTML='<b class="'+(cur?'':'on')+'" data-svp="">All</b>'+
+  L.map(function(v){
    return '<b class="'+(cur===v.id?'on':'')+'" data-svp="'+v.id+'">'+esc(v.name)+'</b>';}).join('')+
   (cur?'<b data-sve="1">Edit</b>':'')+
   '<b data-svn="1">+ New view</b>';
@@ -3819,11 +3836,49 @@ function drawDealChips(){
  var due=S.deals.filter(function(d){return d.s<4&&d.nd&&d.nd<=TD;}).length;
  var counts={};STAGES.forEach(function(st,j){counts[st]=S.deals.filter(function(d){return d.s===j;}).length;});
  counts['Lost']=S.deals.filter(function(d){return d.s===LOST;}).length;
- var opts=[['All',S.deals.length],['Due',due]].concat(STAGES.map(function(st){return [st,counts[st]];})).concat([['Lost',counts['Lost']]]);
+ var opts=[['All',S.deals.length],['Due',due]].concat(STAGES.map(function(st){return [st,counts[st]];}));
+ if(counts['Lost'])opts.push(['Lost',counts['Lost']]);   /* no chip for a thing that has not happened */
+ var unset=S.deals.filter(function(d){return !d.side;}).length;
  document.getElementById('dchips').innerHTML=opts.map(function(o){
   return '<b class="'+(DCHIP===o[0]?'on':'')+'" data-dc="'+o[0]+'">'+o[0]+(o[1]?'<u>'+o[1]+'</u>':'')+'</b>';}).join('');
  document.querySelectorAll('[data-dc]').forEach(function(b){b.onclick=function(){
   DCHIP=b.dataset.dc;drawDeals();};});
+ var nu=document.getElementById('sidenudge');
+ if(nu){
+  nu.innerHTML=unset?'<button class="addbtn" id="dosweep" style="margin:0 0 9px">'+
+    'Mark who is a buyer and who is a seller <b>'+unset+' left</b></button>':'';
+  var db=document.getElementById('dosweep');
+  if(db)db.onclick=openSideSweep;
+ }
+}
+/* Buyer or seller is worth nothing until it is filled in, and filling it in
+   one client at a time through the edit sheet is why it never gets done. */
+function openSideSweep(){
+ function draw(){
+  var rows=S.deals.map(function(d,i){
+   return '<div class="swp"><div class="swn">'+esc(pvName(d.w))+
+     '<s>'+esc(String(d.u||'').split('·')[0].trim().slice(0,34))+'</s></div>'+
+     '<div class="swb">'+SIDES.map(function(x){
+       return '<button class="'+(d.side===x?'on '+x.toLowerCase():'')+'" data-sw="'+i+'" data-sv2="'+x+'">'+
+        (x==='Both'?'B/S':x)+'</button>';}).join('')+'</div></div>';
+  }).join('');
+  var done=S.deals.filter(function(d){return d.side;}).length;
+  document.getElementById('tbody').innerHTML=
+   '<div class="hint">Tap a side for each person. It saves as you go, and tapping '+
+   'the one already chosen clears it. <b>'+done+' of '+S.deals.length+' set.</b></div>'+
+   '<div class="card" style="margin-top:10px">'+rows+'</div>';
+  document.querySelectorAll('[data-sw]').forEach(function(b){
+   b.onclick=function(){
+    var d=S.deals[+b.dataset.sw], v=b.dataset.sv2;
+    d.side=(d.side===v)?'':v; put(S); haptic('light');
+    draw();
+    /* the sheet sits over the Deals page, so refresh what is behind it too,
+       otherwise the badges and the counter stay on the old numbers */
+    drawDeals();
+   };});
+ }
+ openTool('Buyer or seller','','');
+ draw();
 }
 function chipPass(d){
  if(DCHIP==='All')return true;
