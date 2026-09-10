@@ -4436,6 +4436,9 @@ function drawDeals(){
    if(bdf)tags+='<span class="tg blk">'+esc(bdf[1])+'</span>';}
   if(d.npd){var nd=daysTo(d.npd);
    if(nd>=0&&nd<=90)tags+='<span class="tg pay">Pays '+pmoney(d.npa)+' in '+nd+'d</span>';}
+  var txn=txNext(d);
+  if(txn)tags+='<span class="tg '+(txn.left<0?'due':'pay')+'">'+esc(txn.lab)+
+   (txn.left<0?' '+Math.abs(txn.left)+'d late':(txn.left===0?' today':' in '+txn.left+'d'))+'</span>';
   var prim = ph&&!S.priv
    ? '<a class="go2 g" href="tel:'+ph+'">Call</a>'
    : (ph?'<button class="go2 g" disabled style="opacity:.5">Call</button>'
@@ -6552,7 +6555,7 @@ function drawComps(){
 }
 fetch('comps.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&j.communities){COMPS=j;drawComps();}}).catch(function(){});
 
-var APPVER='v47 \u00b7 6 Sep 2026 \u00b7 merge keeps unit map, do-not-contact, your fields and views';
+var APPVER='v48 \u00b7 10 Sep 2026 \u00b7 contract terms in the deal room, deadlines that warn you';
 function drawObj(){
  var L=S.deals.filter(function(d){return d.s===LOST&&d.lost;});
  var el=document.getElementById('objbox');
@@ -10176,6 +10179,81 @@ function openBrief(i){
 
 /* ================= DEAL ROOM =================
    Everything about one live deal on one screen, instead of four tabs. */
+
+/* ---------- a deal that has gone to contract ----------
+   Only the handful of numbers you cannot derive. Everything else, the buyer's
+   cash, the deadlines, the valuation exposure, is worked out rather than typed,
+   because the fields nobody fills in are the ones that ask for arithmetic. */
+function dmyShort(d){
+ if(!d)return '\u2014';
+ var x=new Date(d); if(isNaN(x))return '\u2014';
+ return x.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+function txOf(d){return (d&&d.tx)||null;}
+function txDates(t){
+ if(!t||!t.cd)return [];
+ function on(n){var x=new Date(t.cd); x.setDate(x.getDate()+num(n)); return iso(x);}
+ return [
+  ['Mortgage applied for', on(t.appD||14)],
+  ['Valuation instructed', on(t.valD||30)],
+  ['Long stop',            on(t.lsD||180)]
+ ].map(function(r){ return {lab:r[0], d:r[1], left:dueIn(r[1])}; });
+}
+/* the nearest deadline that is either close or already gone */
+function txNext(d){
+ var t=txOf(d); if(!t||!t.cd)return null;
+ var D=txDates(t).sort(function(a,b){return a.left-b.left;});
+ var n=D[0];
+ return (n&&n.left<=21)?n:null;
+}
+var TXSTOP=['the','and','for','deal','unit'];
+function txWords(s){
+ return low(s).replace(/[^a-z0-9 ]/g,' ').split(/\s+/)
+  .filter(function(w){return w.length>2&&TXSTOP.indexOf(w)<0;});
+}
+function txUnit(d){
+ var hay=low((d&&d.u)||''); if(!hay)return null;
+ var A=txWords(hay), best=null, bs=0;
+ for(var i=0;i<S.units.length;i++){
+  var p=String(S.units[i].p||''); if(!p)continue;
+  var head=p.split(',')[0].trim(), sc=0;
+  if(head&&hay.indexOf(low(head))>=0){ sc=99; }
+  else { var B=txWords(p); A.forEach(function(w){ if(B.indexOf(w)>=0)sc++; }); }
+  if(sc>bs){bs=sc;best=S.units[i];}
+ }
+ return bs>=2?best:null;
+}
+function openTx(i){
+ var d=S.deals[i]; if(!d)return;
+ var t=txOf(d)||{};
+ function f(id,lab,val,ph,type){
+  return '<div><label>'+lab+'</label><input id="tx-'+id+'" type="'+(type||'number')+
+   '" value="'+(val==null?'':esc(String(val)))+'" placeholder="'+(ph||'')+'"></div>';}
+ var h='<div class="pfields">'+
+  f('cd','Contract date',t.cd||'','', 'date')+
+  '<div class="two">'+f('price','Price AED',t.price||num(d.v)||'')+
+   f('ltv','Buyer LTV %',t.ltv||70)+'</div>'+
+  '<div class="two">'+f('mort','Mortgage needed AED',t.mort||'')+
+   f('pre','Pre-approved AED',t.pre||'')+'</div>'+
+  f('dep','Security or deposit held AED',t.dep||'')+
+  '<div class="two">'+f('appD','Apply within days',t.appD||14)+
+   f('valD','Valuation within days',t.valD||30)+'</div>'+
+  f('lsD','Long stop, days from contract',t.lsD||180)+
+  '</div><button class="btnfull" id="tx-save" style="margin-top:12px">Save</button>'+
+  (t.cd?'<button class="addbtn" id="tx-clear" style="margin-top:8px">Remove the contract terms</button>':'');
+ openTool('Contract terms',h,'');
+ document.getElementById('tx-save').onclick=function(){
+  function v(id){var e=document.getElementById('tx-'+id); return e?e.value:'';}
+  d.tx={cd:v('cd'),price:num(v('price')),ltv:num(v('ltv')),mort:num(v('mort')),
+        pre:num(v('pre')),dep:num(v('dep')),
+        appD:num(v('appD'))||14,valD:num(v('valD'))||30,lsD:num(v('lsD'))||180};
+  put(S); haptic('light'); closeTool(); redrawAll(); dealRoom(i);
+ };
+ var cl=document.getElementById('tx-clear');
+ if(cl)cl.onclick=function(){
+  if(!confirm('Remove the contract terms from this deal?'))return;
+  delete d.tx; put(S); closeTool(); redrawAll(); dealRoom(i);};
+}
 function dealRoom(i){
  var d=S.deals[i]; if(!d)return;
  var isR=(d.ty==='Rent'||num(d.rent));
@@ -10214,6 +10292,48 @@ function dealRoom(i){
  if(next)h+='<div class="hint" style="margin-top:7px;color:var(--gold)">Next: '+esc(next[1])+
   (next[2]?' — '+esc(next[2]):'')+'</div>';
 
+
+ /* the contract layer, only once there is one */
+ var TX=txOf(d);
+ if(!TX||!TX.cd){
+  h+='<button class="addbtn" id="dr-tx" style="margin-top:14px">Add contract terms</button>';
+ } else {
+  var cash=TX.price&&TX.mort?TX.price-TX.mort:0;
+  h+='<div class="vhead" style="margin-top:14px">Contract</div><div class="card">'+
+   row('Signed', esc(dmyShort(TX.cd)))+
+   row('Price', pmoney(TX.price))+
+   row('Mortgage', TX.mort?pmoney(TX.mort)+(TX.price?' · '+pvNum(Math.round(TX.mort/TX.price*100)+'%'):''):'\u2014')+
+   (TX.pre?row('Pre-approved', pmoney(TX.pre)+(TX.pre>TX.mort?' · '+pmoney(TX.pre-TX.mort)+' spare':'')):'')+
+   (cash?row('Buyer finds', pmoney(cash),'var(--gold)'):'')+
+   (TX.dep?row('Security held', pmoney(TX.dep)):'')+
+   '</div>';
+  var DD=txDates(TX);
+  h+='<div class="vhead" style="margin-top:14px">Dates that bite</div><div class="card">'+
+   DD.map(function(x){
+    var tone=x.left<0?'var(--bad)':(x.left<=14?'var(--gold)':'var(--dim)');
+    var when=x.left<0?Math.abs(x.left)+' days past':(x.left===0?'today':x.left+' days');
+    return row(x.lab, esc(dmyShort(x.d))+' · '+when, tone);}).join('')+
+   '</div>';
+  /* what the bank is likely to do, from the sales already in the app */
+  var uu=txUnit(d);
+  if(uu&&TX.price&&TX.ltv){
+   var com=String(uu.p||'').split(',')[0].replace(/\s+\d+$/,'').trim();
+   var V=valueIt(com, num(uu.bd), num(uu.bua), TX.price);
+   if(V&&V.p6){
+    var lend=Math.min(TX.price,V.p6)*TX.ltv/100;
+    var full=TX.price*TX.ltv/100;
+    h+='<div class="vhead" style="margin-top:14px">If the bank values it where the market is</div>'+
+     '<div class="card">'+
+     row('Last 6 months in '+esc(com), pmoney(V.p6)+' · from '+V.p6n)+
+     row('Bank would lend', pmoney(lend))+
+     row('Buyer would find', pmoney(TX.price-lend), lend<full?'var(--bad)':'var(--ok)')+
+     (lend<full?row('Extra cash', pmoney(full-lend),'var(--bad)'):'')+
+     '</div>';
+   }
+  }
+  h+='<button class="addbtn" id="dr-tx" style="margin-top:10px">Edit the contract terms</button>';
+ }
+
  /* the honest risk read, from data rather than optimism */
  var risks=[];
  if(!d.ph)risks.push('No phone number, you cannot chase this');
@@ -10225,6 +10345,23 @@ function dealRoom(i){
  if(qScore(d)<4)risks.push('Only '+qScore(d)+' of 5 qualifying questions answered');
  if(num(d.s)>=3&&!pr.done)risks.push('Agreed but the transfer checklist has not been started');
  if(!isR&&!num(d.v))risks.push('No value, so the fee is a guess');
+ var TXr=txOf(d);
+ if(TXr&&TXr.cd){
+  txDates(TXr).forEach(function(x){
+   if(x.left<0)risks.push(x.lab+' was due '+Math.abs(x.left)+' days ago');
+   else if(x.left<=14)risks.push(x.lab+' in '+x.left+' days');});
+  if(TXr.mort&&TXr.pre&&TXr.pre<TXr.mort)
+   risks.push('Pre-approval is '+money(TXr.mort-TXr.pre)+' short of the mortgage he needs');
+  var vu=txUnit(d);
+  if(vu&&TXr.price&&TXr.ltv){
+   var vc=String(vu.p||'').split(',')[0].replace(/\s+\d+$/,'').trim();
+   var VV=valueIt(vc, num(vu.bd), num(vu.bua), TXr.price);
+   if(VV&&VV.p6&&VV.p6<TXr.price){
+    var gap=Math.round((TXr.price-Math.min(TXr.price,VV.p6))*TXr.ltv/100);
+    if(gap>0)risks.push('Priced '+money(TXr.price-VV.p6)+' above the 6-month median, so the buyer may need '+money(gap)+' more cash');
+   }
+  }
+ }
  kds.forEach(function(k){var dd=kdDays(k); if(dd>=0&&dd<=30)risks.push(k.t+' in '+dd+' days');});
  h+='<div class="vhead" style="margin-top:14px">What could go wrong</div>';
  h+=risks.length
@@ -10268,6 +10405,8 @@ function dealRoom(i){
  if(b2)b2.onclick=function(){closeTool();setTimeout(function(){openDocs('deal',i);},200);};
  var b3=document.querySelector('[data-drkd]');
  if(b3)b3.onclick=function(){closeTool();setTimeout(function(){openKd(-1);},200);};
+ var bt=document.getElementById('dr-tx');
+ if(bt)bt.onclick=function(){closeTool();setTimeout(function(){openTx(i);},200);};
 }
 
 /* ================= VIEWINGS AND FEEDBACK =================
