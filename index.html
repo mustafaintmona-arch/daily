@@ -1452,6 +1452,7 @@ body.spclient .mcprice{font-size:29px}
   <div class="sec">
     <div class="big" id="dfore">AED 0<small> likely to close</small></div>
     <div class="meta"><span id="dwon"></span><span id="dgap"></span></div>
+    <button class="showmore" id="dgoal" style="margin-top:9px">Open the target</button>
   </div>
   <div class="sec"><div class="seg" id="dseg"></div></div>
   <div id="d-active">
@@ -1715,7 +1716,24 @@ body.spclient .mcprice{font-size:29px}
   <button id="vclose2" style="border-color:var(--gold);color:var(--gold)">Exit</button></div>
 </div>
 <script>
-const TARGET=500000, DEADLINE='2026-09-27';
+/* ---------- the target ----------
+   Was two hardcoded numbers. Now it is yours to set, because the only number
+   that matters is what lands in your pocket, and that depends on your split.
+   TARGET stays GROSS so every existing screen keeps comparing like with like. */
+const GOALD={net:180000, dl:'2026-10-11', split:50};
+function goal(){
+ S.goal=S.goal||{};
+ Object.keys(GOALD).forEach(function(k){ if(S.goal[k]==null||S.goal[k]==='')S.goal[k]=GOALD[k]; });
+ if(!(Number(S.goal.split)>0))S.goal.split=50;
+ return S.goal;
+}
+var TARGET=360000, DEADLINE='2026-10-11';
+function goalSync(){
+ var g=goal();
+ TARGET=Math.round(Number(g.net||0)/(Number(g.split||50)/100));
+ DEADLINE=g.dl;
+ return g;
+}
 const NUMS=[['calls','Calls',40],['convos','Conversations',10],['meets','Meetings / viewings',2],['opps','New opportunities',2],['agreed','Deals agreed',0]];
 const TOGS=[['gym','Gym','◆'],['pray','Prayers on time','✦'],['deep','Deep work am','●'],['bed','Sleep before 12','☾']];
 const STAGES=['To call','Contacted','Interested','Agreed','Won'];
@@ -1821,6 +1839,7 @@ const money=n=>'AED '+Math.round(n||0).toLocaleString();
 const pmoney=n=>S.priv?'AED •••••••':money(n);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const num=v=>Number(v||0);
+goalSync();   /* TARGET and DEADLINE come from S.goal, not from a hardcoded pair */
 const autoDate=n=>{const d=new Date();d.setDate(d.getDate()+n);return iso(d);};
 function dueIn(x){return x?Math.round((new Date(x)-new Date(TD))/864e5):null;}
 const ddiff=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
@@ -4113,6 +4132,223 @@ function drawQuiet(){
 }
 /* ---- when the money actually lands ---- */
 var LAG={0:120,1:95,2:70,3:45,4:30};
+/* ================= THE TARGET TRACKER =================
+   One screen that answers a single question: what has to happen for the number
+   to land by the date. It refuses to flatter you. If the pipeline cannot get
+   there in the time left, it says so and tells you what would. */
+
+/* when a deal realistically turns into cash.
+   A signed contract knows its own dates, so use those. Otherwise you can set an
+   ETA yourself, because you know where a deal actually is better than its stage
+   does. Only if neither exists does it fall back to the generic stage lag. */
+function goalEta(d){
+ if(d.eta)return d.eta;
+ var t=(d&&d.tx)||null;
+ if(t&&t.cd){
+  var x=new Date(t.cd); x.setDate(x.getDate()+(num(t.lsD)||180)); return iso(x);
+ }
+ var lag=LAG[Math.min(num(d.s),4)];
+ if(lag==null)lag=90;
+ var y=new Date(TD); y.setDate(y.getDate()+lag); return iso(y);
+}
+function goalEtaWhy(d){
+ if(d.eta)return 'you set this';
+ if(d.tx&&d.tx.cd)return 'contract long stop';
+ return 'stage average, '+LAG[Math.min(num(d.s),4)]+' days';
+}
+function goalRows(){
+ var sup=suppressed(), out=[];
+ S.deals.forEach(function(d,i){
+  if(num(d.s)>=4)return;
+  if(sup[i])return;
+  var fee=dealFee(d);
+  var eta=goalEta(d), p=PROB[Math.min(num(d.s),4)]||0;
+  out.push({i:i, d:d, fee:fee, p:p, w:fee*p, eta:eta,
+            days:ddiff(TD,eta), inWin:eta<=DEADLINE, why:goalEtaWhy(d)});
+ });
+ out.sort(function(a,b){return b.w-a.w;});
+ return out;
+}
+/* Winning a deal logs its commission to the ledger automatically, so adding the
+   won deals to the ledger total counts the same money twice. Count a won deal
+   only when nothing matching it is already in the ledger. */
+function goalBanked(){
+ var L=S.ledger||[], used={};
+ var total=L.reduce(function(a,e){return a+num(e.amt);},0);
+ S.deals.forEach(function(d){
+  if(num(d.s)!==4)return;
+  var fee=dealFee(d); if(!fee)return;
+  var hit=-1;
+  L.forEach(function(e,k){
+   if(hit>=0||used[k])return;
+   if(Math.abs(num(e.amt)-fee)<1 && low(e.w||'')===low(d.w||''))hit=k;
+  });
+  if(hit>=0)used[hit]=1; else total+=fee;
+ });
+ return total;
+}
+function goalState(){
+ var g=goalSync();
+ var R=goalRows();
+ var banked=goalBanked();
+ var win=R.filter(function(r){return r.inWin&&r.fee>0;});
+ var wWin=win.reduce(function(a,r){return a+r.w;},0);
+ var mWin=win.reduce(function(a,r){return a+r.fee;},0);
+ var left=ddiff(TD,DEADLINE);
+ var noval=R.filter(function(r){return !r.fee;});
+ return {g:g, R:R, win:win, banked:banked, wWin:wWin, mWin:mWin,
+         need:Math.max(0,TARGET-banked), left:left,
+         wks:Math.max(1,Math.ceil(Math.max(left,0)/7)), noval:noval,
+         netNow:Math.round(banked*num(g.split)/100)};
+}
+/* the shortest list of live deals that clears the gap, biggest fee first.
+   Not clever, deliberately. You cannot work a portfolio, you work a call list. */
+function goalRun(need,pool){
+ var picked=[], run=0;
+ pool.slice().sort(function(a,b){return b.fee-a.fee;}).forEach(function(r){
+  if(run>=need||!r.fee)return;
+  picked.push(r); run+=r.fee;
+ });
+ return {list:picked, total:run, enough:run>=need};
+}
+function openGoalEdit(){
+ var g=goal();
+ var h='<div class="pfields">'+
+  '<div><label>What you want to keep, AED</label><input id="g-net" type="number" value="'+num(g.net)+'"></div>'+
+  '<div class="two">'+
+   '<div><label>Your share, %</label><input id="g-split" type="number" value="'+num(g.split)+'"></div>'+
+   '<div><label>By when</label><input id="g-dl" type="date" value="'+esc(g.dl)+'"></div>'+
+  '</div></div>'+
+  '<div class="hint" style="margin-top:10px">Your share is what reaches you after the company split and any '+
+  'referral give-away. If you are not sure, use the last commission you were actually paid divided by what the deal billed.</div>'+
+  '<button class="btnfull" id="g-save" style="margin-top:12px">Save</button>';
+ openTool('The target',h,'');
+ document.getElementById('g-save').onclick=function(){
+  var n=num(document.getElementById('g-net').value);
+  var sp=num(document.getElementById('g-split').value);
+  var dl=document.getElementById('g-dl').value;
+  if(!n){alert('Put a number in.');return;}
+  if(sp<=0||sp>100){alert('Your share has to be between 1 and 100.');return;}
+  if(!dl){alert('Pick a date.');return;}
+  S.goal={net:n, split:sp, dl:dl};
+  goalSync(); put(S); haptic('light'); closeTool(); redrawAll(); openGoal();
+ };
+}
+function openGoal(){
+ var G=goalState(), g=G.g;
+ function row(l,sub,v,tone){
+  return '<div class="row"><div><div class="lab">'+esc(l)+'</div>'+
+   (sub?'<div class="tgt">'+sub+'</div>':'')+'</div>'+
+   '<div class="val'+(tone?' '+tone:'')+'">'+v+'</div></div>';}
+
+ var h='<div class="hint">Everything here is gross commission except where it says what you keep. '+
+  'Your share is set to '+num(g.split)+'%.</div>';
+
+ h+='<div class="card" style="margin-top:12px">'+
+  row('You want to keep', 'by '+new Date(DEADLINE).toLocaleDateString('en-GB',{day:'numeric',month:'long'}),
+      pmoney(num(g.net)),'hit')+
+  row('So the deals must bill', 'at '+num(g.split)+'% to you', pmoney(TARGET))+
+  row('Banked and won so far', G.banked?'that is '+pmoney(G.netNow)+' in your pocket':'nothing yet',
+      pmoney(G.banked), G.banked?'hit':'')+
+  row('Still to find', G.left>0?G.left+' days left':'the date has passed',
+      pmoney(G.need), G.need?'bad':'hit')+
+  '</div>';
+
+ if(G.left>0&&G.need>0){
+  h+='<div class="hint" style="margin-top:7px;color:var(--gold)">'+
+   pmoney(Math.round(G.need/G.wks))+' of billing a week for the next '+G.wks+' week'+(G.wks===1?'':'s')+'.</div>';
+ }
+
+ /* the honest part */
+ h+='<div class="vhead" style="margin-top:15px">What can actually pay by then</div>';
+ if(!G.win.length){
+  h+='<div class="card" style="border-color:rgba(212,106,94,.45)">'+
+   '<div class="tgt" style="color:var(--bad)">Nothing in the pipeline is expected to turn into cash before '+
+   new Date(DEADLINE).toLocaleDateString('en-GB',{day:'numeric',month:'long'})+'.</div>'+
+   '<div class="tgt" style="margin-top:6px">The soonest is '+
+   (G.R.filter(function(r){return r.fee;}).sort(function(a,b){return a.days-b.days;})[0]
+     ? esc(pvName(G.R.filter(function(r){return r.fee;}).sort(function(a,b){return a.days-b.days;})[0].d.w))+
+       ' in about '+G.R.filter(function(r){return r.fee;}).sort(function(a,b){return a.days-b.days;})[0].days+' days'
+     : 'nothing with a value on it')+
+   '. Either the date moves, or you set a real ETA on the deals that are further along than their stage says.</div></div>';
+ } else {
+  h+='<div class="card">'+
+   row('Weighted', G.win.length+' deal'+(G.win.length===1?'':'s')+' that could land in time', pmoney(G.wWin))+
+   row('If every one of them lands', 'best case, not a forecast', pmoney(G.mWin))+
+   row(G.wWin>=G.need?'Ahead by':'Short by','on the weighted number',
+       pmoney(Math.abs(G.need-G.wWin)), G.wWin>=G.need?'hit':'bad')+
+   '</div>';
+ }
+
+ /* the run list */
+ var run=goalRun(G.need, G.R.filter(function(r){return r.fee>0;}));
+ h+='<div class="vhead" style="margin-top:15px">The shortest way there</div>';
+ if(!run.enough){
+  h+='<div class="hint" style="color:var(--bad)">Even if every live deal with a value closed, that is '+
+   pmoney(run.total)+' against '+pmoney(G.need)+'. The pipeline cannot reach this number.</div>';
+ } else {
+  h+='<div class="hint">'+run.list.length+' deal'+(run.list.length===1?'':'s')+
+   ', biggest first. Close these and you are there.</div>';
+ }
+ h+='<div class="card" style="margin-top:8px">'+run.list.map(function(r){
+   var late=r.eta>DEADLINE;
+   return '<div class="row" data-gdl="'+r.i+'" style="cursor:pointer">'+
+    '<div style="flex:1;min-width:0"><div class="lab">'+esc(pvName(r.d.w))+'</div>'+
+    '<div class="tgt">'+STAGES[Math.min(num(r.d.s),4)]+' · '+esc(pvNum(r.d.u||'no unit'))+
+     (r.d.blk?' · <span style="color:var(--bad)">'+esc((blkDef(r.d.blk)||[])[1]||r.d.blk)+'</span>':'')+
+     '<br><span style="color:'+(late?'var(--bad)':'var(--dim)')+'">cash about '+
+     new Date(r.eta).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+
+     ' · '+r.why+'</span></div></div>'+
+    '<div style="text-align:right"><div class="val">'+pmoney(r.fee)+'</div>'+
+    '<div class="tgt">'+pmoney(Math.round(r.fee*num(g.split)/100))+' to you</div></div></div>';
+  }).join('')+'</div>';
+
+ /* the hole in his own forecast */
+ if(G.noval.length){
+  h+='<div class="vhead" style="margin-top:15px">Not counted, because they have no number</div>'+
+   '<div class="card" style="border-color:rgba(185,151,91,.5)">'+
+   G.noval.slice(0,8).map(function(r){
+    return '<div class="row" data-gdl="'+r.i+'" style="cursor:pointer">'+
+     '<div class="lab" style="font-size:13px">'+esc(pvName(r.d.w))+'</div>'+
+     '<div class="v2" style="color:var(--gold)">set a value</div></div>';}).join('')+
+   '</div>'+
+   '<div class="hint" style="margin-top:6px">'+G.noval.length+' live deal'+(G.noval.length===1?'':'s')+
+   ' with no value, so your own forecast is understating you. Rentals pay fastest of anything you have.</div>';
+ }
+
+ h+='<div class="oacts" style="margin-top:14px">'+
+   '<button data-gedit="1">Change the target</button>'+
+   '<button data-getas="1">Set real ETAs</button>'+
+  '</div>';
+
+ openTool('Target',h,'');
+ document.getElementById('tcopy').textContent='Close';
+ document.querySelectorAll('[data-gdl]').forEach(function(b){
+  b.onclick=function(){var i=+b.dataset.gdl;closeTool();setTimeout(function(){dealRoom(i);},200);};});
+ var e1=document.querySelector('[data-gedit]'); if(e1)e1.onclick=function(){closeTool();setTimeout(openGoalEdit,200);};
+ var e2=document.querySelector('[data-getas]'); if(e2)e2.onclick=function(){closeTool();setTimeout(openGoalEtas,200);};
+}
+/* Set a real cash date on the deals you actually know about. This is the one
+   input that turns the tracker from a generic model into your pipeline. */
+function openGoalEtas(){
+ var R=goalRows().filter(function(r){return r.fee>0;});
+ var h='<div class="hint">The stage average is a guess. If you know when one of these actually pays, put the date in. '+
+  'Blank it to go back to the guess.</div><div class="pfields" style="margin-top:10px">'+
+  R.map(function(r){
+   return '<div><label>'+esc(pvName(r.d.w))+' · '+pmoney(r.fee)+'</label>'+
+    '<input id="ge-'+r.i+'" type="date" value="'+(r.d.eta||'')+'" placeholder="'+r.eta+'"></div>';
+  }).join('')+'</div>'+
+  '<button class="btnfull" id="ge-save" style="margin-top:12px">Save</button>';
+ openTool('When does each one pay',h,'');
+ document.getElementById('ge-save').onclick=function(){
+  R.forEach(function(r){
+   var e=document.getElementById('ge-'+r.i); if(!e)return;
+   if(e.value)S.deals[r.i].eta=e.value; else delete S.deals[r.i].eta;
+  });
+  put(S); haptic('light'); closeTool(); redrawAll(); openGoal();
+ };
+}
+
 function cashFlow(){
  var rows=[], today=new Date(TD);
  S.deals.forEach(function(d){
@@ -4402,7 +4638,18 @@ function drawDeals(){
   b.disabled=!n; b.style.opacity=n?1:.45;})();
  document.getElementById('dfore').innerHTML=pmoney(pipeWeighted())+'<small> likely to close</small>';
  document.getElementById('dwon').textContent='Won '+pmoney(wonTotal())+' · best case '+pmoney(pipeMax());
- document.getElementById('dgap').textContent='Gap '+pmoney(Math.max(0,TARGET-bankedTotal()-wonTotal()-ledgerTotal()));
+ (function(){
+  var G=goalState();
+  document.getElementById('dgap').textContent='Gap '+pmoney(G.need)+
+   ' · '+pmoney(Math.round(G.need*num(G.g.split)/100))+' to you';
+  var gb=document.getElementById('dgoal');
+  if(gb){
+   gb.textContent=pmoney(num(G.g.net))+' by '+
+    new Date(DEADLINE).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+
+    (G.left>0?' · '+G.left+' days left':' · date passed');
+   gb.onclick=openGoal;
+  }
+ })();
 
  function daysTo(x){return x?Math.round((new Date(x)-new Date(TD))/864e5):null;}
  var G={late:[],now:[],soon:[],rest:[],done:[]};
@@ -6555,7 +6802,7 @@ function drawComps(){
 }
 fetch('comps.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&j.communities){COMPS=j;drawComps();}}).catch(function(){});
 
-var APPVER='v48 \u00b7 10 Sep 2026 \u00b7 contract terms in the deal room, deadlines that warn you';
+var APPVER='v49 \u00b7 11 Sep 2026 \u00b7 the target tracker, set what you keep and see what has to close';
 function drawObj(){
  var L=S.deals.filter(function(d){return d.s===LOST&&d.lost;});
  var el=document.getElementById('objbox');
