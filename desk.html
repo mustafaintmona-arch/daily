@@ -328,6 +328,30 @@ td.idx{text-align:center}
 .docc{background:var(--card2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .docc img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;cursor:zoom-in}
 .docc .dl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);padding:7px 9px}
+
+/* multi-select + bulk bar + money strip */
+.bulk{position:sticky;top:0;z-index:60;display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+ background:linear-gradient(180deg,rgba(185,151,91,.16),rgba(185,151,91,.06));
+ border:1px solid rgba(185,151,91,.45);border-radius:10px;padding:9px 12px;margin:0 0 10px}
+.bulk b{color:var(--gold);font-weight:700}
+.bulk select,.bulk input{background:var(--card);border:1px solid var(--line);color:var(--ink);
+ border-radius:7px;padding:5px 7px;font:inherit;font-size:12px}
+.bulk button{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:7px;
+ padding:5px 10px;font:inherit;font-size:12px;cursor:pointer}
+.bulk button:hover{border-color:var(--gold)}
+.bulk button.go{background:var(--gold);border-color:var(--gold);color:#10151c;font-weight:600}
+.bulk button.dang{border-color:rgba(212,106,94,.5);color:#D46A5E}
+.bulk .sp2{flex:1}
+tr.picked td{background:rgba(185,151,91,.10)}
+.money{display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;margin:0 0 10px;
+ border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--card)}
+.money div{display:flex;flex-direction:column;gap:2px}
+.money u{text-decoration:none;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.money b{font-size:16px;color:var(--ink);font-weight:600}
+.money b.g{color:var(--gold)}
+.money s{text-decoration:none;font-size:11px;color:var(--dim)}
+.money .bar2{width:100%;height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:4px}
+.money .bar2 i{display:block;height:100%;background:var(--gold)}
 </style>
 </head>
 <body>
@@ -847,7 +871,7 @@ function render(){
  document.querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){
   var t=document.getElementById('tabs');
   if(t&&t.classList.contains('drag'))return;   /* they were scrolling, not choosing */
-  TAB=b.dataset.t;Q='';F='All';document.getElementById('q').value='';render();};});
+  TAB=b.dataset.t;Q='';F='All';SEL={};document.getElementById('q').value='';render();};});
  wireTabs();
  document.getElementById('src').textContent=BK.at?
   ('Loaded '+new Date(BK.at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})):'';
@@ -877,7 +901,7 @@ function render(){
 function drawFilter(){
  var el=document.getElementById('filt'), rows=LIST[TAB]();
  var opts=['All'];
- if(TAB==='deals')opts=opts.concat(STAGES).concat(['No next date','No criteria']);
+ if(TAB==='deals')opts=opts.concat(STAGES).concat(['Has a price','Sold - convert to buyer','No next date','Stuck 14+ days','Biggest fee first','No criteria']);
  if(TAB==='dates')opts=opts.concat(['Next 90 days','Already gone'])
   .concat(['Tenancy ends','Developer payment','Licence','Emirates ID','Passport','Visa','Handover','Other']
    .filter(function(t){return LIST.dates().some(function(x){return x.t===t;});}));
@@ -893,6 +917,10 @@ function pass(r){
  if(F==='All')return true;
  if(TAB==='deals'){
   if(F==='No next date')return !r.nd&&num(r.s)<4;
+  if(F==='Has a price')return (num(r.v)>0||num(r.rent)>0)&&num(r.s)<5;
+  if(F==='Sold - convert to buyer')return /SOLD - convert/i.test(r.n||'');
+  if(F==='Stuck 14+ days')return num(r.s)<4&&r.sAt&&dayd(r.sAt,TD)<-14;
+  if(F==='Biggest fee first')return num(r.s)<5;
   if(F==='No criteria')return !num(r.lmax)&&!num(r.lbd)&&!(r.lcom||'');
   return STAGES[num(r.s)]===F;}
  if(TAB==='units'){
@@ -919,12 +947,18 @@ function pass(r){
 function drawTable(){
  var cols=COLS[TAB], rows=LIST[TAB](), idx=[];
  rows.forEach(function(r,i){if(pass(r))idx.push(i);});
+ if(TAB==='deals'&&F==='Biggest fee first')
+  idx.sort(function(a,b){return dealFee(rows[b])-dealFee(rows[a]);});
  document.getElementById('count').innerHTML='<b>'+idx.length+'</b> of '+rows.length;
- var h='<table><thead><tr><th></th>'+cols.map(function(c){return '<th>'+c.t+'</th>';}).join('')+'<th></th></tr></thead><tbody>';
+ var pick=(TAB==='units'||TAB==='deals'||TAB==='later');
+ var h=(pick?bulkBar():'')+(TAB==='deals'?moneyBar(rows):'')+
+  '<table><thead><tr><th>'+(pick?'<input type="checkbox" class="ck" id="ckall">':'')+'</th>'+
+  cols.map(function(c){return '<th>'+c.t+'</th>';}).join('')+'<th></th></tr></thead><tbody>';
  idx.forEach(function(i){
   var r=rows[i], dead=(TAB==='deals'&&num(r.s)===5);
-  h+='<tr class="'+(dead?'dead':'')+'"><td class="idx">'+
-   (TAB==='units'?'<input type="checkbox" class="ck" data-s="'+i+'"'+(SEL[i]?' checked':'')+'>':(i+1))+'</td>';
+  var pickable=(TAB==='units'||TAB==='deals'||TAB==='later');
+  h+='<tr class="'+(dead?'dead ':'')+(pickable&&SEL[i]?'picked':'')+'"><td class="idx">'+
+   (pickable?'<input type="checkbox" class="ck" data-s="'+i+'"'+(SEL[i]?' checked':'')+'>':(i+1))+'</td>';
   cols.forEach(function(c){
    if(c.calc){h+='<td class="calc">'+esc(c.calc(r))+'</td>';return;}
    var v=r[c.k];
@@ -978,9 +1012,28 @@ function bindCells(){
   if(el.tagName==='INPUT')el.onblur=commit;
   el.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();commit();el.blur();}};
  });
- document.querySelectorAll('.ck').forEach(function(c){c.onchange=function(){
-  if(c.checked)SEL[c.dataset.s]=1; else delete SEL[c.dataset.s];
-  document.getElementById('cmp').textContent='Compare'+(Object.keys(SEL).length?' ('+Object.keys(SEL).length+')':'');};});
+ /* row checkboxes. shift-click picks a range, like a spreadsheet. */
+ var LASTCK=null;
+ document.querySelectorAll('#main tbody .ck').forEach(function(c){
+  c.onclick=function(ev){
+   var vis=[].slice.call(document.querySelectorAll('#main tbody .ck'));
+   if(ev.shiftKey&&LASTCK!==null&&vis.indexOf(LASTCK)>=0){
+    var a=vis.indexOf(LASTCK), b=vis.indexOf(c);
+    if(a>b){var t=a;a=b;b=t;}
+    for(var k=a;k<=b;k++){vis[k].checked=c.checked;
+     if(c.checked)SEL[vis[k].dataset.s]=1; else delete SEL[vis[k].dataset.s];}
+   } else {
+    if(c.checked)SEL[c.dataset.s]=1; else delete SEL[c.dataset.s];
+   }
+   LASTCK=c; syncPicked();
+  };});
+ var ckall=document.getElementById('ckall');
+ if(ckall)ckall.onclick=function(){
+  document.querySelectorAll('#main tbody .ck').forEach(function(c){
+   c.checked=ckall.checked;
+   if(ckall.checked)SEL[c.dataset.s]=1; else delete SEL[c.dataset.s];});
+  syncPicked();};
+ wireBulk();
  document.querySelectorAll('[data-o]').forEach(function(b){b.onclick=function(e){
   e.stopPropagation(); openUnit(+b.dataset.o);};});
  document.querySelectorAll('[data-x]').forEach(function(b){b.onclick=function(){
@@ -2623,6 +2676,111 @@ function wabLoad(){
  alert('Loaded.\n'+addD+' clients added.\n'+addL+' owners added to Prospects.\n'+
   addN+' numbers added to do-not-contact.'+(skip?'\n'+skip+' already there, left alone.':''));
  render();
+}
+
+
+/* ================= MULTI SELECT AND BULK EDIT =================
+   Pick rows with the checkboxes, shift-click for a range, then change the
+   stage, the next action or the date for all of them at once. */
+function selCount(){return Object.keys(SEL).length;}
+function selRows(){var L=LIST[TAB]();return Object.keys(SEL).map(function(k){return L[+k];}).filter(Boolean);}
+function syncPicked(){
+ document.querySelectorAll('#main tbody .ck').forEach(function(c){
+  var tr=c.closest('tr'); if(tr)tr.classList.toggle('picked',!!SEL[c.dataset.s]);});
+ var n=selCount(), b=document.getElementById('bulkn');
+ if(b)b.textContent=n;
+ var wrap=document.getElementById('bulkwrap');
+ if(wrap)wrap.style.display=n?'flex':'none';
+ var cmp=document.getElementById('cmp');
+ if(cmp)cmp.textContent='Compare'+(n?' ('+n+')':'');
+}
+function bulkBar(){
+ var n=selCount();
+ var stageOpts=STAGES.map(function(o,j){return '<option value="'+j+'">'+esc(o)+'</option>';}).join('');
+ return '<div class="bulk" id="bulkwrap" style="display:'+(n?'flex':'none')+'">'+
+  '<b><span id="bulkn">'+n+'</span> selected</b>'+
+  '<select id="bk-stage"><option value="">Set stage...</option>'+stageOpts+'</select>'+
+  '<input id="bk-date" type="date" title="Set the next date for everyone selected">'+
+  '<input id="bk-na" type="text" placeholder="Set next action..." style="min-width:190px">'+
+  '<button id="bk-apply" class="go">Apply</button>'+
+  '<span class="sp2"></span>'+
+  '<button id="bk-nums">Copy numbers</button>'+
+  '<button id="bk-names">Copy names</button>'+
+  '<button id="bk-clear">Clear</button>'+
+  '<button id="bk-del" class="dang">Delete</button>'+
+  '</div>';
+}
+function wireBulk(){
+ var g=function(i){return document.getElementById(i);};
+ if(!g('bulkwrap'))return;
+ syncPicked();
+ var ap=g('bk-apply');
+ if(ap)ap.onclick=function(){
+  var R=selRows(); if(!R.length){toast('Nothing selected.');return;}
+  var st=g('bk-stage').value, dt=g('bk-date').value, na=g('bk-na').value.trim();
+  if(st===''&&!dt&&!na){toast('Pick a stage, a date or type a next action first.');return;}
+  R.forEach(function(r){
+   if(st!==''){r.s=num(st);r.sAt=TD;if(num(st)===5&&!r.lostAt)r.lostAt=TD;}
+   if(dt)r.nd=dt;
+   if(na)r.na=na;});
+  persist();
+  var what=[];
+  if(st!=='')what.push('stage to '+STAGES[num(st)]);
+  if(dt)what.push('next date');
+  if(na)what.push('next action');
+  toast(R.length+' updated: '+what.join(', ')+'.');
+  drawTable();
+ };
+ var cl=g('bk-clear'); if(cl)cl.onclick=function(){SEL={};drawTable();};
+ var dl=g('bk-del');
+ if(dl)dl.onclick=function(){
+  var R=selRows(); if(!R.length)return;
+  if(!confirm('Delete '+R.length+' row'+(R.length===1?'':'s')+'?'))return;
+  var L=LIST[TAB]();
+  Object.keys(SEL).map(Number).sort(function(a,b){return b-a;}).forEach(function(i){L.splice(i,1);});
+  SEL={};persist();toast(R.length+' deleted.');drawTable();};
+ var nu=g('bk-nums');
+ if(nu)nu.onclick=function(){
+  var v=selRows().map(function(r){return String(r.ph||'').replace(/[^0-9+]/g,'');}).filter(Boolean);
+  if(!v.length){toast('None of those have a number saved.');return;}
+  copyText(v.join('\n'));toast(v.length+' numbers copied.');};
+ var nm=g('bk-names');
+ if(nm)nm.onclick=function(){
+  var v=selRows().map(function(r){return (r.w||r.n||'')+(r.ph?'  '+r.ph:'');}).filter(Boolean);
+  if(!v.length){toast('Nothing to copy.');return;}
+  copyText(v.join('\n'));toast('Copied.');};
+}
+function copyText(t){
+ try{navigator.clipboard.writeText(t);}
+ catch(e){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);
+  a.select();try{document.execCommand('copy');}catch(e2){}document.body.removeChild(a);}
+}
+/* ================= MONEY STRIP =================
+   What the pipeline is worth, and how far it is from the target. */
+var GOALNET=180000, GOALSPLIT=50;
+function moneyBar(rows){
+ var open=0,weighted=0,won=0,live=0,noNext=0,quiet=0;
+ var P=[0,.1,.3,.6,1];
+ rows.forEach(function(d){
+  var st=num(d.s), fee=dealFee(d);
+  if(st===5)return;
+  if(st===4){won+=fee;return;}
+  open+=fee;weighted+=fee*(P[st]||0);live++;
+  if(!d.nd)noNext++;
+  if(d.sAt&&dayd(d.sAt,TD)<-14)quiet++;});
+ var target=GOALNET/(GOALSPLIT/100);
+ var mine=function(x){return x*GOALSPLIT/100;};
+ var pct=Math.max(0,Math.min(100,Math.round(won/target*100)));
+ return '<div class="money">'+
+  '<div><u>Live clients</u><b>'+live+'</b><s>'+rows.length+' in total</s></div>'+
+  '<div><u>Fee at stake</u><b class="g">'+money(open)+'</b><s>'+money(mine(open))+' to you</s></div>'+
+  '<div><u>Weighted</u><b>'+money(weighted)+'</b><s>'+money(mine(weighted))+' to you</s></div>'+
+  '<div><u>Banked</u><b>'+money(won)+'</b><s>'+money(mine(won))+' to you</s></div>'+
+  '<div><u>To the '+money(GOALNET)+' target</u><b>'+money(Math.max(0,target-won))+'</b><s>'+pct+'% there</s></div>'+
+  (noNext?'<div><u>No next date</u><b style="color:#D46A5E">'+noNext+'</b><s>they will go quiet</s></div>':'')+
+  (quiet?'<div><u>Stuck 14+ days</u><b style="color:#D46A5E">'+quiet+'</b><s>same stage</s></div>':'')+
+  '<div class="bar2" style="flex-basis:100%"><i style="width:'+pct+'%"></i></div>'+
+  '</div>';
 }
 
 </script>
